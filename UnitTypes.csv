@@ -1,0 +1,4 @@
+Unit,Cost,Move,Armor,Health,Attack,Damage,Range,Rate,Width,Align,Notes
+Pikemen,7,12,4,1,2,1,0,0,0.75,N,Pikes
+Medium Infantry,7,9,5,1,1,1,0,0,0.75,N,Shields
+Heavy Cavalry,20,12,6,2,2,1,0,0,1,N,Mounted
