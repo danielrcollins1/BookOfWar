@@ -78,12 +78,12 @@ public class UnitList implements Iterable<Unit> {
 	*	Return unit in a specified index of the list.
 	*/
 	public Unit get (int index) {
-		if (0 <= index && index < size()) {
-			return unitList.get(index);
-		}	
-		else {
+		if (index < 0 || size() <= index) {
 			System.err.println("UnitList index out-of-bounds.");
 			return null;
+		}
+		else {
+			return unitList.get(index);
 		}
 	}
 

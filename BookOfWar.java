@@ -216,18 +216,6 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Battle two specified unit types with detailed reports.
-	*/
-	void zoomInGame () {
-		UnitList unitList = UnitList.getInstance();
-		Unit unit1 = unitList.get(zoomGameUnit1 - 1);
-		Unit unit2 = unitList.get(zoomGameUnit2 - 1);
-		if (unit1 != null && unit2 != null) {
-			oneGame(unit1, unit2);
-		}
-	}
-
-	/**
 	*  Create table of assessed win percents.
 	*/
 	void assessmentTable () {
@@ -258,6 +246,24 @@ public class BookOfWar {
 			List<Unit> newUnits = unitList.getSublist(baseUnitSet, unitList.size());
 			makeAutoBalancedTable(baseUnits, newUnits);
 		}			
+	}
+
+	/**
+	*  Battle two specified unit types with detailed in-game reports.
+	*/
+	void zoomInGame () {
+		UnitList unitList = UnitList.getInstance();
+		if (zoomGameUnit1 <= 0 || zoomGameUnit2 <= 0) {
+			System.err.println("Error: Zoom-in game requires two units set (use -y and -z switches).");
+		}
+		else if (zoomGameUnit1 > unitList.size() || zoomGameUnit2 > unitList.size()) {
+			System.err.println("Error: Zoom-in game has unit out of range for database.");
+		}		
+		else {		
+			Unit unit1 = unitList.get(zoomGameUnit1 - 1);
+			Unit unit2 = unitList.get(zoomGameUnit2 - 1);
+			oneGame(unit1, unit2);
+		}
 	}
 
 	/**
