@@ -54,7 +54,7 @@ public class UnitList implements Iterable<Unit> {
 				instance = new UnitList();
 			}
 			catch (IOException e) {
-				System.out.println("Failed to read the UnitTypes file.");
+				System.err.println("Failed to read the UnitTypes file.");
 			}
 		}
 		return instance;
@@ -90,14 +90,8 @@ public class UnitList implements Iterable<Unit> {
 	/**
 	*  Get a copy of a given range of the unit list.
 	*/
-	public Unit[] copyOfRange (int from, int to) { 
-		// TODO: switch this to List implementation.
-		int size = to - from;
-		Unit[] copy = new Unit[size];
-		for (int i = 0; i < size; i++) {
-			copy[i] = unitList.get(from + i);
-		}
-		return copy;
+	public List<Unit> getSublist (int start, int end) { 
+		return unitList.subList(start, end);
 	}
 
 	/**

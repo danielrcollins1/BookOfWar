@@ -1,4 +1,13 @@
 Unit,Cost,Move,Armor,Health,Attack,Damage,Range,Rate,Width,Align,Notes
-Pikemen,7,12,4,1,2,1,0,0,0.75,N,Pikes
-Medium Infantry,7,9,5,1,1,1,0,0,0.75,N,Shields
-Heavy Cavalry,20,12,6,2,2,1,0,0,1,N,Mounted
+Pikemen,6,12,4,1,2,1,0,0,3,N,Pikes
+Medium Foot,7,9,5,1,1,1,0,0,3,N,Shields
+Heavy Horse,20,12,6,2,2,1,0,0,4,N,Mounted
+Archers,7,12,4,1,1,1,15,2,3,N,-
+Longbowmen,10,12,4,1,1,1,21,2,3,N,-
+Horse Archers,8,24,4,1,1,1,18,2,4,N,Mounted
+Light Foot,5,12,4,1,1,1,0,0,3,N,Shields
+Heavy Foot,12,6,6,1,1,1,0,0,3,N,Shields
+Crossbowmen,5,12,4,1,1,1,18,1,3,N,-
+Heavy Crossbowmen,8,9,5,1,1,1,24,1,3,N,-
+Light Horse,12,24,4,2,2,1,0,0,4,N,Mounted
+Medium Horse,15,18,5,2,2,1,0,0,4,N,Mounted

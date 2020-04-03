@@ -11,22 +11,27 @@ public class Unit {
 	enum Alignment {Lawful, Neutral, Chaotic};
 
 	//--------------------------------------------------------------------------
+	//  Constants
+	//--------------------------------------------------------------------------
+
+	/**
+	*  Conversion from internal width units to inches.
+	*/
+	final int WIDTH_UNITS_PER_INCH = 4;
+
+	//--------------------------------------------------------------------------
 	//  Fields
 	//--------------------------------------------------------------------------
 
 	// Unit type statistics
 	String name;
-	int cost, move, armor, health, attacks, damage, range, rate;
-	double figWidth;
+	int cost, move, armor, health, attacks, damage, range, rate, width;
 	Alignment alignment;
 	List<Keyword> keyList;
 
 	// Unit in-play records
-	int figures, damageTaken;
-	int initFiles, figsLostInTurn;
-	int specialCharges;
-	boolean routed;
-	boolean visible;
+	int figures, frontFiles, damageTaken, figsLostInTurn, specialCharges;
+	boolean routed, visible;
 	Hero hero;
 
 	//--------------------------------------------------------------------------
@@ -47,7 +52,7 @@ public class Unit {
 		damage = Integer.parseInt(s[6]);
 		range = Integer.parseInt(s[7]);		
 		rate = Integer.parseInt(s[8]);
-		figWidth = Double.parseDouble(s[9]);
+		width = Integer.parseInt(s[9]);
 		alignment = parseAlignment(s[10]);		
 		parseKeywords(s[11]);
 	}
@@ -65,10 +70,10 @@ public class Unit {
 		damage = src.damage;
 		range = src.range;
 		rate = src.rate;
-		figWidth = src.figWidth;
+		width = src.width;
 		alignment = src.alignment;
 		keyList = new ArrayList<Keyword>(src.keyList);
-		// Note in-play records not copied
+		// In-play records not copied
 	}
 
 	//--------------------------------------------------------------------------
@@ -84,13 +89,13 @@ public class Unit {
 	public int getAttacks() { return attacks; };
 	public int getDamage() { return damage; };
 	public int getRange() { return range; };
-	public int getRate() { return rate; };
-	public double getFigWidth() { return figWidth; };
+	public int getFireRate() { return rate; };
 	public Alignment getAlignment() { return alignment; };
 	public boolean hasKeyword(Keyword key) { return keyList.contains(key); };
 
 	// Unit in-play records
 	public int getFigures() { return figures; };
+	public int getFiles() { return frontFiles; }
 	public int getFigsLostInTurn() { return figsLostInTurn; };
 	public int getCharges() { return specialCharges; }
 	public boolean hasMissiles() { return range > 0; };
@@ -150,32 +155,22 @@ public class Unit {
 	public void setFiles (int files) {
 		assert(files > 0);
 		assert(files <= figures);
-		initFiles = files;	
+		frontFiles = files;	
 	}
 	
 	/**
-	*  Initialize frontage by desired rows.
+	*  Get the figure width in inches.
 	*/
-	public void setFilesByRanks (int ranks) {
-		assert(ranks > 0);
-		assert(ranks <= figures);
-		initFiles = divideRoundUp(figures, ranks);
-	}
+	public double getFigWidth() { 
+		return (double) width / WIDTH_UNITS_PER_INCH; 
+	};
 
 	/**
-	*  Whole number division, rounding up.
+	*  Get the figure length in inches (double width for mounts).
 	*/
-	public int divideRoundUp (int dividend, int divisor) {
-		assert(dividend > 0);
-		assert(divisor > 0);
-		return (dividend + divisor - 1) / divisor;	
-	}
-
-	/**
-	*  Compute files (figures across front).
-	*/
-	public int getFiles() {
-		return Math.min(initFiles, figures);
+	public double getFigLength() {
+		return hasKeyword(Keyword.Mounted) ? 
+			2 * getFigWidth() : getFigWidth();
 	}
 
 	/**
@@ -186,28 +181,21 @@ public class Unit {
 		if (files < 1) return 0;
 		int ranks = figures / files;
 		int backrow = figures % files;
-		if (backrow*2 >= files && files > 1) ranks++;
+		if (backrow * 2 >= files && files > 1) ranks++;
 		return ranks;	
-	}
-
-	/**
-	*  Compute how long the figure is (assume mounted double length).
-	*/
-	public double getFigLength() {
-		return hasKeyword(Keyword.Mounted) ? figWidth * 2.0 : figWidth;
 	}
 
 	/**
 	*  Compute width of unit in inches.
 	*/
-	public double getWidth () {
+	public double getTotalWidth () {
 		return getFiles() * getFigWidth();
 	}
 
 	/**
 	*  Compute length of unit in inches.
 	*/
-	public double getLength () {
+	public double getTotalLength () {
 		return getRanks() * getFigLength();
 	}
 
@@ -215,20 +203,20 @@ public class Unit {
 	*  Compute perimeter around entire unit.
 	*/
 	public double getPerimeter () {
-		return 2 * (getWidth() + getLength());
+		return 2 * (getTotalWidth() + getTotalLength());
 	}
 
 	/**
 	*  Remove a certain number of figures.
-	*  @return Number lost (limited by number in unit).
+	*  @return Number lost (capped by number in unit).
 	*/
 	private int removeFigures (int lost) {
-		if (lost >= figures) {
-			lost = figures;
-			damageTaken = 0;		
-		}
+		lost = Math.min(lost, figures);
 		figures -= lost;
 		figsLostInTurn += lost;
+ 		if (figures < frontFiles) {
+ 			frontFiles = figures;
+ 		}
 		return lost;
 	}
 
@@ -329,9 +317,9 @@ public class Unit {
 	*/
 	public String getAbbreviation() {
 		String s = "" + name.charAt(0);
-		for (int i = 1; i < name.length()-1; i++) {
+		for (int i = 1; i < name.length() - 1; i++) {
 			if (name.charAt(i) == ' ' && s.length() < 3)
-				s = s + name.charAt(i+1);
+				s = s + name.charAt(i + 1);
 		}
 		return s;
 	}
@@ -342,8 +330,8 @@ public class Unit {
 	public static void main (String[] args) {
 		String[] desc = {"Light Infantry", "4", "12", "4", 
 			"1", "1", "1", "0", "0", "0.75", "N", "-"};
-		Unit u = new Unit(desc);
-		System.out.println(u);
+		Unit unit = new Unit(desc);
+		System.out.println(unit);
 	}
 }
 
