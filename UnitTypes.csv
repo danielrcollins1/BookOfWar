@@ -1,13 +1,43 @@
 Unit,Cost,Move,Armor,Health,Attack,Damage,Range,Rate,Width,Align,Notes
-Pikemen,6,12,4,1,2,1,0,0,3,N,Pikes
-Medium Foot,7,9,5,1,1,1,0,0,3,N,Shields
-Heavy Horse,20,12,6,2,2,1,0,0,4,N,Mounted
-Archers,7,12,4,1,1,1,15,2,3,N,-
-Longbowmen,10,12,4,1,1,1,21,2,3,N,-
-Horse Archers,8,24,4,1,1,1,18,2,4,N,Mounted
 Light Foot,5,12,4,1,1,1,0,0,3,N,Shields
-Heavy Foot,12,6,6,1,1,1,0,0,3,N,Shields
-Crossbowmen,5,12,4,1,1,1,18,1,3,N,-
-Heavy Crossbowmen,8,9,5,1,1,1,24,1,3,N,-
+Medium Foot,7,9,5,1,1,1,0,0,3,N,Shields
+Heavy Foot,9,6,6,1,1,1,0,0,3,N,-
+Crossbowmen,6,12,4,1,1,1,18,1,3,N,-
+Heavy Crossbowmen,9,9,5,1,1,1,24,1,3,N,-
+Archers,9,12,4,1,1,1,15,2,3,N,-
+Longbowmen,12,12,4,1,1,1,21,2,3,N,-
 Light Horse,12,24,4,2,2,1,0,0,4,N,Mounted
 Medium Horse,15,18,5,2,2,1,0,0,4,N,Mounted
+Heavy Horse,20,12,6,2,2,1,0,0,4,N,Mounted
+Pikemen,6,12,4,1,2,1,0,0,3,N,Pikes
+Horse Archers,10,24,4,1,1,1,18,2,4,N,Mounted
+War Elephant Archers,80,12,5,6,4,1,15,4,6,N,"Mounted, ShootInMelee"
+War Elephant Spears,85,12,5,6,6,1,0,0,6,N,Mounted
+Goblin Light Infantry,4,9,4,1,1,1,0,0,3,C,LightWeakness
+Goblin Archers,7,9,4,1,1,1,15,2,3,C,LightWeakness
+Goblin Wolf Riders,12,12,4,3,2,1,0,0,4,C,"LightWeakness, Mounted"
+Orc Light Infantry,4,12,4,1,1,1,0,0,4,C,"LightWeakness, Shields"
+Orc Medium Infantry,6,9,5,1,1,1,0,0,4,C,"LightWeakness, Shields"
+Orc Archers,7,12,4,1,1,1,15,2,4,C,LightWeakness
+Hobgoblin Medium Infantry,7,9,5,1,1,1,0,0,4,C,"MoralePlus1, Shields"
+Gnoll Medium Infantry,10,9,5,2,1,1,0,0,4,C,MoralePlus2
+Gnoll Longbowmen,18,9,5,2,1,1,21,2,4,C,MoralePlus2
+Bugbears,15,9,5,3,1,1,0,0,5,C,"GiantClass, HideInWoods"
+Ogres,18,9,5,4,1,1,0,0,6,C,GiantClass
+Trolls,60,12,5,6,2,1,0,0,6,C,"GiantClass, Regeneration"
+"Giants, Hill",50,12,5,8,1,2,20,1,6,C,GiantClass
+"Giants, Stone",65,12,5,9,1,2,20,1,6,N,"GiantClass, StoneBonus"
+"Giants, Frost",70,12,5,10,1,2,20,1,6,C,"GiantClass, ColdImmune"
+"Giants, Fire",75,12,5,11,1,2,20,1,6,C,"GiantClass, FireImmune"
+Halfling Light Infantry,6,12,4,1,1,1,0,0,3,L,"HideInWoods, Shields"
+Halfling Slingers,8,12,4,1,1,1,12,1,3,L,"HideInWoods, SlingBonus"
+Elf Light Infantry,6,12,4,1,1,1,0,0,3,L,"HideInWoods, Shields"
+Elf Medium Infantry,8,9,5,1,1,1,0,0,3,L,"HideInWoods, Shields"
+Elf Archers,10,12,4,1,1,1,15,2,3,L,HideInWoods
+Dwarf Medium Infantry,8,9,5,1,1,1,0,0,3,L,"DodgeGiants, Shields"
+Dwarf Heavy Crossbows,10,9,5,1,1,1,24,1,3,L,DodgeGiants
+Dwarf Cranequiniers,15,12,5,2,2,1,18,1,4,L,"DodgeGiants, Mounted"
+Halfling Elite Slingers,18,12,4,3,1,1,12,1,3,L,"HideInWoods, SlingBonus"
+Elf Elite Archers,35,12,5,3,1,1,21,2,3,L,Invisibility
+Dwarf Elite Infantry,30,9,6,3,1,1,0,0,3,L,DodgeGiants
+Men Elite Cavalry,50,12,6,6,2,1,0,0,4,L,Mounted

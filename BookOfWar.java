@@ -8,7 +8,7 @@ import java.util.List;
 ******************************************************************************/
 
 public class BookOfWar {
-	enum Weather {Sunny, Cloudy, Rainy, Stormy};
+	enum Weather {Clear, Cloudy, Rainy};
 	enum Terrain {Open, Gulley, Rough, Hill, Woods, Marsh, Stream, Pond};
 	enum SimMode {TableAssess, AutoBalance, ZoomGame};
 
@@ -30,7 +30,7 @@ public class BookOfWar {
 	final int budgetMin = 50;
 
 	/** Budget maximum: suggest base 100. */
-	final int budgetMax = 100;
+	final int budgetMax = 200;
 
 	/** Switch to set budget as multiple of pricier unit. */
 	final boolean packBudgetToMax = true;
@@ -45,7 +45,7 @@ public class BookOfWar {
 	final boolean useDamageCeilingByHealth = true;
 
 	/** Switch for optional morale modifiers. */
-	final boolean useOptionalMoraleMods = false;
+	final boolean useOptionalMoraleMods = true;
 
 	/** Switch to buy silver weapons for any troop types. */
 	final boolean useSilverWeapons = false;
@@ -305,6 +305,8 @@ public class BookOfWar {
 
   		// Body
 		double absTotalError = 0.0;
+		double maxAbsError = 0.0;
+		Unit maxAbsErrUnit = null;
 		for (Unit unit1: unitList1) {
 			int winCount = 0;
 			double sumWinPctErr = 0.0;
@@ -322,12 +324,18 @@ public class BookOfWar {
 			}
 			printf(winCount + "\t");
 			printf(toPercent(sumWinPctErr) + "\t");
-			absTotalError += Math.abs(sumWinPctErr);
+			double absError = Math.abs(sumWinPctErr);
+			absTotalError += absError;
+			if (absError > maxAbsError) {
+				maxAbsError = absError;
+				maxAbsErrUnit = unit1;			
+			}
 			printf("\n");
 		}
 
 		// Tail
 		printf("\nAbsolute Total Error: " + toPercent(absTotalError));
+		printf("\nMaximum error unit: " + maxAbsErrUnit.getName());
 		printf("\n");
 	}
 
@@ -722,8 +730,7 @@ public class BookOfWar {
 	*  Does terrain and weather permit shooting?
 	*/
 	boolean terrainPermitShots () {
-		return (!(weather == Weather.Stormy
-			|| terrain == Terrain.Woods || terrain == Terrain.Gulley));	
+		return !(terrain == Terrain.Woods || terrain == Terrain.Gulley);
 	}
 
 	/**
@@ -741,21 +748,21 @@ public class BookOfWar {
 			case Stream: moveCost = 4; break;
 		}
 			
-		// Weather mods
-		if (weather == Weather.Stormy)
-			moveCost *= 2;		
-
-		// Mounted penalties double
-		if (moveCost > 1 && unit.hasKeyword(Keyword.Mounted))
-			moveCost *= 2;
+		// Swimmers ignore streams
+		if (unit.hasKeyword(Keyword.Swimming) && terrain == Terrain.Stream)
+			moveCost = 1;
 
 		// Flyers ignore everything
 		if (unit.hasKeyword(Keyword.Flying))
 			moveCost = 1;
-				
-		// Swim in stream at half-speed
-		if (unit.hasKeyword(Keyword.Swimming) && terrain == Terrain.Stream)
-			moveCost = 2;
+
+		// Weather mods
+		if (weather == Weather.Rainy)
+			moveCost *= 2;		
+
+		// Mounted penalties double
+		if (unit.hasKeyword(Keyword.Mounted) && moveCost > 1)
+			moveCost *= 2;
 
 		// Return move (at least 1 inch)
 		int move = unit.getMove() / moveCost;
@@ -884,19 +891,20 @@ public class BookOfWar {
 				&& !inContact
 				&& attacker.hasKeyword(Keyword.Mounted)
 				&& attacker.getRange() == 0  // not allowed for horse archers
-				&& (terrain == Terrain.Open && weather != Weather.Stormy)) {
+				&& attacker.getHealth() < 6 // not allowed for elephants
+				&& (terrain == Terrain.Open && weather != Weather.Rainy)) {
 			atkDice += atkDice/2;
 		}
 
 		// Mounted gets half dice in bad terrain
 		if (attacker.hasKeyword(Keyword.Mounted) &&
-				(terrain != Terrain.Open || weather == Weather.Stormy)) {
+				(terrain != Terrain.Open || weather == Weather.Rainy)) {
 			atkDice /= 2;
 		}
 
 		// Pikes get half dice in bad terrain
 		if (attacker.hasKeyword(Keyword.Pikes) &&
-				(terrain != Terrain.Open || weather == Weather.Stormy)) {
+				(terrain != Terrain.Open || weather == Weather.Rainy)) {
 			atkDice /= 2;
 		}
 
@@ -922,14 +930,6 @@ public class BookOfWar {
 	int miscAtkBonus (Unit attacker, Unit defender, boolean ranged) {
 		int bonus = 0;
 
-// 		// Charging mounts bonus
-// 		if (useChargeBonus
-// 				&& !ranged
-// 				&& attacker.hasKeyword(Keyword.Mounted)
-// 				&& (terrain == Terrain.Open && weather != Weather.Stormy)) {
-// 			bonus += 1;
-// 		}
-
  		// Pike to-hit bonus vs. large targets
  		if (isPikeAvailable(attacker)
 				&& !ranged
@@ -939,7 +939,7 @@ public class BookOfWar {
  		}
 
 		// Orcs & goblins penalty in sunlight
-		if (attacker.hasKeyword(Keyword.LightWeakness) && weather == Weather.Sunny)
+		if (attacker.hasKeyword(Keyword.LightWeakness) && weather == Weather.Clear)
 			bonus -= 1;
 
 		// Solo heroes attacked in normal melee
@@ -1061,7 +1061,7 @@ public class BookOfWar {
 			bonus += 2;
 
 		// Light weakness (orcs & goblins)
-		if (weather == Weather.Sunny && unit.hasKeyword(Keyword.LightWeakness))
+		if (weather == Weather.Clear && unit.hasKeyword(Keyword.LightWeakness))
 			bonus -= 1;
 
 		// Optional stuff
@@ -1071,7 +1071,7 @@ public class BookOfWar {
 			bonus += unit.hasHero() ? 1 : 0;
 
 			// Extra Ranks
-			bonus += Math.min(unit.getRanks(), unit.getFiles()) - 1;
+			//bonus += Math.min(unit.getRanks(), unit.getFiles()) - 1;
 
 			// Alignment
 			switch (unit.getAlignment()) {
@@ -1107,11 +1107,11 @@ public class BookOfWar {
 	*  Randomize weather.
 	*/
 	void randomizeWeather () {
-		int roll = d6() + d6();
-		if (roll <= 7) weather = Weather.Sunny;
-		else if (roll <= 9) weather = Weather.Cloudy;
-		else if (roll <= 11) weather = Weather.Rainy;
-		else weather = Weather.Stormy;
+		switch (d6()) {
+			case 1: case 2: weather = Weather.Clear; break;
+			case 3: case 4: case 5: weather = Weather.Cloudy; break;
+			case 6: weather = Weather.Rainy; break;
+		}
 	}
 
 	/**
@@ -1154,7 +1154,7 @@ public class BookOfWar {
 		int q = target/num;
 		if (q == 0) return num;
 		int lowerBound = q * num;
-		int upperBound = (q+1) * num;
+		int upperBound = (q + 1) * num;
 		int lowerError = target - lowerBound;
 		int upperError = upperBound - target;
 		return lowerError <= upperError ? lowerBound : upperBound;

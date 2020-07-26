@@ -313,12 +313,12 @@ public class Unit {
 	}
 	
 	/**
-	*  Returns a 3-character abbreviation for this unit.
+	*  Returns a short abbreviation for this unit.
 	*/
 	public String getAbbreviation() {
 		String s = "" + name.charAt(0);
 		for (int i = 1; i < name.length() - 1; i++) {
-			if (name.charAt(i) == ' ' && s.length() < 3)
+			if (name.charAt(i) == ' ' && s.length() < 2)
 				s = s + name.charAt(i + 1);
 		}
 		return s;
