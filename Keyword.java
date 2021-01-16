@@ -8,9 +8,10 @@
 public enum Keyword {
 	Pikes, Shields, Mounted,
 	HideInWoods, DodgeGiants, Invisibility, LightWeakness, 
-	Flying, BreathWeapon, WizardSpells, Paralysis, Fearless, FireImmune, 
-	ColdImmune, LightningImmune, FireVulnerable, ControlWeather, SilverToHit, 
-	MagicToHit, Regeneration, Swimming, GiantClass, SlingBonus, ShootInMelee, 
-	StoneBonus, MoralePlus1, MoralePlus2;
+	BreathWeapon, WizardSpells, Paralysis, FireImmune, ColdImmune, 
+	LightningImmune, FireVulnerable, ControlWeather, SilverToHit, 
+	MagicToHit, Regeneration, Swimming, GiantClass, ShotBonus, 
+	ShootInMelee, HeavyStone, MoralePlus1, MoralePlus2, Detection, 
+	Teleport, Fly30, Fly36, Fly48;
 }; 
 

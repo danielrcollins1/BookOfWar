@@ -284,17 +284,24 @@ public class Unit {
 	}
 
 	/**
-	*  Is this unit fearless (immune to morale)?
-	*/
-	public boolean isFearless () {
-		return hasKeyword(Keyword.Fearless);
-	}	
-
-	/**
 	*  Set routed status.
 	*/
 	public void setRouted (boolean routed) {
 		this.routed = routed;
+	}
+
+	/**
+	*  Get the unit's flying movement.
+	*/
+	public int getFlyMove () {
+		if (hasKeyword(Keyword.Fly30))
+			return 30;
+		else if (hasKeyword(Keyword.Fly36))
+			return 36;
+		else if (hasKeyword(Keyword.Fly48))
+			return 48;
+		else
+			return 0;
 	}
 
 	/**

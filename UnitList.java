@@ -90,7 +90,8 @@ public class UnitList implements Iterable<Unit> {
 	/**
 	*  Get a copy of a given range of the unit list.
 	*/
-	public List<Unit> getSublist (int start, int end) { 
+	public List<Unit> getSublist (int start, int end) {
+		end = Math.min(end, unitList.size());
 		return unitList.subList(start, end);
 	}
 
