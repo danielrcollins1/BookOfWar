@@ -251,11 +251,21 @@ public class BookOfWar {
 	*
 	*  Caution: This feature is not a complete silver bullet.
 	*    - Random nature may make different suggestions on different passes.
-	*    - For a very small unit list, tends to want to make everything more costly.
+	*    - For a very small unit list, tends to cyclically make everything more costly.
 	*    - May be very slow (makes full assessment table for each proposed change).
 	*
 	*  Use tastefully; recommend setting some initial base group manually,
 	*    then locking that down and not changing those if suggested.
+	*
+	*  Why not comprehensively search every unit type, and keep iterating
+	*    as long as we see improvements (e.g., bubble sort)? We tried that.
+	*    - Loses the ability to control time spent closely (longer feedback loop)
+	*    - May be weird artifacts due to particular ordering of units in list.
+	*    - May be likely to fall into ever-increasing-cost loop.
+	*
+	*  Seems to work well with the -n (maxTrialNoGain) switch 
+	*    set to about twice the number of units in the base unit list. 
+	*    (Makes it likely that every unit will be tested.)
 	*/
 	void fullAutoBalancer() {
 
@@ -952,7 +962,7 @@ public class BookOfWar {
 		int damagePerHit = attacker.getDamage();
 		if (attacker.hasKeyword(Keyword.Mounted))
 			damagePerHit = 1; // elephant archers
-		if (attacker.hasKeyword(Keyword.HeavyStone))
+		if (attacker.hasKeyword(Keyword.LargeStones))
 			damagePerHit += 1; // stone giants
 		if (capDamageByHealth) {
 			damagePerHit = Math.min(damagePerHit, defender.getHealth());
