@@ -1,47 +1,47 @@
-Unit,Cost,Move,Armor,Health,Attacks,Damage,Range,Rate,Width,Align,Special
-Medium Foot,5,9,5,1,1,1,0,0,3,N,-
-Pikemen,5,12,4,1,2,1,0,0,3,N,Pikes
-Heavy Horse,20,12,6,2,2,1,0,0,4,N,Mounted
-Longbows,12,12,4,1,1,1,21,2,3,N,-
-Horse Archers,10,24,4,1,1,1,18,2,4,N,Mounted
+Unit,Cost,Move,Armor,Hits,Atks,Dam,Rate,Range,Width,Align,Special
 Light Foot,4,12,4,1,1,1,0,0,3,N,-
+Medium Foot,5,9,5,1,1,1,0,0,3,N,-
 Heavy Foot,9,6,6,1,1,1,0,0,3,N,-
-Crossbows,6,12,4,1,1,1,18,1,3,N,-
-Heavy Crossbows,8,9,5,1,1,1,24,1,3,N,-
-Archers,9,12,4,1,1,1,15,2,3,N,-
+Pikemen,5,12,4,1,2,1,0,0,3,N,Pikes
+Crossbows,6,12,4,1,1,1,1,18,3,N,-
+Heavy Crossbows,8,9,5,1,1,1,1,24,3,N,-
+Archers,9,12,4,1,1,1,2,15,3,N,-
+Longbows,12,12,4,1,1,1,2,21,3,N,-
 Light Horse,10,24,4,2,2,1,0,0,4,N,Mounted
 Medium Horse,15,18,5,2,2,1,0,0,4,N,Mounted
+Heavy Horse,20,12,6,2,2,1,0,0,4,N,Mounted
+Horse Archers,10,24,4,1,1,1,2,18,4,N,Mounted
 Elephant Spears,100,12,5,7,4,2,0,0,6,N,Mounted
-Elephant Archers,100,12,5,7,2,2,15,4,6,N,"Mounted, ShootInMelee"
-Men Elite Foot,25,6,6,3,1,1,0,0,3,N,-
-Stone Giants,90,12,5,9,1,2,20,1,6,N,"GiantClass, LargeStones"
-Hero Griffon Riders,100,12,6,6,4,1,0,0,6,N,"Mounted, Fly30"
+Elephant Archers,100,12,5,7,2,2,4,15,6,N,"Mounted, ShootInMelee"
+Men Elite Foot,25,6,6,3,1,1,0,0,3,N,MoralePlus1
+Stone Giants,90,12,5,9,1,2,1,20,6,N,"GiantClass, LargeStones"
+Hero Griffon Riders,120,12,6,6,4,1,0,0,6,N,"Mounted, Fly30"
 Halfling Light Foot,5,12,4,1,1,1,0,0,3,L,HideInWoods
-Halfling Slingers,7,12,4,1,1,1,12,1,3,L,"HideInWoods, ShotBonus"
+Halfling Slingers,7,12,4,1,1,1,1,12,3,L,"HideInWoods, ShotBonus"
 Elf Light Foot,5,12,4,1,1,1,0,0,3,L,HideInWoods
 Elf Medium Foot,6,9,5,1,1,1,0,0,3,L,HideInWoods
-Elf Archers,10,12,4,1,1,1,15,2,3,L,HideInWoods
+Elf Archers,10,12,4,1,1,1,2,15,3,L,HideInWoods
 Dwarf Medium Foot,6,9,5,1,1,1,0,0,3,L,DodgeGiants
-Dwarf Heavy Crossbows,9,9,5,1,1,1,24,1,3,L,DodgeGiants
-Dwarf Cranequiniers,15,12,5,2,2,1,18,1,4,L,"DodgeGiants, Mounted"
-Halfling Elite Slingers,15,12,4,3,1,1,12,1,3,L,"HideInWoods, ShotBonus"
-Elf Elite Archers,30,12,5,3,1,1,21,2,3,L,Invisibility
+Dwarf Heavy Crossbows,9,9,5,1,1,1,1,24,3,L,DodgeGiants
+Dwarf Cranequiniers,15,12,5,2,2,1,1,18,4,L,"DodgeGiants, Mounted"
+Halfling Elite Slingers,15,12,4,3,1,1,1,12,3,L,"HideInWoods, ShotBonus"
+Elf Elite Archers,30,12,5,3,1,1,2,21,3,L,Invisibility
 Dwarf Elite Foot,25,9,6,3,1,1,0,0,3,L,DodgeGiants
 Warrior Unicorn Riders,50,24,6,3,3,1,0,0,4,L,"Mounted, Detection, Teleport"
-Hero Eagle Riders,60,6,5,5,4,1,0,0,6,L,"Mounted, Detection, Fly48"
+Hero Eagle Riders,70,6,5,5,4,1,0,0,6,L,"Mounted, Detection, Fly48"
 Goblin Light Foot,3,9,4,1,1,1,0,0,3,C,LightWeakness
-Goblin Archers,7,9,4,1,1,1,15,2,3,C,LightWeakness
+Goblin Archers,7,9,4,1,1,1,2,15,3,C,LightWeakness
 Goblin Wolf Riders,8,12,4,2,2,1,0,0,4,C,"LightWeakness, Mounted"
 Orc Light Foot,3,12,4,1,1,1,0,0,4,C,LightWeakness
 Orc Medium Foot,4,9,5,1,1,1,0,0,4,C,LightWeakness
-Orc Archers,7,12,4,1,1,1,15,2,4,C,LightWeakness
+Orc Archers,7,12,4,1,1,1,2,15,4,C,LightWeakness
 Hobgoblin Med Foot,5,9,5,1,1,1,0,0,4,C,MoralePlus1
 Gnoll Medium Foot,10,9,5,2,1,1,0,0,4,C,MoralePlus2
-Gnoll Longbows,20,9,5,2,1,1,21,2,4,C,MoralePlus2
-Bugbears,15,9,5,3,1,1,0,0,5,C,"GiantClass, HideInWoods"
+Gnoll Longbows,20,9,5,2,1,1,2,21,4,C,MoralePlus2
+Bugbears,15,9,5,3,1,1,0,0,4,C,HideInWoods
 Ogres,20,9,5,4,1,1,0,0,6,C,GiantClass
 Trolls,50,12,5,6,2,1,0,0,6,C,"GiantClass, Regeneration"
-Hill Giants,60,12,5,8,1,2,20,1,6,C,GiantClass
-Frost Giants,90,12,5,10,1,2,20,1,6,C,"GiantClass, ColdImmune"
-Fire Giants,95,12,5,11,1,2,20,1,6,C,"GiantClass, FireImmune"
-Wraith Wyvern Riders,100,9,6,6,2,2,0,0,6,C,"Mounted, Detection, Fly36"
+Hill Giants,60,12,5,8,1,2,1,20,6,C,GiantClass
+Frost Giants,90,12,5,10,1,2,1,20,6,C,"GiantClass, ColdImmune"
+Fire Giants,95,12,5,11,1,2,1,20,6,C,"GiantClass, FireImmune"
+Wraith Wyvern Riders,120,9,6,6,2,2,0,0,6,C,"Mounted, Detection, Fly36"

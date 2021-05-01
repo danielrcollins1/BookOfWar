@@ -50,8 +50,8 @@ public class Unit {
 		health = Integer.parseInt(s[4]);
 		attacks = Integer.parseInt(s[5]);
 		damage = Integer.parseInt(s[6]);
-		range = Integer.parseInt(s[7]);		
-		rate = Integer.parseInt(s[8]);
+		rate = Integer.parseInt(s[7]);
+		range = Integer.parseInt(s[8]);		
 		width = Integer.parseInt(s[9]);
 		alignment = parseAlignment(s[10]);		
 		parseKeywords(s[11]);
