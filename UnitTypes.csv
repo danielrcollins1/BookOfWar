@@ -15,7 +15,6 @@ Elephant Spears,100,12,5,7,4,2,0,0,6,N,Mounted
 Elephant Archers,100,12,5,7,2,2,4,15,6,N,"Mounted, ShootInMelee"
 Men Elite Foot,25,6,6,3,1,1,0,0,3,N,MoralePlus1
 Stone Giants,90,12,5,9,1,2,1,20,6,N,"GiantClass, LargeStones"
-Hero Griffon Riders,120,12,6,6,4,1,0,0,6,N,"Mounted, Fly30"
 Halfling Light Foot,5,12,4,1,1,1,0,0,3,L,HideInWoods
 Halfling Slingers,7,12,4,1,1,1,1,12,3,L,"HideInWoods, ShotBonus"
 Elf Light Foot,5,12,4,1,1,1,0,0,3,L,HideInWoods
@@ -28,10 +27,9 @@ Halfling Elite Slingers,15,12,4,3,1,1,1,12,3,L,"HideInWoods, ShotBonus"
 Elf Elite Archers,30,12,5,3,1,1,2,21,3,L,Invisibility
 Dwarf Elite Foot,25,9,6,3,1,1,0,0,3,L,DodgeGiants
 Warrior Unicorn Riders,50,24,6,3,3,1,0,0,4,L,"Mounted, Detection, Teleport"
-Hero Eagle Riders,70,6,5,5,4,1,0,0,6,L,"Mounted, Detection, Fly48"
 Goblin Light Foot,3,9,4,1,1,1,0,0,3,C,LightWeakness
 Goblin Archers,7,9,4,1,1,1,2,15,3,C,LightWeakness
-Goblin Wolf Riders,8,12,4,2,2,1,0,0,4,C,"LightWeakness, Mounted"
+Goblin Wolf Riders,8,18,4,2,2,1,0,0,4,C,"LightWeakness, Mounted"
 Orc Light Foot,3,12,4,1,1,1,0,0,4,C,LightWeakness
 Orc Medium Foot,4,9,5,1,1,1,0,0,4,C,LightWeakness
 Orc Archers,7,12,4,1,1,1,2,15,4,C,LightWeakness
@@ -44,4 +42,3 @@ Trolls,50,12,5,6,2,1,0,0,6,C,"GiantClass, Regeneration"
 Hill Giants,60,12,5,8,1,2,1,20,6,C,GiantClass
 Frost Giants,90,12,5,10,1,2,1,20,6,C,"GiantClass, ColdImmune"
 Fire Giants,95,12,5,11,1,2,1,20,6,C,"GiantClass, FireImmune"
-Wraith Wyvern Riders,120,9,6,6,2,2,0,0,6,C,"Mounted, Detection, Fly36"
