@@ -255,7 +255,7 @@ public class BookOfWar {
 	*    - May be very slow (makes full assessment table for each proposed change).
 	*
 	*  Use tastefully; recommend setting some initial base group manually,
-	*    then locking that down and not changing those if suggested.
+	*    then locking that down and not changing those, even if suggested.
 	*
 	*  Why not comprehensively search every unit type, and keep iterating
 	*    as long as we see improvements (e.g., bubble sort)? We tried that.
@@ -292,7 +292,7 @@ public class BookOfWar {
 				// One step cost change in needed direction
 				int oldCost = modUnit.getCost();
 				double oldUnitSumErr = assessGameSeries(modUnit, baseUnits);
-				modUnit.setCost(oldUnitSumErr < 0 ? oldCost - 1 : oldCost + 1);
+				modUnit.setCost(oldUnitSumErr < 0 ? getCostDec(oldCost) : getCostInc(oldCost));
 				double newAbsTotalError = assessFullGameSeries(baseUnits);
 
 				// If this reduced error from parity, keep new cost
@@ -316,6 +316,34 @@ public class BookOfWar {
 			printf(unit.getAbbreviation() + "\t" + unit.getCost() + "\n");
 		}
 		printf("\n");
+	}
+
+	/**
+	*  Increase cost of unit in full auto-balancer.
+	*    Chooses from predefined preferred values.
+	*/
+	int getCostInc (int oldCost) {
+		if (oldCost < 10)
+			return oldCost + 1;
+		else if (oldCost < 12)
+			return 12;
+		else
+			return (oldCost / 5 + 1) * 5;
+	}
+	
+	/**
+	*  Decrease cost of unit in full auto-balancer.
+	*    Chooses from predefined preferred values.
+	*/
+	int getCostDec (int oldCost) {
+		if (oldCost <= 10)
+			return oldCost - 1;
+		else if (oldCost <= 12)
+			return 10;
+		else if (oldCost <= 15)
+			return 12;
+		else
+			return ((oldCost + 4) / 5 - 1) * 5;
 	}
 
 	/**
@@ -1045,9 +1073,12 @@ public class BookOfWar {
 			bonus -= attacker.getHealth() / 3; // cut bonus from health
 		}
 
-		// Flyers, teleporters get rear attacks
-		if (!priorContact && getsRearAttack(attacker)) {
-			bonus += 1;		
+		// Flyers, teleporters can get rear attacks
+		if (attacker.getFlyMove() >= 30) {
+			bonus += 1; // fast flyers always
+		}
+		else if (getsRearAttack(attacker) && !priorContact) {
+			bonus += 1; // others 1st turn only
 		}
 
 		// (Optional) Extra shield bonus vs. pikes & missiles
