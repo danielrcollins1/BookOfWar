@@ -25,7 +25,7 @@ public class Unit {
 
 	// Unit type statistics
 	String name;
-	int cost, move, armor, health, attacks, damage, range, rate, width;
+	int cost, move, armor, health, attacks, damage, rate, range, width;
 	Alignment alignment;
 	List<Keyword> keyList;
 
@@ -68,8 +68,8 @@ public class Unit {
 		health = src.health;
 		attacks = src.attacks;
 		damage = src.damage;
-		range = src.range;
 		rate = src.rate;
+		range = src.range;
 		width = src.width;
 		alignment = src.alignment;
 		keyList = new ArrayList<Keyword>(src.keyList);
@@ -88,8 +88,8 @@ public class Unit {
 	public int getHealth() { return health; };
 	public int getAttacks() { return attacks; };
 	public int getDamage() { return damage; };
+	public int getRate() { return rate; };
 	public int getRange() { return range; };
-	public int getFireRate() { return rate; };
 	public Alignment getAlignment() { return alignment; };
 	public boolean hasKeyword(Keyword key) { return keyList.contains(key); };
 

@@ -26,28 +26,25 @@ public class BookOfWar {
 	//  Constant fields
 	//-----------------------------------------------------------------
 
-	/** Budget minimum: suggest base 50. */
+	/** Budget minimum (basis 50). */
 	final int budgetMin = 50;
 
-	/** Budget maximum: suggest base 100. */
-	final int budgetMax = 200;
+	/** Budget maximum (basis 100). */
+	final int budgetMax = 100;
 
-	/** Switch to set budget as multiple of pricier unit. */
-	final boolean packBudgetToMax = true;
-
-	/** Balances pikes vs. swords & cavalry. (basis 0.20) */
-	final double pikeFlankingChance = 0.20;
-
-	/** Balances shields vs. missiles. (basis 0.25) */
-	final double shieldFlankingChance = 0.25;
-
-	/** Balances swords vs. pikes & cavalry. (basis 1.00) */
+	/** Balances swords vs. pikes & cavalry (basis 1.00). */
 	final double terrainMultiplier = 1.00;
 
-	/** Cap per-hit damage by target's health? */
+	/** Balances pikes vs. swords & cavalry (basis 0.20). */
+	final double pikeFlankingChance = 0.30;
+
+	/** Use round number prices in full autobalancer? */
+	final boolean autoBalancePreferredCosts = true;
+
+	/** Limit per-hit damage by target's health? */
 	final boolean capDamageByHealth = false;
 
-	/** Switch to buy silver weapons for any troop types. */
+	/** Buy silver weapons for all troop types? */
 	final boolean useSilverWeapons = false;
 	
 	/** Target for morale check success (per Vol-1, p. 12). */
@@ -147,7 +144,7 @@ public class BookOfWar {
 		System.out.println("\t-t trials per matchup (default=" + DEFAULT_TRIALS_PER_MATCHUP + ")");
 		System.out.println("\t-m sim mode (1 = table-assess, 2 = auto-balance,\n"
 									+ "\t\t 3 = full auto-balance, 4 = zoom-in game)");
-		System.out.println("\t-n Max trials without gain in full auto-balancer");
+		System.out.println("\t-n max trials without gain in full auto-balancer");
 		System.out.println("\t-y zoom-in game 1st unit index (1-based)");
 		System.out.println("\t-z zoom-in game 2nd unit index (1-based)");
 		System.out.println();
@@ -292,12 +289,15 @@ public class BookOfWar {
 				// One step cost change in needed direction
 				int oldCost = modUnit.getCost();
 				double oldUnitSumErr = assessGameSeries(modUnit, baseUnits);
-				modUnit.setCost(oldUnitSumErr < 0 ? getCostDec(oldCost) : getCostInc(oldCost));
+				int newCost = getNewCost(oldCost, oldUnitSumErr > 0);
+				modUnit.setCost(newCost);
 				double newAbsTotalError = assessFullGameSeries(baseUnits);
 
 				// If this reduced error from parity, keep new cost
 				if (newAbsTotalError < oldAbsTotalError) {
-					System.out.println(modUnit.getName() + " changed cost to " + modUnit.getCost());
+					System.out.println(modUnit.getName() 
+						+ (newCost > oldCost ? " raised to " : " lowered to ")
+						+ modUnit.getCost());
 					oldAbsTotalError = newAbsTotalError;
 					adjustGain = true;
 					trialsNoGain = 0;			
@@ -316,6 +316,18 @@ public class BookOfWar {
 			printf(unit.getAbbreviation() + "\t" + unit.getCost() + "\n");
 		}
 		printf("\n");
+	}
+
+	/**
+	*  Get new cost for full auto-balancer.
+	*/
+	int getNewCost (int oldCost, boolean up) {
+		if (autoBalancePreferredCosts) {
+			return up ? getCostInc(oldCost) : getCostDec(oldCost);		
+		}	
+		else {
+			return up ? oldCost + 1 : oldCost - 1;		
+		}
 	}
 
 	/**
@@ -389,7 +401,7 @@ public class BookOfWar {
   
 		// Title
 		printf("Assessed win percents "
-			+ "(budget " + budgetMin + "-" + budgetMax + "):\n\n");
+			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
 
 	 	// Header
 		for (Unit unit: unitList2) {
@@ -445,7 +457,7 @@ public class BookOfWar {
 
 		// Title
 		printf("Auto-balanced best cost "
-			+ "(budget " + budgetMin + "-" + budgetMax + "):\n\n");
+			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
 
 	 	// Header
 		printf("Unit\tCost\n");
@@ -593,10 +605,12 @@ public class BookOfWar {
 		int range = budgetMax - budgetMin;
 		int budget = budgetMin + (int)(Math.random() * range);
 
-		// Set budget to a multiple of the pricier unit
-		if (packBudgetToMax) {
-			int maxCost = Math.max(unit1.getCost(), unit2.getCost());
-			budget = closestMultiple(maxCost, budget);
+		// Handle units pricier than our nominal budget:
+		// if so, set budget to their cost plus a margin to not advantage them
+		int maxCost = Math.max(unit1.getCost(), unit2.getCost());
+		if (maxCost > budget) {
+			int minCost = Math.min(unit1.getCost(), unit2.getCost());
+			budget = maxCost + minCost / 2;		
 		}
 
 		// Set units
@@ -612,28 +626,34 @@ public class BookOfWar {
 	*  Initialize one unit by budget.
 	*/
 	void initUnit (Unit unit, int budget) {
+		assert(unit.getCost() <= budget);
 
-		// Buy any attached hero
-		if (unit.hasHero()) {
-			Hero hero = unit.getHero();
-			if (budget >= hero.getCost()) {
-				initUnit(hero, hero.getCost());
-				budget -= hero.getCost();
-			}
-			else {
-				initUnit(hero, 0);			
-			}
-		}
+// 		// Buy any attached hero
+// 		if (unit.hasHero()) {
+// 			Hero hero = unit.getHero();
+// 			if (budget >= hero.getCost()) {
+// 				initUnit(hero, hero.getCost());
+// 				budget -= hero.getCost();
+// 			}
+// 			else {
+// 				initUnit(hero, 0);			
+// 			}
+// 		}
 
-		// Buy silver weapons if needed
-		int cost = unit.getCost();
-		if (useSilverWeapons && !(unit instanceof Hero)
-				&& !unit.hasKeyword(Keyword.SilverToHit) && unit.getHealth() < 4) {
-			cost += (unit.hasMissiles() ? 2 : 1);
-		}
+// 		// Buy silver weapons if needed
+// 		int cost = unit.getCost();
+// 		if (useSilverWeapons && !(unit instanceof Hero)
+// 				&& !unit.hasKeyword(Keyword.SilverToHit) && unit.getHealth() < 4) {
+// 			cost += (unit.hasMissiles() ? 2 : 1);
+// 		}
+
+		// Here we round the number of purchased figures to closest integer
+		// If this goes over budget, we assume it balances with some other
+		// unit on the imagined table that was under-budget to compensate
+		int figures = (int) ((double) budget / unit.getCost() + 0.5);
 
 		// Buy & set up normal figures
-		unit.setFigures(budget/cost);
+		unit.setFigures(figures);
 		setRanksAndFiles(unit);
 
 		// Set visibility
@@ -649,10 +669,21 @@ public class BookOfWar {
 	*  Set ranks and files for a unit.
 	*/
 	void setRanksAndFiles (Unit unit) {
+
+		// Based on experience at table & need for maneuvarability,
+		// we fill out 5 files up to 3 ranks (up to 15 figures).
+		if (unit.getFigures() <= 15) {
+			int files = Math.min(unit.getFigures(), 5);
+			unit.setFiles(files);
+		}
 		
-		// For maneuverability, set all files to max 5
-		int files = Math.min(5, unit.getFigures());
-		unit.setFiles(files);
+		// For more figures (not seen in practice, but may happen here
+		// when the autobalancer starts at low cost, or if budget increased)
+		// then we aim for a files:ranks proportion of 2:1.
+		else {
+			int files = (int) Math.sqrt(2 * unit.getFigures());
+			unit.setFiles(files);
+		}
 	}
 
 	/**
@@ -685,15 +716,39 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Move unit forward given distance.
+	*  Move attacker forward, seeking goal distance
+	*  Either full-speed or half-speed only
+	*  Returns distance actually moved
 	*/
-	void moveForward (Unit attacker, Unit defender, int move) {
-		assert(move > 0);
-		distance -= move;
-		if (distance < 0) distance = 0;
+	int moveSeekRange (Unit attacker, Unit defender, int goalDist, boolean fullSpeed) {
+
+		// Compute distance to move
+		assert(0 <= goalDist && goalDist < distance);
+		int maxMove = getMove(attacker);
+		if (!fullSpeed && maxMove > 1) maxMove /= 2;
+		int moveDist = Math.min(distance - goalDist, maxMove);
+		assert(0 < moveDist && moveDist <= distance);
+
+		// Make the move
+		distance -= moveDist;
+		reportDetail(attacker + " move to distance " + distance);
 		checkVisibility(attacker, defender);
-		reportDetail(attacker + " move to dist. " + distance);
+		if (distance == 0) {
+			checkPikeInterrupt(attacker, defender);
+		}
+		return moveDist;
 	}
+
+// 	/**
+// 	*  Move unit forward given distance.
+// 	*/
+// 	void moveForward (Unit attacker, Unit defender, int move) {
+// 		assert(move > 0);
+// 		distance -= move;
+// 		if (distance < 0) distance = 0;
+// 		checkVisibility(attacker, defender);
+// 		reportDetail(attacker + " move to dist. " + distance);
+// 	}
 
 	/**
 	*  Apply damage from attack & report.
@@ -714,9 +769,9 @@ public class BookOfWar {
 	*/
 	void oneTurnMelee (Unit attacker, Unit defender) {
 	
-		// Move towards contact
+		// Charge to contact
 		if (distance > 0) {
-			moveForward(attacker, defender, Math.min(getMove(attacker), distance));
+			moveSeekRange(attacker, defender, 0, true);
 		}
 
 		// Expand frontage if useful
@@ -730,7 +785,6 @@ public class BookOfWar {
 
  		// Attack if in contact
  		if (distance == 0) {
-			checkPikeInterrupt(attacker, defender);
 			if (!attacker.isBeaten()) {
 	 			meleeAttack(attacker, defender);
 			}
@@ -759,80 +813,124 @@ public class BookOfWar {
 	*  Play out one turn for ranged troops (AI-flavored).
 	*/
 	void oneTurnRanged (Unit attacker, Unit defender) {
-		int minDist = minDistanceToShoot(attacker, defender);
+		int distMoved = 0;	
+		int minShotDist = minDistanceToShoot(attacker, defender);
 
-		// If in contact or shooting impossible, melee attack
-		if (distance == 0 || minDist == 0) {
+		// If no shooting possible or desired, go for melee
+		if (distance == 0 || minShotDist == 0
+				|| attacker.hasKeyword(Keyword.MeleeShot)) {
 			oneTurnMelee(attacker, defender);
 		}
-		
-		// If enemy has no missiles, stay motionless & just shoot
-		else if (!defender.hasMissiles() && !defender.hasAnyWizard()) {
-			if (distance <= minDist)
+
+		// Move to shooting distance
+		if (distance > minShotDist) {
+
+			// If enemy outranges us, better to go full speed to our range
+			// Otherwise we step forward half-speed to get first shot
+			// (Note testing shows it a tiny bit better to stand and wait for full shots;
+			// but that's rare at the table, often pivot required, so we assume movement.)
+			int minShotDistEnemy = minDistanceToShoot(defender, attacker);
+			boolean outranged = (minShotDist < minShotDistEnemy);
+			distMoved = moveSeekRange(attacker, defender, minShotDist, outranged);
+		}
+
+		// Fire if permitted
+		if (distance <= minShotDist) {
+			if (distMoved == 0)
 				rangedAttack(attacker, defender, true);
-		}
-		
-		// Possible charge to melee to reduce enemy missile fire
-		else if (attackAdvantageRatio(attacker, defender) > 1) {
-			oneTurnMelee(attacker, defender);
-		}
-		
-		// If in range, full attack
-		else if (distance <= minDist) {
-			rangedAttack(attacker, defender, true);
-		}
-		
-		// If enemy outranges us, get in range asap
-		else if (minDist < minDistanceToShoot(defender, attacker)
-				|| (defender.hasAnyWizard() && minDist < 24)) {
-			int gap = distance - minDist;
-			moveForward(attacker, defender, Math.min(getMove(attacker), gap));
-			if (distance <= minDist && gap <= getMove(attacker) / 2) 
+			else if (distMoved <= getMove(attacker) / 2)
 				rangedAttack(attacker, defender, false);
 		}
-		
-		// Half-move to range if we can shoot
-		else if (getMove(attacker) / 2 > 0) {
-			int gap = distance - minDist;
-			moveForward(attacker, defender, Math.min(getMove(attacker) / 2, gap));
-			if (distance <= minDist)
-				rangedAttack(attacker, defender, false);
-		}
-		
-		// Just get in range
-		else if (getMove(attacker) > 0) {
-			int gap = distance - minDist;
-			moveForward(attacker, defender, Math.min(getMove(attacker), gap));
-		}
-		
-		// Else force move 1 inch
-		else {
-			assert(getMove(attacker) == 1);
-			moveForward(attacker, defender, 1);
-		}		
 	}
 
-	/**
-	*  Compute attack advantage ratio.
-	*    Like an odds ratio for melee/range attack rate.
-	*    Over 1 prefer melee; under 1 prefer ranged.
-	*    Both units must have missiles (else divide by zero).
-	*/
-	double attackAdvantageRatio (Unit unit1, Unit unit2) {
-		int rateOfMelee1 = meleeAttackDice(unit1, unit2, 1);
-		int rateOfMelee2 = meleeAttackDice(unit2, unit1, 1);
-		double atkAdvantage1 = (double) rateOfMelee1 / unit1.getFireRate();
-		double atkAdvantage2 = (double) rateOfMelee2 / unit2.getFireRate();
-		return atkAdvantage1 / atkAdvantage2;
-	}
+// 	/**
+// 	*  Play out one turn for ranged troops (AI-flavored).
+// 	*/
+// 	void oneTurnRangedOld (Unit attacker, Unit defender) {
+// 		int distMoved = 0;	
+// 		int minDist = minDistanceToShoot(attacker, defender);
+// 
+// 		// If no shots possible, go for melee
+// 		if (distance == 0 || minDist == 0) {
+// 			oneTurnMelee(attacker, defender);
+// 		}
+// 
+// 		// If enemy has no missiles, stay put to get full shot
+// 		else if (!defender.hasMissiles() && !defender.hasAnyWizard()
+// 				&& distance > minDist) {
+// 			return;
+// 		}
+// 
+// 		// Shoot-in-melee types charge (elephant archers)
+// 		else if (attacker.hasKeyword(Keyword.MeleeShot)) {
+// 			oneTurnMelee(attacker, defender);
+// 		}
+// 		
+// /*		
+// 		// Possible charge to melee to reduce enemy missile fire
+// 		else if (attackAdvantageRatio(attacker, defender) > 1) {
+// 			oneTurnMelee(attacker, defender);
+// 		}
+// */
+// 
+// 		// If in range, full attack
+// 		else if (distance <= minDist) {
+// 			rangedAttack(attacker, defender, true);
+// 		}
+// 		
+// 		// If enemy outranges us, get in range asap
+// 		else if (minDist < minDistanceToShoot(defender, attacker)
+// 				|| (defender.hasAnyWizard() && minDist < 24)) {
+// 			int gap = distance - minDist;
+// 			int distToMove = Math.min(getMove(attacker), gap);
+// 			moveForward(attacker, defender, distToMove);
+// 			if (distance <= minDist && gap <= getMove(attacker) / 2) 
+// 				rangedAttack(attacker, defender, false);
+// 		}
+// 		
+// 		// Half-move to range if we can shoot
+// 		else if (getMove(attacker) / 2 > 0) {
+// 			int gap = distance - minDist;
+// 			int distToMove = Math.min(getMove(attacker) / 2, gap);
+// 			moveForward(attacker, defender, distToMove);
+// 			if (distance <= minDist)
+// 				rangedAttack(attacker, defender, false);
+// 		}
+// 		
+// 		// Just get in range
+// 		else {
+// 			int gap = distance - minDist;
+// 			int distToMove = Math.min(getMove(attacker), gap);
+// 			moveForward(attacker, defender, distToMove);
+// 		}
+// 	}
+
+// 	/**
+// 	*  Compute attack advantage ratio.
+// 	*    Like an odds ratio for melee/range attack rate.
+// 	*    Over 1 prefer melee; under 1 prefer ranged.
+// 	*    Both units must have missiles (else divide by zero).
+// 	*/
+// 	double attackAdvantageRatio (Unit unit1, Unit unit2) {
+// 		int rateOfMelee1 = meleeAttackDice(unit1, unit2, 1);
+// 		int rateOfMelee2 = meleeAttackDice(unit2, unit1, 1);
+// 		double atkAdvantage1 = (double) rateOfMelee1 / unit1.getRate();
+// 		double atkAdvantage2 = (double) rateOfMelee2 / unit2.getRate();
+// 		return atkAdvantage1 / atkAdvantage2;
+// 	}
 
 	/**
 	*  Find minimum distance to have any chance of shooting enemy.
 	*/
 	int minDistanceToShoot (Unit attacker, Unit defender) {
-		int baseToHit = defender.getArmor() - attacker.getHealth() / 3 
+		if (!attacker.hasMissiles() || !terrainPermitShots()
+			|| (weather == Weather.Rainy && attacker.hasKeyword(Keyword.NoRainShot)))
+		{
+      	return 0;
+      }
+		int baseToHit = defender.getArmor() - attacker.getHealth() / 3
 			- miscAtkBonus(attacker, defender, true);
-		if (baseToHit > 6 || !terrainPermitShots())
+		if (baseToHit > 6)
 			return 0;                     	   // Melee only
 		else if (baseToHit == 6)
 			return attacker.getRange() / 2;     // Short only
@@ -841,7 +939,7 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Does terrain and weather permit shooting?
+	*  Does terrain permit shooting?
 	*/
 	boolean terrainPermitShots () {
 		return !(terrain == Terrain.Woods || terrain == Terrain.Gulley);
@@ -909,7 +1007,8 @@ public class BookOfWar {
 			return;
 
 		// Shoot in melee special ability (e.g., elephant archers)
-		if (attacker.hasKeyword(Keyword.ShootInMelee)) {
+		// Note: This overlooks possibility of full-move-to-melee
+		if (attacker.hasKeyword(Keyword.MeleeShot)) {
 			if (minDistanceToShoot(attacker, defender) > 0) {
 				rangedAttack(attacker, defender, false);
 			}
@@ -945,10 +1044,12 @@ public class BookOfWar {
 		// Apply damage
 		int damagePerHit = attacker.getDamage();
 		if (pikesInterrupt)
-			damagePerHit *= 2;		
+			damagePerHit *= 2;
 		if (capDamageByHealth)
 			damagePerHit = Math.min(damagePerHit, defender.getHealth());
 		int damageTotal = numHits * damagePerHit;
+		if (attacker.hasKeyword(Keyword.DamageBonus))
+			damageTotal += damageTotal / 2;
 		applyDamage(attacker, defender, false, damageTotal);
 	}
 
@@ -964,10 +1065,7 @@ public class BookOfWar {
 
 		// Compute figures & dice in attack
 		int figsAtk = attacker.getFigures();
-		if (distance == 0) { // shoot in melee ability
-			figsAtk = attacker.getFiles();
-		}			
-		int atkDice = figsAtk * attacker.getFireRate();
+		int atkDice = figsAtk * attacker.getRate();
 		if (!fullRate) atkDice /= 2;
 
 		// Determine range modifier (if any)
@@ -1023,7 +1121,7 @@ public class BookOfWar {
 		if (useChargeBonus
 				&& !priorContact
 				&& attacker.hasKeyword(Keyword.Mounted)
-				&& attacker.getRange() == 0  // not allowed for horse archers
+				&& !attacker.hasMissiles()  // not allowed for horse archers
 				&& attacker.getHealth() < 6 // not allowed for elephants
 				&& (terrain == Terrain.Open && weather != Weather.Rainy)) {
 			atkDice += atkDice/2;
@@ -1081,13 +1179,13 @@ public class BookOfWar {
 			bonus += 1; // others 1st turn only
 		}
 
-		// (Optional) Extra shield bonus vs. pikes & missiles
-		if (useShieldBonus && defender.hasKeyword(Keyword.Shields)) {
-			if ((ranged || attacker.hasKeyword(Keyword.Pikes)) 
-					&& (Math.random() > shieldFlankingChance)) {
-				bonus -= 1;
-			}		
-		}
+// 		// (Optional) Extra shield bonus vs. pikes & missiles
+// 		if (useShieldBonus && defender.hasKeyword(Keyword.Shields)) {
+// 			if ((ranged || attacker.hasKeyword(Keyword.Pikes)) 
+// 					&& (Math.random() > shieldFlankingChance)) {
+// 				bonus -= 1;
+// 			}		
+// 		}
 
 		return bonus;
 	}
@@ -1142,16 +1240,20 @@ public class BookOfWar {
 		if (unit.getFigures() == 0 
 			|| unit.getFigsLostInTurn() == 0) return;
 
-		// Get terms
-		int roll = d6() + d6();
+		// Compute bonus
 		int hitDice = unit.getHealth();
 		int rateOfLoss = unit.getFigures() / unit.getFigsLostInTurn();
 		int miscBonus = miscMoraleBonus(unit);
+		int bonus = hitDice + rateOfLoss + miscBonus;
 
-		// Total, report, and assessment
-		int check = roll + hitDice + rateOfLoss + miscBonus;
-		reportDetail("Morale check (" + unit + "): " + check);
-		if (check < MORALE_TARGET) {
+		// Make the roll
+		int roll = d6() + d6();
+		int total = roll + bonus;
+
+		// Report and assessment
+		reportDetail("Morale check (" + unit + "): " 
+			+ roll + " + " + bonus + " = " + total);
+		if (total < MORALE_TARGET) {
 			unit.setRouted(true);
 			reportDetail(unit + " are *ROUTED*");
 		}
