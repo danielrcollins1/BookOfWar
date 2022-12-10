@@ -77,6 +77,9 @@ public class BookOfWar {
 
 	/** Full auto-balancer max trials without improvement. */
 	int maxTrialsNoGain;
+	
+	/** Print assessment table in CSV format? */
+	boolean printAssessCSV;
 
 	//-----------------------------------------------------------------
 	//  In-game variables
@@ -145,6 +148,7 @@ public class BookOfWar {
 		System.out.println("\t-m sim mode (1 = table-assess, 2 = auto-balance,\n"
 									+ "\t\t 3 = full auto-balance, 4 = zoom-in game)");
 		System.out.println("\t-n max trials without gain in full auto-balancer");
+		System.out.println("\t-v print assessment table in CSV format");
 		System.out.println("\t-y zoom-in game 1st unit index (1-based)");
 		System.out.println("\t-z zoom-in game 2nd unit index (1-based)");
 		System.out.println();
@@ -163,6 +167,7 @@ public class BookOfWar {
 					case 'm': parseSimMode(s); break;
 					case 'n': maxTrialsNoGain = getParamInt(s); break;
 					case 't': trialsPerMatchup = getParamInt(s); break;
+					case 'v': printAssessCSV = true; break;
 					case 'y': zoomGameUnit1 = getParamInt(s); break;
 					case 'z': zoomGameUnit2 = getParamInt(s); break;
 					default: exitAfterArgs = true; break;
@@ -399,19 +404,18 @@ public class BookOfWar {
 	*/
 	void makeAssessmentTable (List<Unit> unitList1, List<Unit> unitList2) {
   
+  		// Get field separator character
+		char sepChar = printAssessCSV ? ',' : '\t';
+  
 		// Title
 		printf("Assessed win percents "
 			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
 
 	 	// Header
 		for (Unit unit: unitList2) {
-			printf("\t" + unit.getAbbreviation());
+			printf(sepChar + unit.getAbbreviation());
 		}
-		printf("\tWins\tSumErr\n");
-		for (int i = 0; i < unitList2.size() + 3; i++) {
-			printf("----");
-		}
-		printf("\n");
+		printf(sepChar + "Wins" + sepChar + "SumErr\n");
 
   		// Body
 		double absTotalError = 0.0;
@@ -420,20 +424,20 @@ public class BookOfWar {
 		for (Unit unit1: unitList1) {
 			int winCount = 0;
 			double sumWinPctErr = 0.0;
-			printf(unit1.getAbbreviation() + "\t");
+			printf(unit1.getAbbreviation() + sepChar);
 			for (Unit unit2: unitList2) {
 				if (unit1 == unit2) {
-					printf("-\t");
+					printf("-" + sepChar);
 				}
 				else {
 					double ratioWon = assessGames(unit1, unit2);
-					printf(ratioWon >= 0.5 ? toPercent(ratioWon) + "\t" : "-\t");
+					printf(ratioWon >= 0.5 ? "" + toPercent(ratioWon) + sepChar : "-" + sepChar);
 					if (ratioWon >= 0.5) winCount++;
 					sumWinPctErr += ratioWon - 0.5;
 				}
 			}
-			printf(winCount + "\t");
-			printf(toPercent(sumWinPctErr) + "\t");
+			printf("" + winCount + sepChar);
+			printf("" + toPercent(sumWinPctErr));
 			absTotalError += Math.abs(sumWinPctErr);
 			if (Math.abs(sumWinPctErr) > Math.abs(maxAbsError)) {
 				maxAbsError = sumWinPctErr;
