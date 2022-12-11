@@ -647,7 +647,7 @@ public class BookOfWar {
 // 		// Buy silver weapons if needed
 // 		int cost = unit.getCost();
 // 		if (useSilverWeapons && !(unit instanceof Hero)
-// 				&& !unit.hasKeyword(Keyword.SilverToHit) && unit.getHealth() < 4) {
+// 				&& !unit.hasSpecial(SpecialType.SilverToHit) && unit.getHealth() < 4) {
 // 			cost += (unit.hasMissiles() ? 2 : 1);
 // 		}
 
@@ -661,8 +661,8 @@ public class BookOfWar {
 		setRanksAndFiles(unit);
 
 		// Set visibility
-		boolean invisible = unit.hasKeyword(Keyword.Invisibility)
-				|| (unit.hasKeyword(Keyword.HideInWoods) && terrain == Terrain.Woods);
+		boolean invisible = unit.hasSpecial(SpecialType.Invisibility)
+				|| (unit.hasSpecial(SpecialType.WoodsCover) && terrain == Terrain.Woods);
 		unit.setVisible(!invisible);
 
 		// Prepare any special abilities
@@ -711,7 +711,7 @@ public class BookOfWar {
 		checkMorale(defender);
 
 		// Check regeneration
-		if (defender.hasKeyword(Keyword.Regeneration))
+		if (defender.hasSpecial(SpecialType.Regeneration))
 			defender.regenerate();
 			
 		// Check for victory
@@ -822,7 +822,7 @@ public class BookOfWar {
 
 		// If no shooting possible or desired, go for melee
 		if (distance == 0 || minShotDist == 0
-				|| attacker.hasKeyword(Keyword.MeleeShot)) {
+				|| attacker.hasSpecial(SpecialType.MeleeShot)) {
 			oneTurnMelee(attacker, defender);
 		}
 
@@ -866,7 +866,7 @@ public class BookOfWar {
 // 		}
 // 
 // 		// Shoot-in-melee types charge (elephant archers)
-// 		else if (attacker.hasKeyword(Keyword.MeleeShot)) {
+// 		else if (attacker.hasSpecial(SpecialType.MeleeShot)) {
 // 			oneTurnMelee(attacker, defender);
 // 		}
 // 		
@@ -928,7 +928,7 @@ public class BookOfWar {
 	*/
 	int minDistanceToShoot (Unit attacker, Unit defender) {
 		if (!attacker.hasMissiles() || !terrainPermitShots()
-			|| (weather == Weather.Rainy && attacker.hasKeyword(Keyword.NoRainShot)))
+			|| (weather == Weather.Rainy && attacker.hasSpecial(SpecialType.NoRainShot)))
 		{
       	return 0;
       }
@@ -965,7 +965,7 @@ public class BookOfWar {
 		}
 			
 		// Swimmers ignore streams
-		if (unit.hasKeyword(Keyword.Swimming) && terrain == Terrain.Stream)
+		if (unit.hasSpecial(SpecialType.Swimming) && terrain == Terrain.Stream)
 			moveCost = 1;
 
 		// Flyers ignore everything
@@ -977,11 +977,11 @@ public class BookOfWar {
 			moveCost *= 2;		
 
 		// Mounted penalties double
-		if (unit.hasKeyword(Keyword.Mounted) && moveCost > 1)
+		if (unit.hasSpecial(SpecialType.Mounts) && moveCost > 1)
 			moveCost *= 2;
 
 		// Teleporters wait to pounce
-		if (unit.hasKeyword(Keyword.Teleport)) {
+		if (unit.hasSpecial(SpecialType.Teleport)) {
 			return distance > 36 ? 1 : distance; // unicorns
 		}
 
@@ -1012,7 +1012,7 @@ public class BookOfWar {
 
 		// Shoot in melee special ability (e.g., elephant archers)
 		// Note: This overlooks possibility of full-move-to-melee
-		if (attacker.hasKeyword(Keyword.MeleeShot)) {
+		if (attacker.hasSpecial(SpecialType.MeleeShot)) {
 			if (minDistanceToShoot(attacker, defender) > 0) {
 				rangedAttack(attacker, defender, false);
 			}
@@ -1052,7 +1052,7 @@ public class BookOfWar {
 		if (capDamageByHealth)
 			damagePerHit = Math.min(damagePerHit, defender.getHealth());
 		int damageTotal = numHits * damagePerHit;
-		if (attacker.hasKeyword(Keyword.DamageBonus))
+		if (attacker.hasSpecial(SpecialType.DamageInc))
 			damageTotal += damageTotal / 2;
 		applyDamage(attacker, defender, false, damageTotal);
 	}
@@ -1090,9 +1090,9 @@ public class BookOfWar {
 		
 		// Apply damage
 		int damagePerHit = attacker.getDamage();
-		if (attacker.hasKeyword(Keyword.Mounted))
+		if (attacker.hasSpecial(SpecialType.Mounts))
 			damagePerHit = 1; // elephant archers
-		if (attacker.hasKeyword(Keyword.LargeStones))
+		if (attacker.hasSpecial(SpecialType.LargeStones))
 			damagePerHit += 1; // stone giants
 		if (capDamageByHealth) {
 			damagePerHit = Math.min(damagePerHit, defender.getHealth());
@@ -1110,13 +1110,13 @@ public class BookOfWar {
 		int atkDice = figsAtk * attacker.getAttacks();
 
 		// Pikes get half dice in bad terrain
-		if (attacker.hasKeyword(Keyword.Pikes) &&
+		if (attacker.hasSpecial(SpecialType.Pikes) &&
 				(terrain != Terrain.Open || weather == Weather.Rainy)) {
 			atkDice /= 2;
 		}
 
 		// Mounted gets half dice in bad terrain
-		if (attacker.hasKeyword(Keyword.Mounted) &&
+		if (attacker.hasSpecial(SpecialType.Mounts) &&
 				(terrain != Terrain.Open || weather == Weather.Rainy)) {
 			atkDice /= 2;
 		}
@@ -1124,7 +1124,7 @@ public class BookOfWar {
 		// (Optional) Mounted gets 3 dice (+50%) on first attack in good terrain
 		if (useChargeBonus
 				&& !priorContact
-				&& attacker.hasKeyword(Keyword.Mounted)
+				&& attacker.hasSpecial(SpecialType.Mounts)
 				&& !attacker.hasMissiles()  // not allowed for horse archers
 				&& attacker.getHealth() < 6 // not allowed for elephants
 				&& (terrain == Terrain.Open && weather != Weather.Rainy)) {
@@ -1152,17 +1152,17 @@ public class BookOfWar {
 			bonus -= 1;
 
 		// Orcs & goblins penalty in sunlight
-		if (attacker.hasKeyword(Keyword.LightWeakness) && weather == Weather.Sunny)
+		if (attacker.hasSpecial(SpecialType.LightWeakness) && weather == Weather.Sunny)
 			bonus -= 1;
 
  		// Halfling ranged attack bonus
- 		if (attacker.hasKeyword(Keyword.ShotBonus) && ranged) {
+ 		if (attacker.hasSpecial(SpecialType.ShotBonus) && ranged) {
 			bonus += 1;
 		}
 		
  		// Dwarf dodge giants
- 		if (attacker.hasKeyword(Keyword.GiantClass) 
-				&& defender.hasKeyword(Keyword.DodgeGiants)) {
+ 		if (attacker.hasSpecial(SpecialType.GiantClass) 
+				&& defender.hasSpecial(SpecialType.GiantDodging)) {
  			bonus -= 1;
 		}
 
@@ -1171,7 +1171,7 @@ public class BookOfWar {
 			bonus += 1;
 
 		// Mounted archers assumed to hit as normal men (e.g.: elephants)
-		if (ranged && attacker.hasKeyword(Keyword.Mounted)) {
+		if (ranged && attacker.hasSpecial(SpecialType.Mounts)) {
 			bonus -= attacker.getHealth() / 3; // cut bonus from health
 		}
 
@@ -1184,8 +1184,8 @@ public class BookOfWar {
 		}
 
 // 		// (Optional) Extra shield bonus vs. pikes & missiles
-// 		if (useShieldBonus && defender.hasKeyword(Keyword.Shields)) {
-// 			if ((ranged || attacker.hasKeyword(Keyword.Pikes)) 
+// 		if (useShieldBonus && defender.hasSpecial(SpecialType.Shields)) {
+// 			if ((ranged || attacker.hasSpecial(SpecialType.Pikes)) 
 // 					&& (Math.random() > shieldFlankingChance)) {
 // 				bonus -= 1;
 // 			}		
@@ -1201,11 +1201,11 @@ public class BookOfWar {
 		assert(!(attacker instanceof Hero));
 		if (!defender.isVisible())
 			return true; // Invisible can't be attacked
-		if (defender.hasKeyword(Keyword.SilverToHit) && !useSilverWeapons 
-				&& attacker.getHealth() < 4 && !attacker.hasKeyword(Keyword.SilverToHit))
+		if (defender.hasSpecial(SpecialType.SilverToHit) && !useSilverWeapons 
+				&& attacker.getHealth() < 4 && !attacker.hasSpecial(SpecialType.SilverToHit))
 			return true; // AD&D rule vs. silver
-		if (defender.hasKeyword(Keyword.MagicToHit)
-				&& attacker.getHealth() < 6 && !attacker.hasKeyword(Keyword.MagicToHit))
+		if (defender.hasSpecial(SpecialType.MagicToHit)
+				&& attacker.getHealth() < 6 && !attacker.hasSpecial(SpecialType.MagicToHit))
 			return true; // AD&D rule vs. +2 to hit
 		return false;
 	}
@@ -1214,7 +1214,7 @@ public class BookOfWar {
 	*  Is this unit able to make the special pike attack?
 	*/
 	boolean isPikeAvailable (Unit unit) {
-		return unit.hasKeyword(Keyword.Pikes)
+		return unit.hasSpecial(SpecialType.Pikes)
 			&& terrain == Terrain.Open
 			&& weather != Weather.Rainy
 			&& !priorContact;
@@ -1225,7 +1225,7 @@ public class BookOfWar {
 	*/
 	boolean getsRearAttack (Unit unit) {
 		return unit.getFlyMove() > 0
-			|| unit.hasKeyword(Keyword.Teleport);	
+			|| unit.hasSpecial(SpecialType.Teleport);	
 	}
 
 	/**
@@ -1276,14 +1276,12 @@ public class BookOfWar {
 			bonus -= 1;
 
 		// Light weakness (orcs & goblins)
-		if (unit.hasKeyword(Keyword.LightWeakness) && weather == Weather.Sunny)
+		if (unit.hasSpecial(SpecialType.LightWeakness) && weather == Weather.Sunny)
 			bonus -= 1;
 
-		// Fixed bonuses
-		if (unit.hasKeyword(Keyword.MoralePlus1))
-			bonus += 1;
-		if (unit.hasKeyword(Keyword.MoralePlus2))
-			bonus += 2;
+		// Special ability bonuses
+		if (unit.hasSpecial(SpecialType.MoraleBonus))
+			bonus += unit.getSpecialParam(SpecialType.MoraleBonus);
 
 		// Leadership
 		if (unit.hasHero())
@@ -1297,9 +1295,9 @@ public class BookOfWar {
 	*/
 	void checkVisibility (Unit attacker, Unit defender) {
 		if (distance <= 15) { // assuming all detection has 15" range
-			if (!attacker.isVisible() && defender.hasKeyword(Keyword.Detection))
+			if (!attacker.isVisible() && defender.hasSpecial(SpecialType.Detection))
 				attacker.setVisible(true);
-			if (!defender.isVisible() && attacker.hasKeyword(Keyword.Detection))
+			if (!defender.isVisible() && attacker.hasSpecial(SpecialType.Detection))
 				defender.setVisible(true);
 		}	
 	}

@@ -27,7 +27,7 @@ public class Unit {
 	String name;
 	int cost, move, armor, health, attacks, damage, rate, range, width;
 	Alignment alignment;
-	List<Keyword> keyList;
+	List<SpecialAbility> specialList;
 
 	// Unit in-play records
 	int figures, frontFiles, damageTaken, figsLostInTurn, specialCharges;
@@ -54,7 +54,7 @@ public class Unit {
 		range = Integer.parseInt(s[8]);		
 		width = Integer.parseInt(s[9]);
 		alignment = parseAlignment(s[10]);		
-		parseKeywords(s[11]);
+		parseSpecials(s[11]);
 	}
 
 	/**
@@ -72,7 +72,7 @@ public class Unit {
 		range = src.range;
 		width = src.width;
 		alignment = src.alignment;
-		keyList = new ArrayList<Keyword>(src.keyList);
+		specialList = new ArrayList<SpecialAbility>(src.specialList);
 		// In-play records not copied
 	}
 
@@ -91,7 +91,6 @@ public class Unit {
 	public int getRate() { return rate; };
 	public int getRange() { return range; };
 	public Alignment getAlignment() { return alignment; };
-	public boolean hasKeyword(Keyword key) { return keyList.contains(key); };
 
 	// Unit in-play records
 	public int getFigures() { return figures; };
@@ -118,17 +117,17 @@ public class Unit {
 	}
 
 	/**
-	*  Parse keyword list.
+	*  Parse specials list.
 	*/
-	private void parseKeywords (String keyString) {
-		keyList = new ArrayList<Keyword>();
-		String[] splits = keyString.split(", ");
-		for (String s: splits) {
-			for (Keyword key: Keyword.values()) {
-				if (key.name().equals(s)) {
-					keyList.add(key);
-					break;				
-				}			
+	private void parseSpecials (String specialString) {
+		specialList = new ArrayList<SpecialAbility>();
+		if (!specialString.equals("-")) {
+			String[] splits = specialString.split(", ");
+			for (String s: splits) {
+				SpecialAbility ability = SpecialAbility.createFromString(s);
+				if (ability != null) {
+					specialList.add(ability);
+				}
 			}
 		}
 	}
@@ -169,7 +168,7 @@ public class Unit {
 	*  Get the figure length in inches (double width for mounts).
 	*/
 	public double getFigLength() {
-		return hasKeyword(Keyword.Mounted) ? 
+		return hasSpecial(SpecialType.Mounts) ? 
 			2 * getFigWidth() : getFigWidth();
 	}
 
@@ -236,6 +235,34 @@ public class Unit {
 	*/
 	public void clearFigsLostInTurn () {
 		figsLostInTurn = 0;	
+		}
+
+	/**
+	*  Get a special ability matching a given type.
+	*/
+	public SpecialAbility getAbilityByType (SpecialType type) {
+		for (SpecialAbility a: specialList) {
+			if (a.getType() == type) {
+				return a;
+			}
+		}
+		return null;
+	}
+
+	/**
+	*  Find if unit has a special of a given type.
+	*/
+	public boolean hasSpecial (SpecialType type) {
+		SpecialAbility ability = getAbilityByType(type);
+		return ability != null;	
+	}
+
+	/**
+	*  Get the parameter for a given special type.
+	*/
+	public int getSpecialParam (SpecialType type) {
+		SpecialAbility ability = getAbilityByType(type);
+		return ability == null ? 0 : ability.getParam();
 	}
 
 	/**
@@ -253,10 +280,9 @@ public class Unit {
 	}
 	
 	/**
-	*  Regenerate 1 hit (formerly per figure in front/contact).
+	*  Regenerate 1 hit
 	*/
 	public void regenerate () {
-		//damageTaken -= getFiles(); 
 		if (damageTaken > 0) {
 			damageTaken -= 1;
 		}
@@ -294,14 +320,7 @@ public class Unit {
 	*  Get the unit's flying movement.
 	*/
 	public int getFlyMove () {
-		if (hasKeyword(Keyword.Fly30))
-			return 30;
-		else if (hasKeyword(Keyword.Fly36))
-			return 36;
-		else if (hasKeyword(Keyword.Fly48))
-			return 48;
-		else
-			return 0;
+		return getSpecialParam(SpecialType.Flight);
 	}
 
 	/**
@@ -336,9 +355,8 @@ public class Unit {
 	*/
 	public static void main (String[] args) {
 		String[] desc = {"Light Infantry", "4", "12", "4", 
-			"1", "1", "1", "0", "0", "0.75", "N", "-"};
+			"1", "1", "1", "0", "0", "3", "N", "-"};
 		Unit unit = new Unit(desc);
 		System.out.println(unit);
 	}
 }
-

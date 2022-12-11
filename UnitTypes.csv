@@ -1,44 +1,44 @@
 Unit,Cost,Move,Armor,Health,Atks,Dam,Rate,Range,Width,Align,Special
 Light Foot,4,12,4,1,1,1,0,0,3,N,-
 Medium Foot,5,9,5,1,1,1,0,0,3,N,-
-Medium Horse,12,18,5,2,2,1,0,0,4,N,Mounted
-Heavy Horse,20,12,6,2,2,1,0,0,4,N,Mounted
-Archers,10,12,4,1,1,1,2,15,3,N,-
-Horse Archers,15,24,4,2,2,1,2,18,4,N,"Mounted, NoRainShot"
 Heavy Foot,8,6,6,1,1,1,0,0,3,N,-
 Pikemen,5,12,4,1,2,1,0,0,3,N,Pikes
 Crossbows,8,12,4,1,1,1,1,18,3,N,-
 Heavy Crossbows,12,9,5,1,1,1,1,24,3,N,-
+Archers,10,12,4,1,1,1,2,15,3,N,-
 Longbows,12,12,4,1,1,1,2,21,3,N,-
-Light Horse,10,24,4,2,2,1,0,0,4,N,Mounted
-Elephant Spears,80,12,5,6,4,2,0,0,6,N,Mounted
-Elephant Archers,85,12,5,6,2,2,4,18,6,N,"Mounted, MeleeShot, NoRainShot"
-Men Elite Foot,25,6,6,3,1,1,0,0,3,N,MoralePlus1
+Light Horse,10,24,4,2,2,1,0,0,4,N,Mounts
+Medium Horse,12,18,5,2,2,1,0,0,4,N,Mounts
+Heavy Horse,20,12,6,2,2,1,0,0,4,N,Mounts
+Horse Archers,15,24,4,2,2,1,2,18,4,N,"Mounts, NoRainShot"
+Elephant Spears,60,12,5,6,3,2,0,0,6,N,Mounts
+Elephant Archers,90,12,5,6,2,2,4,18,6,N,"Mounts, NoRainShot, MeleeShot"
+Men Elite Foot,25,6,6,3,1,1,0,0,3,N,MoraleBonus (1)
 Stone Giants,140,12,5,9,1,2,1,20,6,N,"GiantClass, LargeStones"
-Halfling Light Foot,5,12,4,1,1,1,0,0,3,L,HideInWoods
-Halfling Slingers,20,12,4,1,1,1,2,18,3,L,"HideInWoods, ShotBonus"
-Elf Light Foot,5,12,4,1,1,1,0,0,3,L,HideInWoods
-Elf Medium Foot,6,9,5,1,1,1,0,0,3,L,HideInWoods
-Elf Archers,12,12,4,1,1,1,2,15,3,L,HideInWoods
-Dwarf Medium Foot,6,9,5,1,1,1,0,0,3,L,DodgeGiants
-Dwarf Heavy Crossbows,12,9,5,1,1,1,1,24,3,L,DodgeGiants
-Dwarf Cranequiniers,20,12,5,2,2,1,1,18,4,L,"DodgeGiants, Mounted"
-Halfling Elite Slingers,40,12,4,3,1,1,2,18,3,L,"HideInWoods, ShotBonus"
+Halfling Light Foot,5,12,4,1,1,1,0,0,3,L,WoodsCover
+Halfling Slingers,20,12,4,1,1,1,2,18,3,L,"WoodsCover, ShotBonus (1)"
+Elf Light Foot,5,12,4,1,1,1,0,0,3,L,WoodsCover
+Elf Medium Foot,6,9,5,1,1,1,0,0,3,L,WoodsCover
+Elf Archers,12,12,4,1,1,1,2,15,3,L,WoodsCover
+Dwarf Medium Foot,6,9,5,1,1,1,0,0,3,L,GiantDodging
+Dwarf Heavy Crossbows,12,9,5,1,1,1,1,24,3,L,GiantDodging
+Dwarf Cranequiniers,20,12,5,2,2,1,1,18,4,L,"GiantDodging, Mounts"
+Dwarf Elite Foot,25,9,6,3,1,1,0,0,3,L,GiantDodging
+Halfling Elite Slingers,40,12,4,3,1,1,2,18,3,L,"WoodsCover, ShotBonus (1)"
 Elf Elite Archers,45,12,5,3,1,1,2,21,3,L,Invisibility
-Dwarf Elite Foot,25,9,6,3,1,1,0,0,3,L,DodgeGiants
-Warrior Unicorn Riders,50,24,6,3,3,1,0,0,4,L,"Mounted, Detection, Teleport"
+Unicorn Warriors,50,24,6,3,3,1,0,0,4,L,"Mounts, Detection, Teleport"
 Goblin Light Foot,3,9,4,1,1,1,0,0,3,C,LightWeakness
 Goblin Archers,8,9,4,1,1,1,2,15,3,C,LightWeakness
-Goblin Wolf Riders,8,18,4,2,2,1,0,0,4,C,"LightWeakness, Mounted"
+Goblin Wolf Riders,8,18,4,2,2,1,0,0,4,C,"LightWeakness, Mounts"
 Orc Light Foot,3,12,4,1,1,1,0,0,4,C,LightWeakness
 Orc Medium Foot,4,9,5,1,1,1,0,0,4,C,LightWeakness
 Orc Archers,8,12,4,1,1,1,2,15,4,C,LightWeakness
-Hobgoblin Med Foot,5,9,5,1,1,1,0,0,4,C,MoralePlus1
-Gnoll Medium Foot,10,9,5,2,1,1,0,0,4,C,MoralePlus2
-Gnoll Longbows,25,9,5,2,1,1,2,21,4,C,MoralePlus2
-Bugbears,15,9,5,3,1,1,0,0,4,C,HideInWoods
-Ogres,20,9,5,4,1,1,0,0,6,C,"GiantClass, DamageBonus"
+Hobgoblin Med Foot,5,9,5,1,1,1,0,0,4,C,MoraleBonus (1)
+Gnoll Medium Foot,10,9,5,2,1,1,0,0,4,C,MoraleBonus (2)
+Gnoll Longbows,25,9,5,2,1,1,2,21,4,C,MoraleBonus (2)
+Bugbears,15,9,5,3,1,1,0,0,4,C,WoodsCover
+Ogres,20,9,5,4,1,1,0,0,6,C,"GiantClass, DamageInc"
 Trolls,50,12,5,6,2,1,0,0,6,C,"GiantClass, Regeneration"
 Hill Giants,90,12,5,8,1,2,1,20,6,C,GiantClass
-Frost Giants,120,12,5,10,1,2,1,20,6,C,"GiantClass, ColdImmune"
-Fire Giants,125,12,5,11,1,2,1,20,6,C,"GiantClass, FireImmune"
+Frost Giants,120,12,5,10,1,2,1,20,6,C,"GiantClass, ColdImmunity"
+Fire Giants,125,12,5,11,1,2,1,20,6,C,"GiantClass, FireImmunity"
