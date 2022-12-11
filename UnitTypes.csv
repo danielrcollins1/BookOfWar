@@ -26,7 +26,7 @@ Dwarf Cranequiniers,20,12,5,2,2,1,1,18,4,L,"GiantDodging, Mounts"
 Dwarf Elite Foot,25,9,6,3,1,1,0,0,3,L,GiantDodging
 Halfling Elite Slingers,40,12,4,3,1,1,2,18,3,L,"WoodsCover, ShotBonus (1)"
 Elf Elite Archers,45,12,5,3,1,1,2,21,3,L,Invisibility
-Unicorn Warriors,50,24,6,3,3,1,0,0,4,L,"Mounts, Detection, Teleport"
+Unicorn Warriors,50,24,6,3,3,1,0,0,4,L,"Mounts, Detection (24), Teleport (36)"
 Goblin Light Foot,3,9,4,1,1,1,0,0,3,C,LightWeakness
 Goblin Archers,8,9,4,1,1,1,2,15,3,C,LightWeakness
 Goblin Wolf Riders,8,18,4,2,2,1,0,0,4,C,"LightWeakness, Mounts"

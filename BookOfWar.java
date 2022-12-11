@@ -465,10 +465,6 @@ public class BookOfWar {
 
 	 	// Header
 		printf("Unit\tCost\n");
-		for (int i = 0; i < 2; i++) {
-			printf("----");
-		}
-		printf("\n");
 				
   		// Body
 		for (Unit newUnit: newUnits) {
@@ -969,7 +965,7 @@ public class BookOfWar {
 			moveCost = 1;
 
 		// Flyers ignore everything
-		if (unit.getFlyMove() > 0)
+		if (unit.hasSpecial(SpecialType.Flight))
 			moveCost = 1;
 
 		// Weather mods
@@ -982,7 +978,8 @@ public class BookOfWar {
 
 		// Teleporters wait to pounce
 		if (unit.hasSpecial(SpecialType.Teleport)) {
-			return distance > 36 ? 1 : distance; // unicorns
+			int teleportRange = unit.getSpecialParam(SpecialType.Teleport);
+			return distance < teleportRange ? distance : 1;
 		}
 
 		// Return move (at least 1 inch)
@@ -1224,7 +1221,7 @@ public class BookOfWar {
 	*  Does this unit get an automatic rear attack?
 	*/
 	boolean getsRearAttack (Unit unit) {
-		return unit.getFlyMove() > 0
+		return unit.hasSpecial(SpecialType.Flight)
 			|| unit.hasSpecial(SpecialType.Teleport);	
 	}
 
@@ -1291,15 +1288,22 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Check for visibility changes
+	*  Check for visibility in both directions
 	*/
 	void checkVisibility (Unit attacker, Unit defender) {
-		if (distance <= 15) { // assuming all detection has 15" range
-			if (!attacker.isVisible() && defender.hasSpecial(SpecialType.Detection))
-				attacker.setVisible(true);
-			if (!defender.isVisible() && attacker.hasSpecial(SpecialType.Detection))
-				defender.setVisible(true);
-		}	
+		checkVision(attacker, defender);
+		checkVision(defender, attacker);
+	}
+
+	/**
+	*  Check for one side spotting the other
+	*/
+	void checkVision (Unit spotter, Unit target) {
+		if (!target.isVisible() && 
+			spotter.getSpecialParam(SpecialType.Detection) >= distance)
+		{
+			target.setVisible(true);		
+		}
 	}
 
 	/**
