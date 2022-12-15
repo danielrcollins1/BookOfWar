@@ -1,4 +1,5 @@
 import java.util.List;
+import java.util.Random;
 
 /******************************************************************************
 *  Book of War simulation for cost-balancing purposes.
@@ -57,6 +58,9 @@ public class BookOfWar {
 	/** Flag to escape after parsing arguments. */
 	boolean exitAfterArgs;
 
+	/** Random number generator. */
+	Random random;
+
 	/** Mode of action for simulator. */
 	SimMode simMode;
 
@@ -80,7 +84,7 @@ public class BookOfWar {
 	
 	/** Print assessment table in CSV format? */
 	boolean printAssessCSV;
-
+	
 	//-----------------------------------------------------------------
 	//  In-game variables
 	//-----------------------------------------------------------------
@@ -114,6 +118,7 @@ public class BookOfWar {
 		simMode = DEFAULT_SIM_MODE;
 		trialsPerMatchup = DEFAULT_TRIALS_PER_MATCHUP;
 		baseUnitNum = Integer.MAX_VALUE;
+		random = new Random();
 	}
 
 	//-----------------------------------------------------------------
@@ -283,7 +288,7 @@ public class BookOfWar {
 		while (trialsNoGain < maxTrialsNoGain) {
 
 			// Pick a unit to adjust
-			int modIndex = (int) (Math.random() * baseUnits.size());
+			int modIndex = random.nextInt(baseUnits.size());
 			Unit modUnit = baseUnits.get(modIndex);
 
 			// Keep trying to adjust while we see improvement
@@ -588,7 +593,7 @@ public class BookOfWar {
 	void initBattlefield () {
 		randomizeTerrain();
 		randomizeWeather();
-		distance = 25 + (int) (Math.random() * 25);
+		distance = 25 + random.nextInt(25);
 		reportDetail("Terrain: " + terrain);
 		reportDetail("Weather: " + weather);
 		reportDetail("Distance: " + distance);
@@ -603,7 +608,7 @@ public class BookOfWar {
 
 		// Get random budget
 		int range = budgetMax - budgetMin;
-		int budget = budgetMin + (int)(Math.random() * range);
+		int budget = budgetMin + random.nextInt(range);
 
 		// Handle units pricier than our nominal budget:
 		// if so, set budget to their cost plus a margin to not advantage them
@@ -797,7 +802,7 @@ public class BookOfWar {
 	*/
 	void checkPikeInterrupt (Unit attacker, Unit defender) {
 		if (isPikeAvailable(defender) 
-				&& !(Math.random() < pikeFlankingChance)
+				&& !(random.nextDouble() < pikeFlankingChance)
 				&& !(getsRearAttack(attacker))) 
 		{
 			reportDetail("** PIKES INTERRUPT ATTACK **");
@@ -1183,7 +1188,7 @@ public class BookOfWar {
 // 		// (Optional) Extra shield bonus vs. pikes & missiles
 // 		if (useShieldBonus && defender.hasSpecial(SpecialType.Shields)) {
 // 			if ((ranged || attacker.hasSpecial(SpecialType.Pikes)) 
-// 					&& (Math.random() > shieldFlankingChance)) {
+// 					&& (random.nextDouble() > shieldFlankingChance)) {
 // 				bonus -= 1;
 // 			}		
 // 		}
@@ -1312,7 +1317,7 @@ public class BookOfWar {
 	*    Percents match coverage of entire table.
 	*/
 	void randomizeTerrain () {
-		int roll = (int) (Math.random() / terrainMultiplier * 100);
+		int roll = (int) (random.nextDouble() / terrainMultiplier * 100);
 
 		// These percents are for entire table
 		if (roll < 1) terrain = Terrain.Gulley;
@@ -1344,7 +1349,7 @@ public class BookOfWar {
 	*  Roll a 6-sided die.
 	*/
 	int d6 () {
-		return (int) (Math.random() * 6) + 1;
+		return random.nextInt(6) + 1;
 	}
 
 	/**
@@ -1475,7 +1480,7 @@ public class BookOfWar {
 // 	int magicAreaAttack (Unit target, int damage, boolean getSave) {
 // 		if (!(target instanceof Hero)) {
 // 			int save = 0;
-// 			if (getSave) save = (int) (Math.random() * 3) + 1; // d3
+// 			if (getSave) save = random.nextInt(3) + 1; // d3
 // 			int damageTaken = Math.min(damage - save, target.getHD());
 // 			if (target.nameStarts("Dragon Flock")) damageTaken /= 4;
 // 			return (damageTaken > 0 ? damageTaken : 0);
