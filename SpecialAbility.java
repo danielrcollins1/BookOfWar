@@ -36,6 +36,13 @@ public class SpecialAbility {
 		this(type, 0);
 	}
 	
+	/**	
+	*  Constructor (copy).
+	*/
+	SpecialAbility (SpecialAbility src) {
+		this(src.type, src.param);
+	}
+	
 	//--------------------------------------------------------------------------
 	//  Methods
 	//--------------------------------------------------------------------------

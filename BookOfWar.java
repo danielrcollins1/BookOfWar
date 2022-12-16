@@ -1,4 +1,5 @@
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Random;
 
 /******************************************************************************
@@ -467,26 +468,48 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Estimate best cost for a set of units.
+	*  Make auto-balanced table of estimated best costs.
+	*  Multithreaded: Runs separate thread for each new tested unit.
 	*/
 	void makeAutoBalancedTable (List<Unit> baseUnits, List<Unit> newUnits) {
 		assert(baseUnits != newUnits);
 
-		// Title
+		// Print header
 		printf("Auto-balanced best cost "
 			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
-
-	 	// Header
 		printf("Unit\tCost\n");
-				
-  		// Body
-		for (Unit newUnit: newUnits) {
-			setAutoBalancedCost(newUnit, baseUnits);
+
+		// Make process thread for each new unit & start run
+		int numNewUnits = newUnits.size();
+		Thread threads[] = new Thread[numNewUnits];
+		AutoBalancer auto[] = new AutoBalancer[numNewUnits];
+		for (int i = 0; i < numNewUnits; i++) {
+			auto[i] = new AutoBalancer(this, baseUnits, newUnits.get(i));
+			threads[i] = new Thread(auto[i]);
+			threads[i].start();
+		}
+		
+		// Make the table	as each thread finishes
+		for (int i = 0; i < numNewUnits; i++) {
+			waitForThread(threads[i]);
+			Unit newUnit = auto[i].getTestUnit();
 			printf(newUnit.getAbbreviation() + "\t" + newUnit.getCost() + "\n");
 		}
-	
-		// Tail
 		printf("\n");
+	} 
+
+	/**
+	*  Wait for a thread to finish
+	*/
+	void waitForThread (Thread t) {
+		while (t.isAlive()) {
+			try {
+				Thread.sleep(10);
+			}
+			catch (Exception e) {
+				System.err.println("Exception in waitForThread: " + e);
+			}
+		}	
 	}
 
 	/**
@@ -1680,6 +1703,32 @@ public class BookOfWar {
 // 	}
 }
 
+//	Class	for multi-threaded auto-balancer
+class	AutoBalancer implements Runnable {
+
+	// Member records
+	BookOfWar bowSim;
+	List<Unit> baseUnits;
+	Unit testUnit;
+
+	// Constructor
+	public AutoBalancer(BookOfWar bowSim, List<Unit> baseUnits, Unit testUnit) {
+		this.bowSim = new BookOfWar(bowSim);
+		this.testUnit = new Unit(testUnit);
+		this.baseUnits = baseUnits;
+	}
+
+	// Interface run function
+	@Override
+	public void run() {
+		bowSim.setAutoBalancedCost(testUnit, baseUnits);
+	}
+	
+	// Get the tested unit
+	public Unit getTestUnit () {
+		return testUnit;
+	}
+}
 
 /*
 =====================================================================

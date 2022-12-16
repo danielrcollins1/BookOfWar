@@ -72,7 +72,10 @@ public class Unit {
 		range = src.range;
 		width = src.width;
 		alignment = src.alignment;
-		specialList = new ArrayList<SpecialAbility>(src.specialList);
+		specialList = new ArrayList<SpecialAbility>(src.specialList.size());
+		for (SpecialAbility s: src.specialList) {
+			specialList.add(new SpecialAbility(s));		
+		}
 		// In-play records not copied
 	}
 
