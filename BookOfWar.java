@@ -55,9 +55,6 @@ public class BookOfWar {
 	//  Out-of-game settings
 	//-----------------------------------------------------------------
 
-	/** Flag to escape after parsing arguments. */
-	boolean exitAfterArgs;
-
 	/** Random number generator. */
 	Random random;
 
@@ -70,12 +67,6 @@ public class BookOfWar {
 	/** Number of trials per matchup. */
 	int trialsPerMatchup;
 
-	/** Switch for cavalry charge bonus. */
-	boolean useChargeBonus;
-
-	/** Switch for shield bonus vs. pikes & archers. */
-	boolean useShieldBonus;
-
 	/** Units for zoom-in game (1-based index into Units list). */
 	int zoomGameUnit1, zoomGameUnit2;
 
@@ -84,6 +75,9 @@ public class BookOfWar {
 	
 	/** Print assessment table in CSV format? */
 	boolean printAssessCSV;
+
+	/** Flag to escape after parsing arguments. */
+	boolean exitAfterArgs;
 	
 	//-----------------------------------------------------------------
 	//  In-game variables
@@ -115,10 +109,26 @@ public class BookOfWar {
 	*  Construct the simulator.
 	*/
 	public BookOfWar () {
-		simMode = DEFAULT_SIM_MODE;
-		trialsPerMatchup = DEFAULT_TRIALS_PER_MATCHUP;
-		baseUnitNum = Integer.MAX_VALUE;
 		random = new Random();
+		simMode = DEFAULT_SIM_MODE;
+		baseUnitNum = Integer.MAX_VALUE;
+		trialsPerMatchup = DEFAULT_TRIALS_PER_MATCHUP;
+	}
+
+	/**
+	*  Copy constructor.
+	*  Copies only out-of-game setings.
+	*/
+	public BookOfWar (BookOfWar src) {
+		random = new Random();			
+		simMode = src.simMode;
+		baseUnitNum = src.baseUnitNum;
+		trialsPerMatchup = src.trialsPerMatchup;
+		zoomGameUnit1 = src.zoomGameUnit1;
+		zoomGameUnit2 = src.zoomGameUnit2;
+		maxTrialsNoGain = src.maxTrialsNoGain;
+		printAssessCSV = src.printAssessCSV;
+		exitAfterArgs = src.exitAfterArgs;
 	}
 
 	//-----------------------------------------------------------------
@@ -167,8 +177,6 @@ public class BookOfWar {
 			if (s.charAt(0) == '-') {
 				switch (s.charAt(1)) {
 					case 'b': baseUnitNum = getParamInt(s); break;
-					case 's': useShieldBonus = true; break;
-					case 'c': useChargeBonus = true; break;
 					case 'm': parseSimMode(s); break;
 					case 'n': maxTrialsNoGain = getParamInt(s); break;
 					case 't': trialsPerMatchup = getParamInt(s); break;
@@ -554,18 +562,23 @@ public class BookOfWar {
 	*  Return ratio of wins by first unit.
 	*/
 	double assessGames(Unit unit1, Unit unit2) {
-		int wins = 0;
+		int unitOneWins = 0;
 		for (int i = 0; i < trialsPerMatchup; i++) {
-			oneGame(unit1, unit2);
-			if (unit1 == winner) wins++;
+			int winIndex = oneGame(unit1, unit2);
+			if (winIndex == 1) unitOneWins++;
 		}
-		return (double) wins/trialsPerMatchup;
+		return (double) unitOneWins / trialsPerMatchup;
 	}
 
 	/**
 	*  Play out one game.
+	*  Returns 1 or 2 for which unit won.
 	*/
-	void oneGame (Unit unit1, Unit unit2) {
+	int oneGame (Unit srcUnit1, Unit srcUnit2) {
+
+		// Make copies of units
+		Unit unit1 = new Unit(srcUnit1);
+		Unit unit2 = new Unit(srcUnit2);
 
 		// Set up game
 		initBattlefield();
@@ -585,6 +598,7 @@ public class BookOfWar {
 
 		// Report on winner
 		reportDetail("* WINNER *: " + winner);
+		return winner == unit1 ? 1 : 2;
 	}
 
 	/**
@@ -1121,16 +1135,6 @@ public class BookOfWar {
 		if (attacker.hasSpecial(SpecialType.Mounts) &&
 				(terrain != Terrain.Open || weather == Weather.Rainy)) {
 			atkDice /= 2;
-		}
-
-		// (Optional) Mounted gets 3 dice (+50%) on first attack in good terrain
-		if (useChargeBonus
-				&& !priorContact
-				&& attacker.hasSpecial(SpecialType.Mounts)
-				&& !attacker.hasMissiles()  // not allowed for horse archers
-				&& attacker.getHealth() < 6 // not allowed for elephants
-				&& (terrain == Terrain.Open && weather != Weather.Rainy)) {
-			atkDice += atkDice/2;
 		}
 
 // 		// Ghoul paralysis effectively 3 dice vs. 1HD heroes
