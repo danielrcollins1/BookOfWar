@@ -241,7 +241,7 @@ public class BookOfWar {
 	void assessmentTable () {
 		UnitList unitList = UnitList.getInstance();
 		List<Unit> baseUnits = unitList.getSublist(0, baseUnitNum);
-		makeAssessmentTable(baseUnits, baseUnits);
+		makeAssessmentTableThreaded(baseUnits, baseUnits);
 	}
 
 	/**
@@ -468,8 +468,87 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Make general assessment table.
+	*  Multithreaded: Spawns separate thread for each tested unit.
+	*
+	*  Absolute total error is used here, instead of sum squared error,
+	*  because the latter has much more variation under random trials. 
+	*/
+	void makeAssessmentTableThreaded (List<Unit> unitList1, List<Unit> unitList2) {
+  
+  		// Set up & print header
+		char sepChar = printAssessCSV ? ',' : '\t';
+		printf("Assessed win percents "
+			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
+		for (Unit unit: unitList2) {
+			printf(sepChar + unit.getAbbreviation());
+		}
+		printf(sepChar + "Wins" + sepChar + "SumErr\n");
+
+		// Make process thread for each new unit & start run
+		int numUnits = unitList1.size();
+		Thread threads[] = new Thread[numUnits];
+		Assessor assessors[] = new Assessor[numUnits];
+		for (int i = 0; i < numUnits; i++) {
+			assessors[i] = new Assessor(this, unitList2, unitList1.get(i));
+			threads[i] = new Thread(assessors[i]);
+			threads[i].start();
+		}
+
+		// Make the table	as each thread finishes
+		for (int i = 0; i < numUnits; i++) {
+			waitForThread(threads[i]);
+			Assessor assessed = assessors[i];
+			Unit unit1 = unitList1.get(i);
+			printf(unit1.getAbbreviation() + sepChar);								
+			for (int j = 0; j < unitList2.size(); j++) {
+				double winRate = assessed.getWinRatio(j);
+				printf(winRate <= 0.5 ? "-" : "" + toPercent(winRate));
+				printf("" + sepChar);
+			}
+			printf("" + assessed.countWinMatchups() + sepChar);
+			printf("" + toPercent(assessed.getSumError()) + sepChar);
+			printf("\n");
+		}		
+
+		// Print table tail		
+		Assessor maxAbsErr = findMaxAbsError(assessors);
+		printf("\nAbsolute Total Error: " + toPercent(getAbsTotalError(assessors)));
+		printf("\nMaximum error unit: " + maxAbsErr.getTestUnit().getName()
+			+ " (" + toPercent(maxAbsErr.getSumError()) + ")");
+		printf("\n");
+	}
+
+	/**
+	*  Add absolute sum of all sumErrs in array of Assessor objects.
+	*/
+	double getAbsTotalError (Assessor assessors[]) {
+		double absTotalErr = 0.0;
+		for (Assessor a: assessors) {
+			absTotalErr += Math.abs(a.getSumError());	
+		}
+		return absTotalErr;
+	}
+	
+	/**
+	*  Find Assessor object with maximum absolute error.
+	*/
+	Assessor findMaxAbsError (Assessor assessors[]) {
+		Assessor maxAssess = assessors[0];
+		double maxAbsErr = maxAssess.getSumError();
+		for (int i = 1; i < assessors.length; i++) {
+			double thisAbsErr = assessors[i].getSumError();
+			if (Math.abs(thisAbsErr) > Math.abs(maxAbsErr)) {
+				maxAssess = assessors[i];
+				maxAbsErr = thisAbsErr;
+			}
+		}	
+		return maxAssess;
+	}
+
+	/**
 	*  Make auto-balanced table of estimated best costs.
-	*  Multithreaded: Runs separate thread for each new tested unit.
+	*  Multithreaded: Spawns separate thread for each tested unit.
 	*/
 	void makeAutoBalancedTable (List<Unit> baseUnits, List<Unit> newUnits) {
 		assert(baseUnits != newUnits);
@@ -597,11 +676,7 @@ public class BookOfWar {
 	*  Play out one game.
 	*  Returns 1 or 2 for which unit won.
 	*/
-	int oneGame (Unit srcUnit1, Unit srcUnit2) {
-
-		// Make copies of units
-		Unit unit1 = new Unit(srcUnit1);
-		Unit unit2 = new Unit(srcUnit2);
+	int oneGame (Unit unit1, Unit unit2) {
 
 		// Set up game
 		initBattlefield();
@@ -1715,7 +1790,10 @@ class	AutoBalancer implements Runnable {
 	public AutoBalancer(BookOfWar bowSim, List<Unit> baseUnits, Unit testUnit) {
 		this.bowSim = new BookOfWar(bowSim);
 		this.testUnit = new Unit(testUnit);
-		this.baseUnits = baseUnits;
+		this.baseUnits = new ArrayList<Unit>(baseUnits.size());
+		for (Unit u: baseUnits) {
+			this.baseUnits.add(new Unit(u));
+		}
 	}
 
 	// Interface run function
@@ -1727,6 +1805,71 @@ class	AutoBalancer implements Runnable {
 	// Get the tested unit
 	public Unit getTestUnit () {
 		return testUnit;
+	}
+}
+
+//	Class	for multi-threaded assessor
+class	Assessor implements Runnable {
+
+	// Member records
+	BookOfWar bowSim;
+	Unit testUnit;
+	List<Unit> baseUnits;
+	double winRatios[];
+
+	// Constructor
+	public Assessor(BookOfWar bowSim, List<Unit> baseUnits, Unit testUnit) {
+		this.bowSim = new BookOfWar(bowSim);
+		this.testUnit = new Unit(testUnit);
+		this.baseUnits = new ArrayList<Unit>(baseUnits.size());
+		for (Unit u: baseUnits) {
+			this.baseUnits.add(new Unit(u));
+		}
+		winRatios = new double[baseUnits.size()];
+	}
+
+	// Interface run function
+	@Override
+	public void run() {
+		for (int i = 0; i < baseUnits.size(); i++) {
+			Unit baseUnit = baseUnits.get(i);
+			if (baseUnit.getName().equals(testUnit.getName())) {
+				winRatios[i] = 0.5;
+			}
+			else {		
+				winRatios[i] = bowSim.assessGames(testUnit, baseUnit);
+			}
+		}
+	}
+
+	// Get the tested unit
+	public Unit getTestUnit () {
+		return testUnit;
+	}
+	
+	// Get a given win ratio
+	public double getWinRatio (int idx) {
+		return winRatios[idx];
+	}
+	
+	// Get sum error of the win ratios
+	public double getSumError () {
+		double sumErr = 0.0;
+		for (double d: winRatios) {
+			sumErr += d - 0.5;
+		}
+		return sumErr;
+	}
+	
+	// Get number of winning matchups
+	public int countWinMatchups () {
+		int winMatchups = 0;
+		for (double d: winRatios) {
+			if (d > 0.5) {
+				winMatchups++;
+			}
+		}
+		return winMatchups;
 	}
 }
 
