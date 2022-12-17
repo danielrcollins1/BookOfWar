@@ -65,6 +65,9 @@ public class BookOfWar {
 	/** Base unit set number (unit types 1 to n). */
 	int baseUnitNum;
 
+	/** Lockdown units in full auto-balancer (unit types 1 to n). */
+	int lockUnitNum;
+
 	/** Number of trials per matchup. */
 	int trialsPerMatchup;
 
@@ -121,6 +124,7 @@ public class BookOfWar {
 		random = new Random();			
 		simMode = src.simMode;
 		baseUnitNum = src.baseUnitNum;
+		lockUnitNum = src.lockUnitNum;
 		trialsPerMatchup = src.trialsPerMatchup;
 		zoomGameUnit1 = src.zoomGameUnit1;
 		zoomGameUnit2 = src.zoomGameUnit2;
@@ -155,12 +159,11 @@ public class BookOfWar {
 		System.out.println("Usage: BookOfWar [options]");
 		System.out.println("  Options include:");
 		System.out.println("\t-b use first n units as base for comparisons");
-		System.out.println("\t-s use shield bonus");
-		System.out.println("\t-c use charge bonus");
-		System.out.println("\t-t trials per matchup (default=" + DEFAULT_TRIALS_PER_MATCHUP + ")");
+		System.out.println("\t-l lock down first n units for full auto-balancer");
 		System.out.println("\t-m sim mode (1 = table-assess, 2 = auto-balance,\n"
 									+ "\t\t 3 = full auto-balance, 4 = zoom-in game)");
 		System.out.println("\t-n max trials without gain in full auto-balancer");
+		System.out.println("\t-t trials per matchup (default=" + DEFAULT_TRIALS_PER_MATCHUP + ")");
 		System.out.println("\t-v print assessment table in CSV format");
 		System.out.println("\t-y zoom-in game 1st unit index (1-based)");
 		System.out.println("\t-z zoom-in game 2nd unit index (1-based)");
@@ -175,6 +178,7 @@ public class BookOfWar {
 			if (s.charAt(0) == '-') {
 				switch (s.charAt(1)) {
 					case 'b': baseUnitNum = getParamInt(s); break;
+					case 'l': lockUnitNum = getParamInt(s); break;
 					case 'm': parseSimMode(s); break;
 					case 'n': maxTrialsNoGain = getParamInt(s); break;
 					case 't': trialsPerMatchup = getParamInt(s); break;
@@ -294,7 +298,8 @@ public class BookOfWar {
 		while (trialsNoGain < maxTrialsNoGain) {
 
 			// Pick a unit to adjust
-			int modIndex = random.nextInt(baseUnits.size());
+			int range = baseUnits.size() - lockUnitNum;
+			int modIndex = random.nextInt(range) + lockUnitNum;
 			Unit modUnit = baseUnits.get(modIndex);
 
 			// Keep trying to adjust while we see improvement
@@ -568,6 +573,7 @@ public class BookOfWar {
 
 	/**
 	*  Play repeated series of one unit against a list of other units.
+	*  (Think of a "docket" as one season for a pro sports team.)
 	*  Multithreaded: Spawns separate thread per series matchup.
 	*  Returns array of win ratios for test unit vs. each enemy in list.
 	*/
@@ -593,7 +599,7 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Play series of games between pair of units.
+	*  Play series of games between a pair of units.
 	*  Return ratio of wins by first unit.
 	*/
 	double playSeries (Unit unit1, Unit unit2) {
