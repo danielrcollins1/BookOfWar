@@ -238,7 +238,7 @@ public class BookOfWar {
 	void assessmentTable () {
 		UnitList unitList = UnitList.getInstance();
 		List<Unit> baseUnits = unitList.getSublist(0, baseUnitNum);
-		makeAssessmentTableThreaded(baseUnits, baseUnits);
+		makeAssessmentTable(baseUnits, baseUnits);
 	}
 
 	/**
@@ -415,46 +415,40 @@ public class BookOfWar {
 	*/
 	void makeAssessmentTable (List<Unit> unitList1, List<Unit> unitList2) {
   
-  		// Get field separator character
+  		// Header
 		char sepChar = printAssessCSV ? ',' : '\t';
-  
-		// Title
 		printf("Assessed win percents "
 			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
-
-	 	// Header
 		for (Unit unit: unitList2) {
 			printf(sepChar + unit.getAbbreviation());
 		}
 		printf(sepChar + "Wins" + sepChar + "SumErr\n");
 
   		// Body
-		double absTotalError = 0.0;
-		double maxAbsError = 0.0;
 		Unit maxAbsErrUnit = null;
+		double maxAbsError = 0.0;
+		double absTotalError = 0.0;
 		for (Unit unit1: unitList1) {
-			int winCount = 0;
-			double sumWinPctErr = 0.0;
+
+			// Run simulation docket
+			double[] winRates = playDocketThreads(unit1, unitList2);
+			double sumErr = sumErrArray(winRates);
+
+			// Print row
 			printf(unit1.getAbbreviation() + sepChar);
-			for (Unit unit2: unitList2) {
-				if (unit1 == unit2) {
-					printf("-" + sepChar);
-				}
-				else {
-					double ratioWon = playSeries(unit1, unit2);
-					printf(ratioWon >= 0.5 ? "" + toPercent(ratioWon) + sepChar : "-" + sepChar);
-					if (ratioWon >= 0.5) winCount++;
-					sumWinPctErr += ratioWon - 0.5;
-				}
+			for (int i = 0; i < unitList2.size(); i++) {
+				printf(winRates[i] <= 0.5 ? "-" : "" + toPercent(winRates[i]));
+				printf("" + sepChar);
 			}
-			printf("" + winCount + sepChar);
-			printf("" + toPercent(sumWinPctErr));
-			absTotalError += Math.abs(sumWinPctErr);
-			if (Math.abs(sumWinPctErr) > Math.abs(maxAbsError)) {
-				maxAbsError = sumWinPctErr;
-				maxAbsErrUnit = unit1;			
+			printf("" + countHighRates(winRates) + sepChar);
+			printf(toPercent(sumErr) + "\n");
+
+			// Update global stats
+			absTotalError += Math.abs(sumErr);
+			if (Math.abs(sumErr) > Math.abs(maxAbsError)) {
+				maxAbsError = sumErr;
+				maxAbsErrUnit = unit1;
 			}
-			printf("\n");
 		}
 
 		// Tail
@@ -465,87 +459,7 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Make general assessment table.
-	*  Multithreaded: Spawns separate thread for each tested unit.
-	*
-	*  Absolute total error is used here, instead of sum squared error,
-	*  because the latter has much more variation under random trials. 
-	*/
-	void makeAssessmentTableThreaded (List<Unit> unitList1, List<Unit> unitList2) {
-  
-  		// Set up & print header
-		char sepChar = printAssessCSV ? ',' : '\t';
-		printf("Assessed win percents "
-			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
-		for (Unit unit: unitList2) {
-			printf(sepChar + unit.getAbbreviation());
-		}
-		printf(sepChar + "Wins" + sepChar + "SumErr\n");
-
-		// Make process thread for each new unit & start run
-		int numUnits = unitList1.size();
-		Thread threads[] = new Thread[numUnits];
-		Assessor assessors[] = new Assessor[numUnits];
-		for (int i = 0; i < numUnits; i++) {
-			assessors[i] = new Assessor(this, unitList2, unitList1.get(i));
-			threads[i] = new Thread(assessors[i]);
-			threads[i].start();
-		}
-
-		// Make the table	as each thread finishes
-		for (int i = 0; i < numUnits; i++) {
-			waitForThread(threads[i]);
-			Assessor assessed = assessors[i];
-			Unit unit1 = unitList1.get(i);
-			printf(unit1.getAbbreviation() + sepChar);								
-			for (int j = 0; j < unitList2.size(); j++) {
-				double winRate = assessed.getWinRatio(j);
-				printf(winRate <= 0.5 ? "-" : "" + toPercent(winRate));
-				printf("" + sepChar);
-			}
-			printf("" + assessed.countWinMatchups() + sepChar);
-			printf("" + toPercent(assessed.getSumError()) + sepChar);
-			printf("\n");
-		}		
-
-		// Print table tail		
-		Assessor maxAbsErr = findMaxAbsError(assessors);
-		printf("\nAbsolute Total Error: " + toPercent(getAbsTotalError(assessors)));
-		printf("\nMaximum error unit: " + maxAbsErr.getTestUnit().getName()
-			+ " (" + toPercent(maxAbsErr.getSumError()) + ")");
-		printf("\n");
-	}
-
-	/**
-	*  Add absolute sum of all sumErrs in array of Assessor objects.
-	*/
-	double getAbsTotalError (Assessor assessors[]) {
-		double absTotalErr = 0.0;
-		for (Assessor a: assessors) {
-			absTotalErr += Math.abs(a.getSumError());	
-		}
-		return absTotalErr;
-	}
-	
-	/**
-	*  Find Assessor object with maximum absolute error.
-	*/
-	Assessor findMaxAbsError (Assessor assessors[]) {
-		Assessor maxAssess = assessors[0];
-		double maxAbsErr = maxAssess.getSumError();
-		for (int i = 1; i < assessors.length; i++) {
-			double thisAbsErr = assessors[i].getSumError();
-			if (Math.abs(thisAbsErr) > Math.abs(maxAbsErr)) {
-				maxAssess = assessors[i];
-				maxAbsErr = thisAbsErr;
-			}
-		}	
-		return maxAssess;
-	}
-
-	/**
 	*  Make auto-balanced table of estimated best costs.
-	*  Multithreaded: Spawns separate thread for each tested unit.
 	*/
 	void makeAutoBalancedTable (List<Unit> baseUnits, List<Unit> newUnits) {
 		assert(baseUnits != newUnits);
@@ -555,42 +469,16 @@ public class BookOfWar {
 			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
 		printf("Unit\tCost\n");
 
-		// Make process thread for each new unit & start run
-		int numNewUnits = newUnits.size();
-		Thread threads[] = new Thread[numNewUnits];
-		AutoBalancer auto[] = new AutoBalancer[numNewUnits];
-		for (int i = 0; i < numNewUnits; i++) {
-			auto[i] = new AutoBalancer(this, baseUnits, newUnits.get(i));
-			threads[i] = new Thread(auto[i]);
-			threads[i].start();
-		}
-		
-		// Make the table	as each thread finishes
-		for (int i = 0; i < numNewUnits; i++) {
-			waitForThread(threads[i]);
-			Unit newUnit = auto[i].getTestUnit();
+		// Make the table
+		for (Unit newUnit: newUnits) {
+			setAutoBalancedCost(newUnit, baseUnits);		
 			printf(newUnit.getAbbreviation() + "\t" + newUnit.getCost() + "\n");
 		}
 		printf("\n");
 	} 
 
 	/**
-	*  Wait for a thread to finish
-	*/
-	void waitForThread (Thread t) {
-		while (t.isAlive()) {
-			try {
-				Thread.sleep(10);
-			}
-			catch (Exception e) {
-				System.err.println("Exception in waitForThread: " + e);
-			}
-		}	
-	}
-
-	/**
 	*  Set auto-balanced cost for a new unit.
-	*
 	*  Searches for sumWinPctErr closest to zero (0). 
 	*/
 	void setAutoBalancedCost (Unit newUnit, List<Unit> baseUnits) {
@@ -632,6 +520,31 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Get sum error for a double array.
+	*  (Sum of differences from 0.5.)
+	*/
+	double sumErrArray(double[] dblArray) {
+		double sumErr = 0.0;
+		for (double d: dblArray) {
+			sumErr += d - 0.5;
+		}
+		return sumErr;
+	}
+
+	/**
+	*  Count ratios above 0.5 in a double array.
+	*/
+	int countHighRates(double[] dblArray) {
+		int countHigh = 0;
+		for (double d: dblArray) {
+			if (d >= 0.5) {
+				countHigh++;
+			}
+		}
+		return countHigh;
+	}
+
+	/**
 	*  Play repeated series of every unit in a list against every other unit.
 	*  Returns absolute grand total win percent error.
 	*/
@@ -646,14 +559,37 @@ public class BookOfWar {
 
 	/**
 	*  Play repeated series of one unit against a list of other units.
-	*  Returns sum win percent error (difference from 0.5).
+	*  Returns sum win percentage error for the test unit.
 	*/
-	double playDocket (Unit unit, List<Unit> enemies) {
-		double sumWinPctErr = 0.0;
-		for (Unit enemy: enemies) {
-			sumWinPctErr += playSeries(unit, enemy) - 0.5;
+	double playDocket(Unit unit, List<Unit> enemies) {
+		double results[] = playDocketThreads(unit, enemies);
+		return sumErrArray(results);
+	}
+
+	/**
+	*  Play repeated series of one unit against a list of other units.
+	*  Multithreaded: Spawns separate thread per series matchup.
+	*  Returns array of win ratios for test unit vs. each enemy in list.
+	*/
+	double[] playDocketThreads (Unit unit, List<Unit> enemies) {
+
+		// Run series threads
+		int numOpp = enemies.size();
+		Thread threads[] = new Thread[numOpp];
+		SeriesRunner runners[] = new SeriesRunner[numOpp];
+		for (int i = 0; i < numOpp; i++) {
+			runners[i] = new SeriesRunner(this, unit, enemies.get(i));		
+			threads[i] = new Thread(runners[i]);
+			threads[i].start();		
 		}
-		return sumWinPctErr;
+		waitForThreads(threads);
+
+		// Compile results array
+		double results[] = new double[numOpp];
+		for (int i = 0; i < numOpp; i++) {
+			results[i] = runners[i].getWinRatioUnit1();
+		}		
+		return results;
 	}
 
 	/**
@@ -862,17 +798,6 @@ public class BookOfWar {
 		return moveDist;
 	}
 
-// 	/**
-// 	*  Move unit forward given distance.
-// 	*/
-// 	void moveForward (Unit attacker, Unit defender, int move) {
-// 		assert(move > 0);
-// 		distance -= move;
-// 		if (distance < 0) distance = 0;
-// 		checkVisibility(attacker, defender);
-// 		reportDetail(attacker + " move to dist. " + distance);
-// 	}
-
 	/**
 	*  Apply damage from attack & report.
 	*/
@@ -966,82 +891,6 @@ public class BookOfWar {
 		}
 	}
 
-// 	/**
-// 	*  Play out one turn for ranged troops (AI-flavored).
-// 	*/
-// 	void oneTurnRangedOld (Unit attacker, Unit defender) {
-// 		int distMoved = 0;	
-// 		int minDist = minDistanceToShoot(attacker, defender);
-// 
-// 		// If no shots possible, go for melee
-// 		if (distance == 0 || minDist == 0) {
-// 			oneTurnMelee(attacker, defender);
-// 		}
-// 
-// 		// If enemy has no missiles, stay put to get full shot
-// 		else if (!defender.hasMissiles() && !defender.hasAnyWizard()
-// 				&& distance > minDist) {
-// 			return;
-// 		}
-// 
-// 		// Shoot-in-melee types charge (elephant archers)
-// 		else if (attacker.hasSpecial(SpecialType.MeleeShot)) {
-// 			oneTurnMelee(attacker, defender);
-// 		}
-// 		
-// /*		
-// 		// Possible charge to melee to reduce enemy missile fire
-// 		else if (attackAdvantageRatio(attacker, defender) > 1) {
-// 			oneTurnMelee(attacker, defender);
-// 		}
-// */
-// 
-// 		// If in range, full attack
-// 		else if (distance <= minDist) {
-// 			rangedAttack(attacker, defender, true);
-// 		}
-// 		
-// 		// If enemy outranges us, get in range asap
-// 		else if (minDist < minDistanceToShoot(defender, attacker)
-// 				|| (defender.hasAnyWizard() && minDist < 24)) {
-// 			int gap = distance - minDist;
-// 			int distToMove = Math.min(getMove(attacker), gap);
-// 			moveForward(attacker, defender, distToMove);
-// 			if (distance <= minDist && gap <= getMove(attacker) / 2) 
-// 				rangedAttack(attacker, defender, false);
-// 		}
-// 		
-// 		// Half-move to range if we can shoot
-// 		else if (getMove(attacker) / 2 > 0) {
-// 			int gap = distance - minDist;
-// 			int distToMove = Math.min(getMove(attacker) / 2, gap);
-// 			moveForward(attacker, defender, distToMove);
-// 			if (distance <= minDist)
-// 				rangedAttack(attacker, defender, false);
-// 		}
-// 		
-// 		// Just get in range
-// 		else {
-// 			int gap = distance - minDist;
-// 			int distToMove = Math.min(getMove(attacker), gap);
-// 			moveForward(attacker, defender, distToMove);
-// 		}
-// 	}
-
-// 	/**
-// 	*  Compute attack advantage ratio.
-// 	*    Like an odds ratio for melee/range attack rate.
-// 	*    Over 1 prefer melee; under 1 prefer ranged.
-// 	*    Both units must have missiles (else divide by zero).
-// 	*/
-// 	double attackAdvantageRatio (Unit unit1, Unit unit2) {
-// 		int rateOfMelee1 = meleeAttackDice(unit1, unit2, 1);
-// 		int rateOfMelee2 = meleeAttackDice(unit2, unit1, 1);
-// 		double atkAdvantage1 = (double) rateOfMelee1 / unit1.getRate();
-// 		double atkAdvantage2 = (double) rateOfMelee2 / unit2.getRate();
-// 		return atkAdvantage1 / atkAdvantage2;
-// 	}
-
 	/**
 	*  Find minimum distance to have any chance of shooting enemy.
 	*/
@@ -1117,15 +966,6 @@ public class BookOfWar {
 	void meleeAttack (Unit attacker, Unit defender) {
 		makeVisible(attacker);
 
-// 		// Check for heroes attacking
-// 		if (attacker.hasHero()) {
-// 			heroMeleeAttack(attacker.getHero(), defender);
-// 		}
-// 		else if (attacker instanceof Hero) {
-// 			heroMeleeAttack((Hero) attacker, defender);
-// 			return;
-// 		}
-
 		// Check for defender immune
 		if (isAttackImmune(attacker, defender))
 			return;
@@ -1147,15 +987,6 @@ public class BookOfWar {
 		if ((defender instanceof Hero) && (figsAtk > defender.getFigures()))
 			figsAtk = defender.getFigures();
 		int atkDice = meleeAttackDice(attacker, defender, figsAtk);
-
-// 		// Check dragon breath attack
-// 		if (attacker.nameStarts("Dragon")
-// 				&& attacker.getCharges() > 0)
-// 			dragonBreathAttack(attacker, defender, figsAtk);
-
-// 		// Check hell hound breath attack
-// 		if (attacker.nameStarts("Hell Hound"))
-// 			hellHoundBreathAttack(attacker, defender, figsAtk);
 
 		// Roll attack dice
 		int numHits = 0;
@@ -1241,12 +1072,6 @@ public class BookOfWar {
 			atkDice /= 2;
 		}
 
-// 		// Ghoul paralysis effectively 3 dice vs. 1HD heroes
-// 		if (attacker.nameStarts("Ghouls") && (defender instanceof Hero)
-// 				&& (!defender.nameContains("Elf")) && (defender.getHD() == 1)) {
-// 			atkDice *= 3;
-// 		}
-
 		// Return (at least 1 die)
 		return Math.max(atkDice, 1);
 	}
@@ -1292,14 +1117,6 @@ public class BookOfWar {
 		else if (getsRearAttack(attacker) && !priorContact) {
 			bonus += 1; // others 1st turn only
 		}
-
-// 		// (Optional) Extra shield bonus vs. pikes & missiles
-// 		if (useShieldBonus && defender.hasSpecial(SpecialType.Shields)) {
-// 			if ((ranged || attacker.hasSpecial(SpecialType.Pikes)) 
-// 					&& (random.nextDouble() > shieldFlankingChance)) {
-// 				bonus -= 1;
-// 			}		
-// 		}
 
 		return bonus;
 	}
@@ -1504,6 +1321,36 @@ public class BookOfWar {
 	*/
 	int toPercent (double d) {
 		return (int) Math.round(d * 100); 	
+	}
+
+	//-----------------------------------------------------------------
+	//  Methods for thread management
+	//-----------------------------------------------------------------
+
+	/**
+	*  Check if any thread in an array is live
+	*/
+	boolean isAnyThreadLive(Thread[] threads) {
+		for (Thread t: threads) {
+			if (t.isAlive()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	*  Wait for all threads in an array to finish
+	*/
+	void waitForThreads (Thread[] threads) {
+		while (isAnyThreadLive(threads)) {
+			try {
+				Thread.sleep(10);
+			}
+			catch (Exception e) {
+				System.err.println("Exception in waitForThreads: " + e);
+			}
+		}	
 	}
 
 	//-----------------------------------------------------------------
@@ -1784,98 +1631,125 @@ public class BookOfWar {
 // 	}
 }
 
-//	Class	for multi-threaded auto-balancer
-class	AutoBalancer implements Runnable {
+// //	Class	for multi-threaded auto-balancer
+// class	AutoBalancer implements Runnable {
+// 
+// 	// Member records
+// 	BookOfWar bowSim;
+// 	List<Unit> baseUnits;
+// 	Unit testUnit;
+// 
+// 	// Constructor
+// 	public AutoBalancer(BookOfWar bowSim, List<Unit> baseUnits, Unit testUnit) {
+// 		this.bowSim = new BookOfWar(bowSim);
+// 		this.testUnit = new Unit(testUnit);
+// 		this.baseUnits = new ArrayList<Unit>(baseUnits.size());
+// 		for (Unit u: baseUnits) {
+// 			this.baseUnits.add(new Unit(u));
+// 		}
+// 	}
+// 
+// 	// Interface run function
+// 	@Override
+// 	public void run() {
+// 		bowSim.setAutoBalancedCost(testUnit, baseUnits);
+// 	}
+// 	
+// 	// Get the tested unit
+// 	public Unit getTestUnit () {
+// 		return testUnit;
+// 	}
+// }
+
+// //	Class	for multi-threaded assessor
+// class	Assessor implements Runnable {
+// 
+// 	// Member records
+// 	BookOfWar bowSim;
+// 	Unit testUnit;
+// 	List<Unit> baseUnits;
+// 	double winRatios[];
+// 
+// 	// Constructor
+// 	public Assessor(BookOfWar bowSim, List<Unit> baseUnits, Unit testUnit) {
+// 		this.bowSim = new BookOfWar(bowSim);
+// 		this.testUnit = new Unit(testUnit);
+// 		this.baseUnits = new ArrayList<Unit>(baseUnits.size());
+// 		for (Unit u: baseUnits) {
+// 			this.baseUnits.add(new Unit(u));
+// 		}
+// 		winRatios = new double[baseUnits.size()];
+// 	}
+// 
+// 	// Interface run function
+// 	@Override
+// 	public void run() {
+// 		for (int i = 0; i < baseUnits.size(); i++) {
+// 			Unit baseUnit = baseUnits.get(i);
+// 			if (baseUnit.getName().equals(testUnit.getName())) {
+// 				winRatios[i] = 0.5;
+// 			}
+// 			else {		
+// 				winRatios[i] = bowSim.playSeries(testUnit, baseUnit);
+// 			}
+// 		}
+// 	}
+// 
+// 	// Get the tested unit
+// 	public Unit getTestUnit () {
+// 		return testUnit;
+// 	}
+// 	
+// 	// Get a given win ratio
+// 	public double getWinRatio (int idx) {
+// 		return winRatios[idx];
+// 	}
+// 	
+// 	// Get sum error of the win ratios
+// 	public double getSumError () {
+// 		double sumErr = 0.0;
+// 		for (double d: winRatios) {
+// 			sumErr += d - 0.5;
+// 		}
+// 		return sumErr;
+// 	}
+// 	
+// 	// Get number of winning matchups
+// 	public int countWinMatchups () {
+// 		int winMatchups = 0;
+// 		for (double d: winRatios) {
+// 			if (d > 0.5) {
+// 				winMatchups++;
+// 			}
+// 		}
+// 		return winMatchups;
+// 	}
+// }
+
+//	Class	for multi-threaded game series
+class	SeriesRunner implements Runnable {
 
 	// Member records
 	BookOfWar bowSim;
-	List<Unit> baseUnits;
-	Unit testUnit;
+	Unit unit1, unit2;
+	double winRatioUnit1;
 
 	// Constructor
-	public AutoBalancer(BookOfWar bowSim, List<Unit> baseUnits, Unit testUnit) {
+	public SeriesRunner(BookOfWar bowSim, Unit unit1, Unit unit2) {
 		this.bowSim = new BookOfWar(bowSim);
-		this.testUnit = new Unit(testUnit);
-		this.baseUnits = new ArrayList<Unit>(baseUnits.size());
-		for (Unit u: baseUnits) {
-			this.baseUnits.add(new Unit(u));
-		}
+		this.unit1 = new Unit(unit1);
+		this.unit2 = new Unit(unit2);
 	}
 
 	// Interface run function
 	@Override
 	public void run() {
-		bowSim.setAutoBalancedCost(testUnit, baseUnits);
+		winRatioUnit1 = bowSim.playSeries(unit1, unit2);
 	}
 	
-	// Get the tested unit
-	public Unit getTestUnit () {
-		return testUnit;
-	}
-}
-
-//	Class	for multi-threaded assessor
-class	Assessor implements Runnable {
-
-	// Member records
-	BookOfWar bowSim;
-	Unit testUnit;
-	List<Unit> baseUnits;
-	double winRatios[];
-
-	// Constructor
-	public Assessor(BookOfWar bowSim, List<Unit> baseUnits, Unit testUnit) {
-		this.bowSim = new BookOfWar(bowSim);
-		this.testUnit = new Unit(testUnit);
-		this.baseUnits = new ArrayList<Unit>(baseUnits.size());
-		for (Unit u: baseUnits) {
-			this.baseUnits.add(new Unit(u));
-		}
-		winRatios = new double[baseUnits.size()];
-	}
-
-	// Interface run function
-	@Override
-	public void run() {
-		for (int i = 0; i < baseUnits.size(); i++) {
-			Unit baseUnit = baseUnits.get(i);
-			if (baseUnit.getName().equals(testUnit.getName())) {
-				winRatios[i] = 0.5;
-			}
-			else {		
-				winRatios[i] = bowSim.playSeries(testUnit, baseUnit);
-			}
-		}
-	}
-
-	// Get the tested unit
-	public Unit getTestUnit () {
-		return testUnit;
-	}
-	
-	// Get a given win ratio
-	public double getWinRatio (int idx) {
-		return winRatios[idx];
-	}
-	
-	// Get sum error of the win ratios
-	public double getSumError () {
-		double sumErr = 0.0;
-		for (double d: winRatios) {
-			sumErr += d - 0.5;
-		}
-		return sumErr;
-	}
-	
-	// Get number of winning matchups
-	public int countWinMatchups () {
-		int winMatchups = 0;
-		for (double d: winRatios) {
-			if (d > 0.5) {
-				winMatchups++;
-			}
-		}
-		return winMatchups;
+	// Get win ratio result
+	public double getWinRatioUnit1 () {
+		return winRatioUnit1;
 	}
 }
 
@@ -1901,4 +1775,3 @@ USA
 The author may be contacted by email at: delta@superdan.net
 =====================================================================
 */
-
