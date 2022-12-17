@@ -98,9 +98,6 @@ public class BookOfWar {
 
 	/** Are pikes making an interrupting defense now? */
 	boolean pikesInterrupt;
-	
-	/** Victorious unit for the battle. */
-	Unit winner;
 
 	//-----------------------------------------------------------------
 	//  Constructor(s)
@@ -289,7 +286,7 @@ public class BookOfWar {
 		printf("Initializing full auto-balancer...\n");
 		UnitList unitList = UnitList.getInstance();
 		List<Unit> baseUnits = unitList.getSublist(0, baseUnitNum);
-		double oldAbsTotalError = assessFullGameSeries(baseUnits);
+		double oldAbsTotalError = playAllDockets(baseUnits);
 		
 		// Iterate attempts at improving a random unit
 		printf("Searching for improved costs...\n");
@@ -307,10 +304,10 @@ public class BookOfWar {
 
 				// One step cost change in needed direction
 				int oldCost = modUnit.getCost();
-				double oldUnitSumErr = assessGameSeries(modUnit, baseUnits);
+				double oldUnitSumErr = playDocket(modUnit, baseUnits);
 				int newCost = getNewCost(oldCost, oldUnitSumErr > 0);
 				modUnit.setCost(newCost);
-				double newAbsTotalError = assessFullGameSeries(baseUnits);
+				double newAbsTotalError = playAllDockets(baseUnits);
 
 				// If this reduced error from parity, keep new cost
 				if (newAbsTotalError < oldAbsTotalError) {
@@ -391,7 +388,7 @@ public class BookOfWar {
 		else {		
 			Unit unit1 = unitList.get(zoomGameUnit1 - 1);
 			Unit unit2 = unitList.get(zoomGameUnit2 - 1);
-			oneGame(unit1, unit2);
+			playGame(unit1, unit2);
 		}
 	}
 
@@ -444,7 +441,7 @@ public class BookOfWar {
 					printf("-" + sepChar);
 				}
 				else {
-					double ratioWon = assessGames(unit1, unit2);
+					double ratioWon = playSeries(unit1, unit2);
 					printf(ratioWon >= 0.5 ? "" + toPercent(ratioWon) + sepChar : "-" + sepChar);
 					if (ratioWon >= 0.5) winCount++;
 					sumWinPctErr += ratioWon - 0.5;
@@ -601,24 +598,24 @@ public class BookOfWar {
 
 		// Check lower bound for cost
 		newUnit.setCost(lowCost);
-		double lowCostWinPctErr = assessGameSeries(newUnit, baseUnits);
+		double lowCostWinPctErr = playDocket(newUnit, baseUnits);
 		if (lowCostWinPctErr < 0)
 			return;
 
 		// Find upper bound for cost
 		newUnit.setCost(highCost);
-		double highCostWinPctErr = assessGameSeries(newUnit, baseUnits);
+		double highCostWinPctErr = playDocket(newUnit, baseUnits);
 		while (highCostWinPctErr > 0) {
 			highCost *= 2;
 			newUnit.setCost(highCost);
-			highCostWinPctErr = assessGameSeries(newUnit, baseUnits);
+			highCostWinPctErr = playDocket(newUnit, baseUnits);
 		}
 			
 		// Binary search for best cost
 		while (highCost - lowCost > 1) {
 			int midCost = (highCost + lowCost)/2;			
 			newUnit.setCost(midCost);
-			double midWinPctErr = assessGameSeries(newUnit, baseUnits);
+			double midWinPctErr = playDocket(newUnit, baseUnits);
 			if (midWinPctErr < 0) {
 				highCost = midCost;
 				highCostWinPctErr = midWinPctErr;
@@ -635,48 +632,48 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Run game trials on entire matrix of units.
+	*  Play repeated series of every unit in a list against every other unit.
 	*  Returns absolute grand total win percent error.
 	*/
-	double assessFullGameSeries(List<Unit> unitList) {
+	double playAllDockets (List<Unit> unitList) {
 		double absTotalError = 0.0;
 		for (Unit unit: unitList) {
-			double error = assessGameSeries(unit, unitList);
+			double error = playDocket(unit, unitList);
 			absTotalError += Math.abs(error);
 		}
 		return absTotalError;
 	}
 
 	/**
-	*  Run game trials versus array of enemy units.
+	*  Play repeated series of one unit against a list of other units.
 	*  Returns sum win percent error (difference from 0.5).
 	*/
-	double assessGameSeries(Unit unit, List<Unit> enemies) {
+	double playDocket (Unit unit, List<Unit> enemies) {
 		double sumWinPctErr = 0.0;
 		for (Unit enemy: enemies) {
-			sumWinPctErr += assessGames(unit, enemy) - 0.5;
+			sumWinPctErr += playSeries(unit, enemy) - 0.5;
 		}
 		return sumWinPctErr;
 	}
 
 	/**
-	*  Run many game trials.
+	*  Play series of games between pair of units.
 	*  Return ratio of wins by first unit.
 	*/
-	double assessGames(Unit unit1, Unit unit2) {
+	double playSeries (Unit unit1, Unit unit2) {
 		int unitOneWins = 0;
 		for (int i = 0; i < trialsPerMatchup; i++) {
-			int winIndex = oneGame(unit1, unit2);
-			if (winIndex == 1) unitOneWins++;
+			boolean win1 = playGame(unit1, unit2);
+			if (win1) unitOneWins++;
 		}
 		return (double) unitOneWins / trialsPerMatchup;
 	}
 
 	/**
 	*  Play out one game.
-	*  Returns 1 or 2 for which unit won.
+	*  Return true if first unit wins.
 	*/
-	int oneGame (Unit unit1, Unit unit2) {
+	boolean playGame (Unit unit1, Unit unit2) {
 
 		// Set up game
 		initBattlefield();
@@ -688,15 +685,32 @@ public class BookOfWar {
 		}
 		
 		// Battle until one side wins
-		while (winner == null) {
+		while (bothUnitsLive(unit1, unit2)) {
 			oneTurn(unit1, unit2);
-			if (winner != null) break;
-			oneTurn(unit2, unit1);
+			if (bothUnitsLive(unit1, unit2))
+				oneTurn(unit2, unit1);
 		}
 
 		// Report on winner
+		Unit winner = getWinner(unit1, unit2);		
 		reportDetail("* WINNER *: " + winner);
-		return winner == unit1 ? 1 : 2;
+		return winner == unit1;
+	}
+
+	/**
+	*  Check if both units in game still live.
+	*/
+	boolean bothUnitsLive (Unit unit1, Unit unit2) {
+		return getWinner(unit1, unit2) == null;
+	}
+
+	/**
+	*  Determine victorious unit.
+	*/
+	Unit getWinner (Unit unit1, Unit unit2) {
+		if (unit1.isBeaten()) return unit2;
+		if (unit2.isBeaten()) return unit1;
+		return null;
 	}
 
 	/**
@@ -710,7 +724,6 @@ public class BookOfWar {
 		reportDetail("Weather: " + weather);
 		reportDetail("Distance: " + distance);
 		priorContact = false;
-		winner = null;
 	}
 
 	/**
@@ -812,9 +825,6 @@ public class BookOfWar {
 		defender.clearFigsLostInTurn();
 
 		// Take action by type
-//		if (attacker.hasAnyWizard())
-//			oneTurnWizard(attacker, defender); else
-
 		if (attacker.hasMissiles())
 			oneTurnRanged(attacker, defender);
 		else
@@ -826,10 +836,6 @@ public class BookOfWar {
 		// Check regeneration
 		if (defender.hasSpecial(SpecialType.Regeneration))
 			defender.regenerate();
-			
-		// Check for victory
-		if (attacker.isBeaten()) winner = defender;
-		if (defender.isBeaten()) winner = attacker;
 	}
 
 	/**
@@ -1837,7 +1843,7 @@ class	Assessor implements Runnable {
 				winRatios[i] = 0.5;
 			}
 			else {		
-				winRatios[i] = bowSim.assessGames(testUnit, baseUnit);
+				winRatios[i] = bowSim.playSeries(testUnit, baseUnit);
 			}
 		}
 	}
