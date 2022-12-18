@@ -283,7 +283,7 @@ public class Unit {
 	}
 	
 	/**
-	*  Regenerate 1 hit
+	*  Regenerate 1 hit.
 	*/
 	public void regenerate () {
 		if (damageTaken > 0) {
@@ -292,7 +292,7 @@ public class Unit {
 	}
 
 	/**
-	*  Set visibility (after invisible attack).
+	*  Set unit visibility.
 	*/
 	public void setVisible (boolean visible) {
 		this.visible = visible;
@@ -324,6 +324,13 @@ public class Unit {
 	*/
 	public int getFlyMove () {
 		return getSpecialParam(SpecialType.Flight);
+	}
+
+	/**
+	*  Check if this unit has same name as another unit.
+	*/
+	public boolean isSameType (Unit other) {
+		return name.equals(other.name);	
 	}
 
 	/**

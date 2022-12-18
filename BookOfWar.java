@@ -62,11 +62,11 @@ public class BookOfWar {
 	/** Mode of action for simulator. */
 	SimMode simMode;
 
-	/** Base unit set number (unit types 1 to n). */
-	int baseUnitNum;
+	/** Assess to this unit number (unit types 1 to n). */
+	int assessUnitNum;
 
-	/** Lockdown units in full auto-balancer (unit types 1 to n). */
-	int lockUnitNum;
+	/** Base unit set for comparisons (unit types 1 to n). */
+	int baseUnitNum;
 
 	/** Number of trials per matchup. */
 	int trialsPerMatchup;
@@ -77,8 +77,8 @@ public class BookOfWar {
 	/** Full auto-balancer max trials without improvement. */
 	int maxTrialsNoGain;
 	
-	/** Print assessment table in CSV format? */
-	boolean printAssessCSV;
+	/** Print results table in CSV format? */
+	boolean printFormatCSV;
 
 	/** Flag to escape after parsing arguments. */
 	boolean exitAfterArgs;
@@ -112,7 +112,7 @@ public class BookOfWar {
 	public BookOfWar () {
 		random = new Random();
 		simMode = DEFAULT_SIM_MODE;
-		baseUnitNum = Integer.MAX_VALUE;
+		assessUnitNum = Integer.MAX_VALUE;
 		trialsPerMatchup = DEFAULT_TRIALS_PER_MATCHUP;
 	}
 
@@ -123,13 +123,13 @@ public class BookOfWar {
 	public BookOfWar (BookOfWar src) {
 		random = new Random();			
 		simMode = src.simMode;
+		assessUnitNum = src.assessUnitNum;
 		baseUnitNum = src.baseUnitNum;
-		lockUnitNum = src.lockUnitNum;
 		trialsPerMatchup = src.trialsPerMatchup;
 		zoomGameUnit1 = src.zoomGameUnit1;
 		zoomGameUnit2 = src.zoomGameUnit2;
 		maxTrialsNoGain = src.maxTrialsNoGain;
-		printAssessCSV = src.printAssessCSV;
+		printFormatCSV = src.printFormatCSV;
 		exitAfterArgs = src.exitAfterArgs;
 	}
 
@@ -158,8 +158,8 @@ public class BookOfWar {
 		System.out.println();
 		System.out.println("Usage: BookOfWar [options]");
 		System.out.println("  Options include:");
-		System.out.println("\t-b use first n units as base for comparisons");
-		System.out.println("\t-l lock down first n units for full auto-balancer");
+		System.out.println("\t-a assess up to the nth unit in database");
+		System.out.println("\t-b use first n units as fixed base for comparisons");
 		System.out.println("\t-m sim mode (1 = table-assess, 2 = auto-balance,\n"
 									+ "\t\t 3 = full auto-balance, 4 = zoom-in game)");
 		System.out.println("\t-n max trials without gain in full auto-balancer");
@@ -177,12 +177,12 @@ public class BookOfWar {
 		for (String s: args) {
 			if (s.charAt(0) == '-') {
 				switch (s.charAt(1)) {
+					case 'a': assessUnitNum = getParamInt(s); break;
 					case 'b': baseUnitNum = getParamInt(s); break;
-					case 'l': lockUnitNum = getParamInt(s); break;
 					case 'm': parseSimMode(s); break;
 					case 'n': maxTrialsNoGain = getParamInt(s); break;
 					case 't': trialsPerMatchup = getParamInt(s); break;
-					case 'v': printAssessCSV = true; break;
+					case 'v': printFormatCSV = true; break;
 					case 'y': zoomGameUnit1 = getParamInt(s); break;
 					case 'z': zoomGameUnit2 = getParamInt(s); break;
 					default: exitAfterArgs = true; break;
@@ -225,9 +225,45 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Validate values of assessed and base unit numbers.
+	*/
+	boolean checkArgUnitNums () {
+		UnitList unitList = UnitList.getInstance();
+		if (assessUnitNum <= 0) {
+			System.err.println("Error: Assessed unit set must be positive (fix -a switch).");
+			return false;
+		}
+		if (baseUnitNum < 0) {
+			System.err.println("Error: Base unit set must be nonnegative (fix -b switch).");
+			return false;
+		}
+		else if (baseUnitNum >= unitList.size()) {
+			System.err.println("Error: Base unit set must be less than database size (fix -b switch).");
+			return false;
+		}
+		else if (assessUnitNum <= baseUnitNum) {
+			System.err.println("Error: Assessed unit set must be more than base units (fix -a or -b switch).");
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	*  Check base unit set positive (for auto-balancer).
+	*/
+	boolean checkBaseUnitsPositive () {
+		if (baseUnitNum <= 0) {
+			System.err.println("Error: Base unit set must be positive (fix -b switch).");
+			return false;
+		}
+		return true;
+	}	
+
+	/**
 	*  Run the simulator in selected mode.
 	*/
 	void run () {
+		if (!checkArgUnitNums()) return;
  		switch (simMode) {
  			case TableAssess: assessmentTable(); break;
  			case AutoBalance: autoBalancer(); break;
@@ -241,8 +277,8 @@ public class BookOfWar {
 	*/
 	void assessmentTable () {
 		UnitList unitList = UnitList.getInstance();
-		List<Unit> baseUnits = unitList.getSublist(0, baseUnitNum);
-		makeAssessmentTable(baseUnits, baseUnits);
+		List<Unit> assessUnits = unitList.getSublist(0, assessUnitNum);
+		makeAssessmentTable(assessUnits, assessUnits);
 	}
 
 	/**
@@ -250,17 +286,10 @@ public class BookOfWar {
 	*/
 	void autoBalancer() {
 		UnitList unitList = UnitList.getInstance();
-		if (baseUnitNum <= 0) {
-			System.err.println("Error: Base unit set must be above zero (fix -b switch).");
-		}
-		else if (baseUnitNum >= unitList.size()) {
-			System.err.println("Error: Base unit set must be less than database size (fix -b switch).");
-		}
-		else {
-			List<Unit> baseUnits = unitList.getSublist(0, baseUnitNum);
-			List<Unit> newUnits = unitList.getSublist(baseUnitNum, unitList.size());
-			makeAutoBalancedTable(baseUnits, newUnits);
-		}			
+		if (!checkBaseUnitsPositive()) return;
+		List<Unit> baseUnits = unitList.getSublist(0, baseUnitNum);
+		List<Unit> assessUnits = unitList.getSublist(baseUnitNum, assessUnitNum);
+		makeAutoBalancedTable(baseUnits, assessUnits);
 	}
 
 	/**
@@ -289,8 +318,8 @@ public class BookOfWar {
 		// Initialize list to balance
 		printf("Initializing full auto-balancer...\n");
 		UnitList unitList = UnitList.getInstance();
-		List<Unit> baseUnits = unitList.getSublist(0, baseUnitNum);
-		double oldAbsTotalError = playAllDockets(baseUnits);
+		List<Unit> assessUnits = unitList.getSublist(0, assessUnitNum);
+		double oldAbsTotalError = playAllDockets(assessUnits);
 		
 		// Iterate attempts at improving a random unit
 		printf("Searching for improved costs...\n");
@@ -298,9 +327,9 @@ public class BookOfWar {
 		while (trialsNoGain < maxTrialsNoGain) {
 
 			// Pick a unit to adjust
-			int range = baseUnits.size() - lockUnitNum;
-			int modIndex = random.nextInt(range) + lockUnitNum;
-			Unit modUnit = baseUnits.get(modIndex);
+			int range = assessUnits.size() - baseUnitNum;
+			int modIndex = random.nextInt(range) + baseUnitNum;
+			Unit modUnit = assessUnits.get(modIndex);
 
 			// Keep trying to adjust while we see improvement
 			boolean adjustGain;
@@ -309,10 +338,10 @@ public class BookOfWar {
 
 				// One step cost change in needed direction
 				int oldCost = modUnit.getCost();
-				double oldUnitSumErr = playDocket(modUnit, baseUnits);
+				double oldUnitSumErr = playDocket(modUnit, assessUnits);
 				int newCost = getNewCost(oldCost, oldUnitSumErr > 0);
 				modUnit.setCost(newCost);
-				double newAbsTotalError = playAllDockets(baseUnits);
+				double newAbsTotalError = playAllDockets(assessUnits);
 
 				// If this reduced error from parity, keep new cost
 				if (newAbsTotalError < oldAbsTotalError) {
@@ -332,11 +361,11 @@ public class BookOfWar {
 		
 		// Print table of new values
 		printf("\nFinal suggested costs:\n");
-		printf("\nUnit\tCost\n----\t----\n");
-		for (Unit unit: baseUnits) {
-			printf(unit.getAbbreviation() + "\t" + unit.getCost() + "\n");
+		printf("\nUnit\tCost\n");
+		for (int i = baseUnitNum; i < assessUnits.size(); i++) {
+			Unit unit = assessUnits.get(i);
+			printf(unit.getAbbreviation() + getSepChar() + unit.getCost() + "\n");
 		}
-		printf("\n");
 	}
 
 	/**
@@ -413,6 +442,13 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Get the preferred field separator character.
+	*/
+	char getSepChar() {
+		return printFormatCSV ? ',' : '\t';
+	}
+
+	/**
 	*  Make general assessment table.
 	*
 	*  Absolute total error is used here, instead of sum squared error,
@@ -421,7 +457,7 @@ public class BookOfWar {
 	void makeAssessmentTable (List<Unit> unitList1, List<Unit> unitList2) {
   
   		// Header
-		char sepChar = printAssessCSV ? ',' : '\t';
+		char sepChar = getSepChar();
 		printf("Assessed win percents "
 			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
 		for (Unit unit: unitList2) {
@@ -455,12 +491,12 @@ public class BookOfWar {
 				maxAbsErrUnit = unit1;
 			}
 		}
+		printf("\n");
 
 		// Tail
-		printf("\nAbsolute Total Error: " + toPercent(absTotalError));
-		printf("\nMaximum error unit: " + maxAbsErrUnit.getName() 
-			+ " (" + toPercent(maxAbsError) + ")");
-		printf("\n");
+		printf("Absolute Total Error: " + toPercent(absTotalError) + "\n");
+		printf("Maximum error unit: " + maxAbsErrUnit.getName() 
+			+ " (" + toPercent(maxAbsError) + ")\n");
 	}
 
 	/**
@@ -477,9 +513,8 @@ public class BookOfWar {
 		// Make the table
 		for (Unit newUnit: newUnits) {
 			setAutoBalancedCost(newUnit, baseUnits);		
-			printf(newUnit.getAbbreviation() + "\t" + newUnit.getCost() + "\n");
+			printf(newUnit.getAbbreviation() + getSepChar() + newUnit.getCost() + "\n");
 		}
-		printf("\n");
 	} 
 
 	/**
@@ -542,7 +577,7 @@ public class BookOfWar {
 	int countHighRates(double[] dblArray) {
 		int countHigh = 0;
 		for (double d: dblArray) {
-			if (d >= 0.5) {
+			if (d > 0.5) {
 				countHigh++;
 			}
 		}
@@ -593,7 +628,7 @@ public class BookOfWar {
 		// Compile results array
 		double results[] = new double[numOpp];
 		for (int i = 0; i < numOpp; i++) {
-			results[i] = runners[i].getWinRatioUnit1();
+			results[i] = runners[i].getTestUnitWinRatio();
 		}		
 		return results;
 	}
@@ -1737,25 +1772,26 @@ class	SeriesRunner implements Runnable {
 
 	// Member records
 	BookOfWar bowSim;
-	Unit unit1, unit2;
-	double winRatioUnit1;
+	Unit testUnit, oppUnit;
+	double testUnitWinRatio;
 
 	// Constructor
-	public SeriesRunner(BookOfWar bowSim, Unit unit1, Unit unit2) {
+	public SeriesRunner(BookOfWar bowSim, Unit testUnit, Unit oppUnit) {
 		this.bowSim = new BookOfWar(bowSim);
-		this.unit1 = new Unit(unit1);
-		this.unit2 = new Unit(unit2);
+		this.testUnit = new Unit(testUnit);
+		this.oppUnit = new Unit(oppUnit);
 	}
 
 	// Interface run function
 	@Override
 	public void run() {
-		winRatioUnit1 = bowSim.playSeries(unit1, unit2);
+		testUnitWinRatio = testUnit.isSameType(oppUnit) ?
+			0.5 : bowSim.playSeries(testUnit, oppUnit);
 	}
 	
 	// Get win ratio result
-	public double getWinRatioUnit1 () {
-		return winRatioUnit1;
+	public double getTestUnitWinRatio () {
+		return testUnitWinRatio;
 	}
 }
 
