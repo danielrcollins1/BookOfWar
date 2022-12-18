@@ -802,7 +802,7 @@ public class BookOfWar {
 		defender.clearFigsLostInTurn();
 
 		// Take action by type
-		if (attacker.hasMissiles())
+		if (actAsRanged(attacker, defender))
 			oneTurnRanged(attacker, defender);
 		else
 			oneTurnMelee(attacker, defender);
@@ -813,6 +813,16 @@ public class BookOfWar {
 		// Check regeneration
 		if (defender.hasSpecial(SpecialType.Regeneration))
 			defender.regenerate();
+	}
+
+	/**
+	*  Should this attacker pursue ranged shooting at this time?
+	*/
+	boolean actAsRanged (Unit attacker, Unit defender) {
+		return distance > 0
+			&& attacker.hasMissiles()
+			&& minDistanceToShoot(attacker, defender) > 0
+			&& !attacker.hasSpecial(SpecialType.MeleeShot);
 	}
 
 	/**
@@ -827,9 +837,9 @@ public class BookOfWar {
 		int maxMove = getMove(attacker);
 		if (!fullSpeed && maxMove > 1) maxMove /= 2;
 		int moveDist = Math.min(distance - goalDist, maxMove);
-		assert(0 < moveDist && moveDist <= distance);
 
 		// Make the move
+		assert(0 < moveDist && moveDist <= distance);
 		distance -= moveDist;
 		reportDetail(attacker + " move to distance " + distance);
 		checkVisibility(attacker, defender);
@@ -838,6 +848,22 @@ public class BookOfWar {
 		}
 		return moveDist;
 	}
+
+	/**
+	*  Move attacker backward, as much as possible
+	*  For horse archers with split-move-and-fire ability
+	*  Assumes this uses half movement after fire
+	*    & requires some wheeling to make happen
+	*  So: Only get one-quarter of full movement
+	*/
+	int moveBackward (Unit attacker) {
+		assert(distance > 0);
+		assert(attacker.hasSpecial(SpecialType.SplitMove));
+		int moveDist = getMove(attacker) / 4;
+		distance += moveDist;
+		reportDetail(attacker + " **MOVE BACK** to distance " + distance);
+		return moveDist;			
+	}	
 
 	/**
 	*  Apply damage from attack & report.
@@ -857,14 +883,15 @@ public class BookOfWar {
 	*  Play out one turn for melee troops.
 	*/
 	void oneTurnMelee (Unit attacker, Unit defender) {
+		int distMoved = 0;
 	
 		// Charge to contact
 		if (distance > 0) {
-			moveSeekRange(attacker, defender, 0, true);
+			distMoved = moveSeekRange(attacker, defender, 0, true);
 		}
 
 		// Expand frontage if useful
-		else {
+		if (distMoved == 0) {
 			if (attacker.getRanks() > 1 
 					&& attacker.getTotalWidth() < defender.getPerimeter()) {
 				int newFiles = Math.min(attacker.getFiles() + 6, attacker.getFigures());
@@ -876,9 +903,23 @@ public class BookOfWar {
  		if (distance == 0) {
 			if (!attacker.isBeaten()) {
 	 			meleeAttack(attacker, defender);
+				checkMeleeShot(attacker, defender, distMoved);
 			}
 			priorContact = true;
  		}
+	}
+
+	/**
+	*  Try to make shot in melee, if possible.
+	*/
+	void checkMeleeShot(Unit attacker, Unit defender, int distMoved) {
+		assert(distance == 0);
+		if (attacker.hasSpecial(SpecialType.MeleeShot) 
+			&& minDistanceToShoot(attacker, defender) > 0
+			&& distMoved <= getMove(attacker) / 2)
+		{				
+			rangedAttack(attacker, defender, false);
+		}
 	}
 
 	/**
@@ -902,14 +943,12 @@ public class BookOfWar {
 	*  Play out one turn for ranged troops (AI-flavored).
 	*/
 	void oneTurnRanged (Unit attacker, Unit defender) {
-		int distMoved = 0;	
-		int minShotDist = minDistanceToShoot(attacker, defender);
+		int distMoved = 0;
 
-		// If no shooting possible or desired, go for melee
-		if (distance == 0 || minShotDist == 0
-				|| attacker.hasSpecial(SpecialType.MeleeShot)) {
-			oneTurnMelee(attacker, defender);
-		}
+		// Check relative firing ranges
+		int minShotDist = minDistanceToShoot(attacker, defender);
+		int minShotDistEnemy = minDistanceToShoot(defender, attacker);
+		boolean outranged = (minShotDist < minShotDistEnemy);
 
 		// Move to shooting distance
 		if (distance > minShotDist) {
@@ -918,25 +957,36 @@ public class BookOfWar {
 			// Otherwise we step forward half-speed to get first shot
 			// (Note testing shows it a tiny bit better to stand and wait for full shots;
 			// but that's rare at the table, often pivot required, so we assume movement.)
-			int minShotDistEnemy = minDistanceToShoot(defender, attacker);
-			boolean outranged = (minShotDist < minShotDistEnemy);
 			distMoved = moveSeekRange(attacker, defender, minShotDist, outranged);
 		}
 
 		// Fire if permitted
 		if (distance <= minShotDist) {
-			if (distMoved == 0)
+			if (distMoved == 0) {
 				rangedAttack(attacker, defender, true);
-			else if (distMoved <= getMove(attacker) / 2)
+			}
+			else if (distMoved <= getMove(attacker) / 2) {
 				rangedAttack(attacker, defender, false);
+				checkSplitMove(attacker, outranged);
+			}
 		}
+	}
+
+	/**
+	*  Try to use split-move-and-fire, if possible.
+	*/
+	void checkSplitMove(Unit attacker, boolean outranged) {
+		if (attacker.hasSpecial(SpecialType.SplitMove) && !outranged)
+			moveBackward(attacker);
 	}
 
 	/**
 	*  Find minimum distance to have any chance of shooting enemy.
 	*/
 	int minDistanceToShoot (Unit attacker, Unit defender) {
-		if (!attacker.hasMissiles() || !terrainPermitShots()
+		if (!attacker.hasMissiles() 
+			|| !terrainPermitShots()
+			|| isAttackImmune(attacker, defender)
 			|| (weather == Weather.Rainy && attacker.hasSpecial(SpecialType.NoRainShot)))
 		{
       	return 0;
@@ -1008,16 +1058,7 @@ public class BookOfWar {
 		makeVisible(attacker);
 
 		// Check for defender immune
-		if (isAttackImmune(attacker, defender))
-			return;
-
-		// Shoot in melee special ability (e.g., elephant archers)
-		// Note: This overlooks possibility of full-move-to-melee
-		if (attacker.hasSpecial(SpecialType.MeleeShot)) {
-			if (minDistanceToShoot(attacker, defender) > 0) {
-				rangedAttack(attacker, defender, false);
-			}
-		}
+		if (isAttackImmune(attacker, defender)) return;
 
 		// Compute figures & dice in attack
 		// Normally assumes wrap, but no rear bonus
@@ -1056,8 +1097,7 @@ public class BookOfWar {
 		makeVisible(attacker);
 
 		// Check for defender immune
-		if (isAttackImmune(attacker, defender))
-			return;
+		if (isAttackImmune(attacker, defender)) return;
 
 		// Compute figures & dice in attack
 		int figsAtk = attacker.getFigures();
@@ -1084,7 +1124,7 @@ public class BookOfWar {
 		int damagePerHit = attacker.getDamage();
 		if (attacker.hasSpecial(SpecialType.Mounts))
 			damagePerHit = 1; // elephant archers
-		if (attacker.hasSpecial(SpecialType.LargeStones))
+		if (attacker.hasSpecial(SpecialType.BigStones))
 			damagePerHit += 1; // stone giants
 		if (capDamageByHealth) {
 			damagePerHit = Math.min(damagePerHit, defender.getHealth());

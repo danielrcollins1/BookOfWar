@@ -9,9 +9,9 @@ public enum SpecialType {
 	//  Enumeration
 	//--------------------------------------------------------------------------
 
-	Pikes, Shields, Mounts, MoraleBonus, 
+	Pikes, Shields, Mounts, SplitMove, MoraleBonus,
 	WoodsCover, GiantDodging, LightWeakness, GiantClass,
-	ShotBonus, MeleeShot, NoRainShot, LargeStones, DamageInc, 
+	ShotBonus, MeleeShot, NoRainShot, BigStones, DamageInc, 
 	Invisibility, Detection, Teleport, Regeneration, 
 	FireImmunity, ColdImmunity, VoltImmunity, FireVulnerability,
 	Flight, Swimming, BreathWeapon, Whirlwind, Spells,
