@@ -75,7 +75,7 @@ public class BookOfWar {
 	int maxTrialsNoGain;
 
 	/** Use round number prices in full autobalancer? */
-	boolean usePreferredValues = true;
+	boolean usePreferredValues;
 	
 	/** Print results table in CSV format? */
 	boolean printFormatCSV;
