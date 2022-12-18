@@ -13,9 +13,9 @@ public class BookOfWar {
 	enum Weather {Sunny, Cloudy, Rainy};
 	enum Terrain {Open, Gulley, Rough, Hill, Woods, Marsh, Stream, Pond};
 	enum SimMode {TableAssess, AutoBalance, FullBalance, ZoomGame};
-
+	
 	//-----------------------------------------------------------------
-	//  Constant defaults
+	//  Parameter defaults
 	//-----------------------------------------------------------------
 
 	/** Default trials per matchup. */
@@ -74,7 +74,7 @@ public class BookOfWar {
 	/** Full auto-balancer max trials without improvement. */
 	int maxTrialsNoGain;
 
-	/** Use round number prices in full autobalancer? */
+	/** Use round number prices in autobalancer? */
 	boolean usePreferredValues;
 	
 	/** Print results table in CSV format? */
@@ -375,40 +375,10 @@ public class BookOfWar {
 	*  Get new cost for full auto-balancer.
 	*/
 	int getNewCost (int oldCost, boolean up) {
-		if (usePreferredValues) {
-			return up ? getCostInc(oldCost) : getCostDec(oldCost);		
-		}	
-		else {
+		if (!usePreferredValues)
 			return up ? oldCost + 1 : oldCost - 1;		
-		}
-	}
-
-	/**
-	*  Increase cost of unit in full auto-balancer.
-	*    Chooses from predefined preferred values.
-	*/
-	int getCostInc (int oldCost) {
-		if (oldCost < 10)
-			return oldCost + 1;
-		else if (oldCost < 12)
-			return 12;
-		else
-			return (oldCost / 5 + 1) * 5;
-	}
-	
-	/**
-	*  Decrease cost of unit in full auto-balancer.
-	*    Chooses from predefined preferred values.
-	*/
-	int getCostDec (int oldCost) {
-		if (oldCost <= 10)
-			return oldCost - 1;
-		else if (oldCost <= 12)
-			return 10;
-		else if (oldCost <= 15)
-			return 12;
-		else
-			return ((oldCost + 4) / 5 - 1) * 5;
+		else 
+			return up ? PreferredValues.inc(oldCost) : PreferredValues.dec(oldCost);
 	}
 
 	/**
@@ -559,7 +529,8 @@ public class BookOfWar {
 
 		// Final check for which is better
 		assert(lowCostWinPctErr >= 0 && highCostWinPctErr <= 0);
-		newUnit.setCost(lowCostWinPctErr < -highCostWinPctErr ? lowCost : highCost);
+		int bestCost = lowCostWinPctErr < -highCostWinPctErr ? lowCost : highCost;
+		newUnit.setCost(!usePreferredValues ? bestCost : PreferredValues.getClosest(bestCost));
 	}
 
 	/**
@@ -1408,36 +1379,6 @@ public class BookOfWar {
 	}
 
 	//-----------------------------------------------------------------
-	//  Methods for thread management
-	//-----------------------------------------------------------------
-
-	/**
-	*  Check if any thread in an array is live
-	*/
-	boolean isAnyThreadLive(Thread[] threads) {
-		for (Thread t: threads) {
-			if (t.isAlive()) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	*  Wait for all threads in an array to finish
-	*/
-	void waitForThreads (Thread[] threads) {
-		while (isAnyThreadLive(threads)) {
-			try {
-				Thread.sleep(10);
-			}
-			catch (Exception e) {
-				System.err.println("Exception in waitForThreads: " + e);
-			}
-		}	
-	}
-
-	//-----------------------------------------------------------------
 	//  Methods for special abilities
 	//  (Hero attacks, wizard spells, dragon breath, etc.)
 	//-----------------------------------------------------------------
@@ -1713,104 +1654,42 @@ public class BookOfWar {
 // 			applyDamage(wizard, target, true, hits);		
 // 		}
 // 	}
+
+	//-----------------------------------------------------------------
+	//  Methods for thread management
+	//-----------------------------------------------------------------
+
+	/**
+	*  Check if any thread in an array is live
+	*/
+	boolean isAnyThreadLive(Thread[] threads) {
+		for (Thread t: threads) {
+			if (t.isAlive()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	*  Wait for all threads in an array to finish
+	*/
+	void waitForThreads (Thread[] threads) {
+		while (isAnyThreadLive(threads)) {
+			try {
+				Thread.sleep(10);
+			}
+			catch (Exception e) {
+				System.err.println("Exception in waitForThreads: " + e);
+			}
+		}	
+	}
 }
 
-// //	Class	for multi-threaded auto-balancer
-// class	AutoBalancer implements Runnable {
-// 
-// 	// Member records
-// 	BookOfWar bowSim;
-// 	List<Unit> baseUnits;
-// 	Unit testUnit;
-// 
-// 	// Constructor
-// 	public AutoBalancer(BookOfWar bowSim, List<Unit> baseUnits, Unit testUnit) {
-// 		this.bowSim = new BookOfWar(bowSim);
-// 		this.testUnit = new Unit(testUnit);
-// 		this.baseUnits = new ArrayList<Unit>(baseUnits.size());
-// 		for (Unit u: baseUnits) {
-// 			this.baseUnits.add(new Unit(u));
-// 		}
-// 	}
-// 
-// 	// Interface run function
-// 	@Override
-// 	public void run() {
-// 		bowSim.setAutoBalancedCost(testUnit, baseUnits);
-// 	}
-// 	
-// 	// Get the tested unit
-// 	public Unit getTestUnit () {
-// 		return testUnit;
-// 	}
-// }
+//-----------------------------------------------------------------
+//  Class to run multi-threaded game series.
+//-----------------------------------------------------------------
 
-// //	Class	for multi-threaded assessor
-// class	Assessor implements Runnable {
-// 
-// 	// Member records
-// 	BookOfWar bowSim;
-// 	Unit testUnit;
-// 	List<Unit> baseUnits;
-// 	double winRatios[];
-// 
-// 	// Constructor
-// 	public Assessor(BookOfWar bowSim, List<Unit> baseUnits, Unit testUnit) {
-// 		this.bowSim = new BookOfWar(bowSim);
-// 		this.testUnit = new Unit(testUnit);
-// 		this.baseUnits = new ArrayList<Unit>(baseUnits.size());
-// 		for (Unit u: baseUnits) {
-// 			this.baseUnits.add(new Unit(u));
-// 		}
-// 		winRatios = new double[baseUnits.size()];
-// 	}
-// 
-// 	// Interface run function
-// 	@Override
-// 	public void run() {
-// 		for (int i = 0; i < baseUnits.size(); i++) {
-// 			Unit baseUnit = baseUnits.get(i);
-// 			if (baseUnit.getName().equals(testUnit.getName())) {
-// 				winRatios[i] = 0.5;
-// 			}
-// 			else {		
-// 				winRatios[i] = bowSim.playSeries(testUnit, baseUnit);
-// 			}
-// 		}
-// 	}
-// 
-// 	// Get the tested unit
-// 	public Unit getTestUnit () {
-// 		return testUnit;
-// 	}
-// 	
-// 	// Get a given win ratio
-// 	public double getWinRatio (int idx) {
-// 		return winRatios[idx];
-// 	}
-// 	
-// 	// Get sum error of the win ratios
-// 	public double getSumError () {
-// 		double sumErr = 0.0;
-// 		for (double d: winRatios) {
-// 			sumErr += d - 0.5;
-// 		}
-// 		return sumErr;
-// 	}
-// 	
-// 	// Get number of winning matchups
-// 	public int countWinMatchups () {
-// 		int winMatchups = 0;
-// 		for (double d: winRatios) {
-// 			if (d > 0.5) {
-// 				winMatchups++;
-// 			}
-// 		}
-// 		return winMatchups;
-// 	}
-// }
-
-//	Class	for multi-threaded game series
 class	SeriesRunner implements Runnable {
 
 	// Member records
