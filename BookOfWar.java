@@ -40,9 +40,6 @@ public class BookOfWar {
 	/** Balances pikes vs. swords & cavalry (basis 0.20). */
 	final double pikeFlankingChance = 0.30;
 
-	/** Use round number prices in full autobalancer? */
-	final boolean autoBalancePreferredCosts = true;
-
 	/** Limit per-hit damage by target's health? */
 	final boolean capDamageByHealth = false;
 
@@ -76,6 +73,9 @@ public class BookOfWar {
 
 	/** Full auto-balancer max trials without improvement. */
 	int maxTrialsNoGain;
+
+	/** Use round number prices in full autobalancer? */
+	boolean usePreferredValues = true;
 	
 	/** Print results table in CSV format? */
 	boolean printFormatCSV;
@@ -129,6 +129,7 @@ public class BookOfWar {
 		zoomGameUnit1 = src.zoomGameUnit1;
 		zoomGameUnit2 = src.zoomGameUnit2;
 		maxTrialsNoGain = src.maxTrialsNoGain;
+		usePreferredValues = src.usePreferredValues;
 		printFormatCSV = src.printFormatCSV;
 		exitAfterArgs = src.exitAfterArgs;
 	}
@@ -163,6 +164,7 @@ public class BookOfWar {
 		System.out.println("\t-m sim mode (1 = table-assess, 2 = auto-balance,\n"
 									+ "\t\t 3 = full auto-balance, 4 = zoom-in game)");
 		System.out.println("\t-n max trials without gain in full auto-balancer");
+		System.out.println("\t-p use preferred values in full auto-balancer");
 		System.out.println("\t-t trials per matchup (default=" + DEFAULT_TRIALS_PER_MATCHUP + ")");
 		System.out.println("\t-v print assessment table in CSV format");
 		System.out.println("\t-y zoom-in game 1st unit index (1-based)");
@@ -181,6 +183,7 @@ public class BookOfWar {
 					case 'b': baseUnitNum = getParamInt(s); break;
 					case 'm': parseSimMode(s); break;
 					case 'n': maxTrialsNoGain = getParamInt(s); break;
+					case 'p': usePreferredValues = true; break;					
 					case 't': trialsPerMatchup = getParamInt(s); break;
 					case 'v': printFormatCSV = true; break;
 					case 'y': zoomGameUnit1 = getParamInt(s); break;
@@ -372,7 +375,7 @@ public class BookOfWar {
 	*  Get new cost for full auto-balancer.
 	*/
 	int getNewCost (int oldCost, boolean up) {
-		if (autoBalancePreferredCosts) {
+		if (usePreferredValues) {
 			return up ? getCostInc(oldCost) : getCostDec(oldCost);		
 		}	
 		else {
