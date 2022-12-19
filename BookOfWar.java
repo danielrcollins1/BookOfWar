@@ -1,6 +1,7 @@
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Collections;
 
 /******************************************************************************
 *  Book of War simulation for cost-balancing purposes.
@@ -71,9 +72,6 @@ public class BookOfWar {
 	/** Units for zoom-in game (1-based index into Units list). */
 	int zoomGameUnit1, zoomGameUnit2;
 
-	/** Full auto-balancer max trials without improvement. */
-	int maxTrialsNoGain;
-
 	/** Use round number prices in autobalancer? */
 	boolean usePreferredValues;
 	
@@ -128,7 +126,6 @@ public class BookOfWar {
 		trialsPerMatchup = src.trialsPerMatchup;
 		zoomGameUnit1 = src.zoomGameUnit1;
 		zoomGameUnit2 = src.zoomGameUnit2;
-		maxTrialsNoGain = src.maxTrialsNoGain;
 		usePreferredValues = src.usePreferredValues;
 		printFormatCSV = src.printFormatCSV;
 		exitAfterArgs = src.exitAfterArgs;
@@ -163,7 +160,6 @@ public class BookOfWar {
 		System.out.println("\t-b use first n units as fixed base for comparisons");
 		System.out.println("\t-m sim mode (1 = table-assess, 2 = auto-balance,\n"
 									+ "\t\t 3 = full auto-balance, 4 = zoom-in game)");
-		System.out.println("\t-n max trials without gain in full auto-balancer");
 		System.out.println("\t-p use preferred values in full auto-balancer");
 		System.out.println("\t-t trials per matchup (default=" + DEFAULT_TRIALS_PER_MATCHUP + ")");
 		System.out.println("\t-v print assessment table in CSV format");
@@ -182,7 +178,6 @@ public class BookOfWar {
 					case 'a': assessUnitNum = getParamInt(s); break;
 					case 'b': baseUnitNum = getParamInt(s); break;
 					case 'm': parseSimMode(s); break;
-					case 'n': maxTrialsNoGain = getParamInt(s); break;
 					case 'p': usePreferredValues = true; break;					
 					case 't': trialsPerMatchup = getParamInt(s); break;
 					case 'v': printFormatCSV = true; break;
@@ -300,21 +295,9 @@ public class BookOfWar {
 	*
 	*  Caution: This feature is not a complete silver bullet.
 	*    - Random nature may make different suggestions on different passes.
-	*    - For a very small unit list, tends to cyclically make everything more costly.
-	*    - May be very slow (makes full assessment table for each proposed change).
+	*    - For a very small unit list, may cyclically push costs in one direction.
 	*
-	*  Use tastefully; recommend setting some initial base group manually,
-	*    then locking that down and not changing those, even if suggested.
-	*
-	*  Why not comprehensively search every unit type, and keep iterating
-	*    as long as we see improvements (e.g., bubble sort)? We tried that.
-	*    - Loses the ability to control time spent closely (longer feedback loop)
-	*    - May be weird artifacts due to particular ordering of units in list.
-	*    - May be likely to fall into ever-increasing-cost loop.
-	*
-	*  Seems to work well with the -n (maxTrialNoGain) switch 
-	*    set to about twice the number of units in the base unit list. 
-	*    (Makes it likely that every unit will be tested.)
+	*  Use tastefully; recommend estimating prices with mode-2 first.
 	*/
 	void fullAutoBalancer() {
 
@@ -322,45 +305,52 @@ public class BookOfWar {
 		printf("Initializing full auto-balancer...\n");
 		UnitList unitList = UnitList.getInstance();
 		List<Unit> assessUnits = unitList.getSublist(0, assessUnitNum);
-		double oldAbsTotalError = playAllDockets(assessUnits);
+		double oldSumNormError = playAllDockets(assessUnits);
 		
-		// Iterate attempts at improving a random unit
+		// Iterate attempts at improving some unit
 		printf("Searching for improved costs...\n");
-		int trialsNoGain = 0;
-		while (trialsNoGain < maxTrialsNoGain) {
+		boolean adjustedAnyUnit;
+		do {
+			adjustedAnyUnit = false;
 
-			// Pick a unit to adjust
-			int range = assessUnits.size() - baseUnitNum;
-			int modIndex = random.nextInt(range) + baseUnitNum;
-			Unit modUnit = assessUnits.get(modIndex);
+			// Make shuffled list of units to test
+			List<Unit> unitsToTest = new ArrayList<Unit>
+				(unitList.getSublist(baseUnitNum, assessUnitNum));
+			Collections.shuffle(unitsToTest);
+				
+			// Try to improve price of any unit
+			for (Unit modUnit: unitsToTest) {
+		
+				// Keep trying to adjust while we see improvement
+				boolean adjustGain;
+				do {
+					adjustGain = false;
 
-			// Keep trying to adjust while we see improvement
-			boolean adjustGain;
-			do {
-				adjustGain = false;
+					// One step cost change in needed direction
+					int oldCost = modUnit.getCost();
+					double oldUnitSumErr = playDocket(modUnit, assessUnits);
+					int newCost = getNewCost(oldCost, oldUnitSumErr > 0);
+					modUnit.setCost(newCost);
+					double newSumNormError = playAllDockets(assessUnits);
 
-				// One step cost change in needed direction
-				int oldCost = modUnit.getCost();
-				double oldUnitSumErr = playDocket(modUnit, assessUnits);
-				int newCost = getNewCost(oldCost, oldUnitSumErr > 0);
-				modUnit.setCost(newCost);
-				double newAbsTotalError = playAllDockets(assessUnits);
-
-				// If this reduced error from parity, keep new cost
-				if (newAbsTotalError < oldAbsTotalError) {
-					System.out.println(modUnit.getName() 
-						+ (newCost > oldCost ? " raised to " : " lowered to ")
-						+ modUnit.getCost());
-					oldAbsTotalError = newAbsTotalError;
-					adjustGain = true;
-					trialsNoGain = 0;			
-				}
-				else {
-					modUnit.setCost(oldCost);
-					trialsNoGain++;
-				}
-			} while (adjustGain);
-		}		
+					// If this reduced error from parity, keep new cost
+					if (newSumNormError < oldSumNormError) {
+						System.out.println(modUnit.getName() 
+							+ (newCost > oldCost ? " raised to " : " lowered to ")
+							+ modUnit.getCost());
+						oldSumNormError = newSumNormError;
+						adjustGain = true;
+						adjustedAnyUnit = true;
+					}
+					else {
+						modUnit.setCost(oldCost);
+					}
+				} while (adjustGain);
+				
+				// If we adjusted a unit, restart search with new shuffle
+				if (adjustedAnyUnit) break;
+			}	
+		} while (adjustedAnyUnit);
 		
 		// Print table of new values
 		printf("\nFinal suggested costs:\n");
