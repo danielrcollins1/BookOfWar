@@ -422,6 +422,14 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Normalize an error value to positive.
+	*  (We may try either squared-error or absolute-error here.)
+	*/
+	double normalError(double error) {
+		return error * error;
+	}
+
+	/**
 	*  Make general assessment table.
 	*
 	*  Absolute total error is used here, instead of sum squared error,
@@ -429,47 +437,66 @@ public class BookOfWar {
 	*/
 	void makeAssessmentTable (List<Unit> unitList1, List<Unit> unitList2) {
   
+		// Get formatting info
+		String sepChar = "" + getSepChar();
+		int nameSize = getMaxNameLength(unitList1);
+		String nameFormat = "%1$-" + nameSize + "s";
+
   		// Header
-		char sepChar = getSepChar();
 		printf("Assessed win percents "
 			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
+		printf(printFormatCSV ? "" : String.format(nameFormat, ""));
 		for (Unit unit: unitList2) {
 			printf(sepChar + unit.getAbbreviation());
 		}
 		printf(sepChar + "Wins" + sepChar + "SumErr\n");
 
   		// Body
-		Unit maxAbsErrUnit = null;
-		double maxAbsError = 0.0;
-		double absTotalError = 0.0;
+		Unit maxNormErrUnit = null;
+		double maxNormError = 0.0;
+		double sumNormError = 0.0;
 		for (Unit unit1: unitList1) {
 
 			// Run simulation docket
 			double[] winRates = playDocketThreads(unit1, unitList2);
 			double sumErr = sumErrArray(winRates);
 
-			// Print row
-			printf(unit1.getAbbreviation() + sepChar);
+			// Print row name
+			printf(printFormatCSV ? unit1.getName() : 
+				String.format(nameFormat, unit1.getName()));
 			for (int i = 0; i < unitList2.size(); i++) {
-				printf(winRates[i] <= 0.5 ? "-" : "" + toPercent(winRates[i]));
-				printf("" + sepChar);
+				printf(sepChar + (winRates[i] <= 0.5 ? "-" : "" + toPercent(winRates[i])));
 			}
-			printf("" + countHighRates(winRates) + sepChar);
-			printf(toPercent(sumErr) + "\n");
+			printf(sepChar + countHighRates(winRates));
+			printf(sepChar + toPercent(sumErr) + "\n");
 
 			// Update global stats
-			absTotalError += Math.abs(sumErr);
-			if (Math.abs(sumErr) > Math.abs(maxAbsError)) {
-				maxAbsError = sumErr;
-				maxAbsErrUnit = unit1;
+			sumNormError += normalError(sumErr);
+			if (normalError(sumErr) > normalError(maxNormError)) {
+				maxNormError = sumErr;
+				maxNormErrUnit = unit1;
 			}
 		}
 		printf("\n");
 
 		// Tail
-		printf("Absolute Total Error: " + toPercent(absTotalError) + "\n");
-		printf("Maximum error unit: " + maxAbsErrUnit.getName() 
-			+ " (" + toPercent(maxAbsError) + ")\n");
+		printf("Sum Normal Error: " + toPercent(sumNormError * 100) + "\n");
+		printf("Maximum error unit: " + maxNormErrUnit.getName() 
+			+ " (" + toPercent(maxNormError) + ")\n");
+	}
+
+	/**
+	*  Get maximum name length in a list of units.
+	*/
+	int getMaxNameLength (List<Unit> unitList) {
+		int maxLength = 0;
+		for (Unit u: unitList) {
+			int nameLength = u.getName().length();
+			if (nameLength > maxLength) {
+				maxLength = nameLength;
+			}
+		}	
+		return maxLength;
 	}
 
 	/**
@@ -560,15 +587,15 @@ public class BookOfWar {
 
 	/**
 	*  Play repeated series of every unit in a list against every other unit.
-	*  Returns absolute grand total win percent error.
+	*  Returns grand total of normalized win percent error.
 	*/
 	double playAllDockets (List<Unit> unitList) {
-		double absTotalError = 0.0;
+		double sumNormError = 0.0;
 		for (Unit unit: unitList) {
 			double error = playDocket(unit, unitList);
-			absTotalError += Math.abs(error);
+			sumNormError += normalError(error);
 		}
-		return absTotalError;
+		return sumNormError;
 	}
 
 	/**
@@ -768,7 +795,7 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Play out one turn of action for one unit.
+	*  Play out one turn of action for one attacking unit.
 	*/
 	void oneTurn (Unit attacker, Unit defender) {
 
@@ -835,7 +862,7 @@ public class BookOfWar {
 		assert(attacker.hasSpecial(SpecialType.SplitMove));
 		int moveDist = getMove(attacker) / 4;
 		distance += moveDist;
-		reportDetail(attacker + " **MOVE BACK** to distance " + distance);
+		reportDetail(attacker + " move back to distance " + distance);
 		return moveDist;			
 	}	
 
@@ -1034,8 +1061,8 @@ public class BookOfWar {
 		// Check for defender immune
 		if (isAttackImmune(attacker, defender)) return;
 
-		// Compute figures & dice in attack
-		// Normally assumes wrap, but no rear bonus
+		// Compute number of dice to roll
+		// (normally assumes wrap, but no rear bonus)
 		double atkWidth = attacker.getTotalWidth();
 		double defWidth = priorContact ? defender.getPerimeter() : defender.getTotalWidth();
 		int figsAtk = (atkWidth <= defWidth ? attacker.getFiles() :
@@ -1044,11 +1071,14 @@ public class BookOfWar {
 			figsAtk = defender.getFigures();
 		int atkDice = meleeAttackDice(attacker, defender, figsAtk);
 
-		// Roll attack dice
+		// Compute attack bonus
+		int atkBonus = basicAtkBonus(attacker) 
+			+ miscAtkBonus(attacker, defender, false);
+
+		// Roll the attack dice
 		int numHits = 0;
-		int atkBonus = miscAtkBonus(attacker, defender, false);
 		for (int i = 0; i < atkDice; i++) {
-			if (rollToHit(defender.getArmor(), attacker.getHealth(), atkBonus))
+			if (rollToHit(atkBonus, defender.getArmor()))
 				numHits++;
 		}
 
@@ -1073,23 +1103,27 @@ public class BookOfWar {
 		// Check for defender immune
 		if (isAttackImmune(attacker, defender)) return;
 
-		// Compute figures & dice in attack
-		int figsAtk = attacker.getFigures();
-		int atkDice = figsAtk * attacker.getRate();
-		if (!fullRate) atkDice /= 2;
-
-		// Determine range modifier (if any)
+		// Measure range & get modifier (if any)
 		int rangeMod = 0;
 		if (distance > attacker.getRange())
 			return; // out-of-range
 		if (distance > attacker.getRange() / 2)
 			rangeMod = -1;
 
+		// Compute number of dice to roll
+		int figsAtk = attacker.getFigures();
+		int atkDice = figsAtk * attacker.getRate();
+		if (!fullRate) atkDice /= 2;
+
+		// Compute attack bonus
+		int atkBonus = basicAtkBonus(attacker) 
+			+ miscAtkBonus(attacker, defender, true) 
+			+ rangeMod;
+
 		// Roll attack dice
 		int numHits = 0;
-		int atkBonus = miscAtkBonus(attacker, defender, true) + rangeMod;
 		for (int i = 0; i < atkDice; i++) {
-			if (rollToHit(defender.getArmor(), attacker.getHealth(), atkBonus)) {
+			if (rollToHit(atkBonus, defender.getArmor())) {
 				numHits++;
 			}
 		}
@@ -1132,6 +1166,13 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Get basic attack bonus (one-third of health).
+	*/
+	int basicAtkBonus (Unit attacker) {
+		return attacker.getHealth() / 3;
+	}
+
+	/**
 	*  Find miscellaneous to-hit bonuses.
 	*/
 	int miscAtkBonus (Unit attacker, Unit defender, boolean ranged) {
@@ -1162,7 +1203,7 @@ public class BookOfWar {
 
 		// Mounted archers assumed to hit as normal men (e.g.: elephants)
 		if (ranged && attacker.hasSpecial(SpecialType.Mounts)) {
-			bonus -= attacker.getHealth() / 3; // cut bonus from health
+			bonus -= attacker.getHealth() / 3; // cut any bonus from health
 		}
 
 		// Flyers, teleporters can get rear attacks
@@ -1213,10 +1254,8 @@ public class BookOfWar {
 	/**
 	*  Roll to hit for one attack.
 	*/
-	boolean rollToHit (int AH, int HD, int mods) {
-		int roll = d6();
-		int target = AH - HD/3 - mods;
-		return roll >= target;
+	boolean rollToHit (int bonus, int armor) {
+		return d6() + bonus >= armor;
 	}
 
 	/**
@@ -1241,7 +1280,7 @@ public class BookOfWar {
 			+ roll + " + " + bonus + " = " + total);
 		if (total < MORALE_TARGET) {
 			unit.setRouted(true);
-			reportDetail(unit + " are *ROUTED*");
+			reportDetail(unit + " are * ROUTED *");
 		}
 	}
 
