@@ -349,7 +349,7 @@ public class BookOfWar {
   
 		// Get formatting info
 		String sepChar = "" + getSepChar();
-		int nameColSize = getMaxNameLength(unitList1) + 1;
+		int nameColSize = getMaxNameLength(unitList1);
 
   		// Header
 		printf("Assessed win percents "
@@ -361,9 +361,9 @@ public class BookOfWar {
 		printf(sepChar + "Wins" + sepChar + "SumErr\n");
 
   		// Body
-		Unit maxNormErrUnit = null;
-		double maxNormError = 0.0;
 		double sumNormError = 0.0;
+		double maxNormError = 0.0;
+		Unit maxNormErrUnit = unitList1.get(0);
 		for (Unit unit1: unitList1) {
 
 			// Run simulation docket
@@ -400,7 +400,7 @@ public class BookOfWar {
 		assert(baseUnits != newUnits);
 
 		// Get name field size
-		int nameColSize = getMaxNameLength(newUnits) + 1;
+		int nameColSize = getMaxNameLength(newUnits);
 
 		// Print header
 		printf("Auto-balanced best cost "
@@ -523,9 +523,9 @@ public class BookOfWar {
 		
 		// Print table of new values
 		printf("\nFinal suggested costs:\n\n");
-		List<Unit> testedUnits = new ArrayList<Unit>
-			(unitList.getSublist(baseUnitNum, assessUnitNum));
-		int nameColSize = getMaxNameLength(testedUnits) + 1;
+		List<Unit> testedUnits = 
+			unitList.getSublist(baseUnitNum, assessUnitNum);
+		int nameColSize = getMaxNameLength(testedUnits);
 		printWideField("Unit", nameColSize);
 		printf(getSepChar() + "Cost\n");
 		for (Unit unit: testedUnits) {
