@@ -14,7 +14,7 @@ Light Horse,10,24,4,2,2,1,0,0,4,N,Mounts,9
 Elephant Spears,60,12,5,6,3,2,0,0,6,N,Mounts,13
 Elephant Archers,60,12,5,6,2,2,4,18,6,N,"Mounts, MeleeShot, NoRainShot",14
 Men Elite Foot,25,6,6,3,1,1,0,0,3,N,MoraleBonus (1),15
-Stone Giants,95,12,5,9,1,2,1,20,6,N,"GiantClass, BigStones",16
+Stone Giants,90,12,5,9,1,2,1,20,6,N,"GiantClass, BigStones",16
 Halfling Light Foot,5,12,4,1,1,1,0,0,3,L,WoodsCover,17
 Halfling Slingers,12,12,4,1,1,1,2,18,3,L,"WoodsCover, ShotBonus (1)",18
 Elf Light Foot,5,12,4,1,1,1,0,0,3,L,WoodsCover,19
@@ -40,5 +40,5 @@ Bugbears,15,9,5,3,1,1,0,0,4,C,WoodsCover,38
 Ogres,20,9,5,4,1,1,0,0,6,C,"GiantClass, DamageInc",39
 Trolls,60,12,5,6,2,1,0,0,6,C,"GiantClass, Regeneration",40
 Hill Giants,60,12,5,8,1,2,1,20,6,C,GiantClass,41
-Frost Giants,85,12,5,10,1,2,1,20,6,C,"GiantClass, ColdImmunity",42
-Fire Giants,90,12,5,11,1,2,1,20,6,C,"GiantClass, FireImmunity",43
+Frost Giants,80,12,5,10,1,2,1,20,6,C,"GiantClass, ColdImmunity",42
+Fire Giants,85,12,5,11,1,2,1,20,6,C,"GiantClass, FireImmunity",43
