@@ -291,105 +291,6 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Fully automatic unit cost-balancer.
-	*
-	*  Caution: This feature is not a complete silver bullet.
-	*    - Random nature may make different suggestions on different passes.
-	*    - For a very small unit list, may cyclically push costs in one direction.
-	*
-	*  Use tastefully; recommend estimating prices with mode-2 first.
-	*/
-	void fullAutoBalancer() {
-
-		// Initialize list to balance
-		printf("Initializing full auto-balancer...\n");
-		UnitList unitList = UnitList.getInstance();
-		List<Unit> assessUnits = unitList.getSublist(0, assessUnitNum);
-		double oldSumNormError = playAllDockets(assessUnits);
-		
-		// Iterate attempts at improving some unit
-		printf("Searching for improved costs...\n");
-		boolean adjustedAnyUnit;
-		do {
-			adjustedAnyUnit = false;
-
-			// Make shuffled list of units to test
-			List<Unit> unitsToTest = new ArrayList<Unit>
-				(unitList.getSublist(baseUnitNum, assessUnitNum));
-			Collections.shuffle(unitsToTest);
-				
-			// Try to improve price of any unit
-			for (Unit modUnit: unitsToTest) {
-		
-				// Keep trying to adjust while we see improvement
-				boolean adjustGain;
-				do {
-					adjustGain = false;
-
-					// One step cost change in needed direction
-					int oldCost = modUnit.getCost();
-					double oldUnitSumErr = playDocket(modUnit, assessUnits);
-					int newCost = getNewCost(oldCost, oldUnitSumErr > 0);
-					modUnit.setCost(newCost);
-					double newSumNormError = playAllDockets(assessUnits);
-
-					// If this reduced error from parity, keep new cost
-					if (newSumNormError < oldSumNormError) {
-						System.out.println(modUnit.getName() 
-							+ (newCost > oldCost ? " raised to " : " lowered to ")
-							+ modUnit.getCost());
-						oldSumNormError = newSumNormError;
-						adjustGain = true;
-						adjustedAnyUnit = true;
-					}
-					else {
-						modUnit.setCost(oldCost);
-					}
-				} while (adjustGain);
-				
-				// If we adjusted a unit, restart search with new shuffle
-				if (adjustedAnyUnit) break;
-			}	
-		} while (adjustedAnyUnit);
-		
-		// Print table of new values
-		printf("\nFinal suggested costs:\n");
-		printf("\nUnit\tCost\n");
-		for (int i = baseUnitNum; i < assessUnits.size(); i++) {
-			Unit unit = assessUnits.get(i);
-			printf(unit.getAbbreviation() + getSepChar() + unit.getCost() + "\n");
-		}
-	}
-
-	/**
-	*  Get new cost for full auto-balancer.
-	*/
-	int getNewCost (int oldCost, boolean up) {
-		if (!usePreferredValues)
-			return up ? oldCost + 1 : oldCost - 1;		
-		else 
-			return up ? PreferredValues.inc(oldCost) : PreferredValues.dec(oldCost);
-	}
-
-	/**
-	*  Battle two specified unit types with detailed in-game reports.
-	*/
-	void zoomInGame () {
-		UnitList unitList = UnitList.getInstance();
-		if (zoomGameUnit1 <= 0 || zoomGameUnit2 <= 0) {
-			System.err.println("Error: Zoom-in game requires two units set (use -y and -z switches).");
-		}
-		else if (zoomGameUnit1 > unitList.size() || zoomGameUnit2 > unitList.size()) {
-			System.err.println("Error: Zoom-in game has unit out of range for database.");
-		}		
-		else {		
-			Unit unit1 = unitList.get(zoomGameUnit1 - 1);
-			Unit unit2 = unitList.get(zoomGameUnit2 - 1);
-			playGame(unit1, unit2);
-		}
-	}
-
-	/**
 	*  Report detail for a zoom-in game.
 	*/
 	void reportDetail (String s) {
@@ -412,11 +313,30 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Normalize an error value to positive.
-	*  (We may try either squared-error or absolute-error here.)
+	*  Print formatted entry in a wide table column (left-justified).
 	*/
-	double normalError(double error) {
-		return error * error;
+	void printWideField (String text, int fieldWidth) {
+		if (printFormatCSV) {
+			printf(text);
+		}			
+		else {
+			String fieldCode = "%1$-" + fieldWidth + "s";
+			printf(String.format(fieldCode, text));
+		}
+	}
+
+	/**
+	*  Get maximum name length in a list of units.
+	*/
+	int getMaxNameLength (List<Unit> unitList) {
+		int maxLength = 0;
+		for (Unit u: unitList) {
+			int nameLength = u.getName().length();
+			if (nameLength > maxLength) {
+				maxLength = nameLength;
+			}
+		}	
+		return maxLength;
 	}
 
 	/**
@@ -429,13 +349,12 @@ public class BookOfWar {
   
 		// Get formatting info
 		String sepChar = "" + getSepChar();
-		int nameSize = getMaxNameLength(unitList1);
-		String nameFormat = "%1$-" + nameSize + "s";
+		int nameColSize = getMaxNameLength(unitList1) + 1;
 
   		// Header
 		printf("Assessed win percents "
 			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
-		printf(printFormatCSV ? "" : String.format(nameFormat, ""));
+		printWideField("", nameColSize);
 		for (Unit unit: unitList2) {
 			printf(sepChar + unit.getAbbreviation());
 		}
@@ -452,8 +371,7 @@ public class BookOfWar {
 			double sumErr = sumErrArray(winRates);
 
 			// Print row name
-			printf(printFormatCSV ? unit1.getName() : 
-				String.format(nameFormat, unit1.getName()));
+			printWideField(unit1.getName(), nameColSize);
 			for (int i = 0; i < unitList2.size(); i++) {
 				printf(sepChar + (winRates[i] <= 0.5 ? "-" : "" + toPercent(winRates[i])));
 			}
@@ -476,34 +394,25 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Get maximum name length in a list of units.
-	*/
-	int getMaxNameLength (List<Unit> unitList) {
-		int maxLength = 0;
-		for (Unit u: unitList) {
-			int nameLength = u.getName().length();
-			if (nameLength > maxLength) {
-				maxLength = nameLength;
-			}
-		}	
-		return maxLength;
-	}
-
-	/**
 	*  Make auto-balanced table of estimated best costs.
 	*/
 	void makeAutoBalancedTable (List<Unit> baseUnits, List<Unit> newUnits) {
 		assert(baseUnits != newUnits);
 
+		// Get name field size
+		int nameColSize = getMaxNameLength(newUnits) + 1;
+
 		// Print header
 		printf("Auto-balanced best cost "
 			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
-		printf("Unit\tCost\n");
+		printWideField("Unit", nameColSize);
+		printf(getSepChar() + "Cost\n");
 
 		// Make the table
 		for (Unit newUnit: newUnits) {
 			setAutoBalancedCost(newUnit, baseUnits);		
-			printf(newUnit.getAbbreviation() + getSepChar() + newUnit.getCost() + "\n");
+			printWideField(newUnit.getName(), nameColSize);
+			printf(getSepChar() + "" + newUnit.getCost() + "\n");
 		}
 	} 
 
@@ -548,6 +457,109 @@ public class BookOfWar {
 		assert(lowCostWinPctErr >= 0 && highCostWinPctErr <= 0);
 		int bestCost = lowCostWinPctErr < -highCostWinPctErr ? lowCost : highCost;
 		newUnit.setCost(!usePreferredValues ? bestCost : PreferredValues.getClosest(bestCost));
+	}
+
+	/**
+	*  Fully automatic unit cost-balancer.
+	*
+	*  Caution: This feature is not a complete silver bullet.
+	*    - Random nature may make different suggestions on different passes.
+	*    - For a very small unit list, may cyclically push costs in one direction.
+	*
+	*  Use tastefully; recommend estimating prices with mode-2 first.
+	*/
+	void fullAutoBalancer() {
+
+		// Initialize list to balance
+		printf("Initializing full auto-balancer...\n");
+		UnitList unitList = UnitList.getInstance();
+		List<Unit> assessUnits = unitList.getSublist(0, assessUnitNum);
+		double oldSumNormError = playAllDockets(assessUnits);
+		
+		// Iterate attempts at improving some unit
+		printf("Searching for improved costs...\n");
+		boolean adjustedAnyUnit;
+		do {
+			adjustedAnyUnit = false;
+
+			// Make shuffled list of units to test
+			List<Unit> unitsToTest = new ArrayList<Unit>
+				(unitList.getSublist(baseUnitNum, assessUnitNum));
+			Collections.shuffle(unitsToTest);
+				
+			// Try to improve price of any unit in list
+			for (Unit modUnit: unitsToTest) {
+		
+				// Keep trying to adjust this unit while we see improvement
+				boolean adjustGain;
+				do {
+					adjustGain = false;
+
+					// One step cost change in needed direction
+					int oldCost = modUnit.getCost();
+					double oldUnitSumErr = playDocket(modUnit, assessUnits);
+					int newCost = getNewCost(oldCost, oldUnitSumErr > 0);
+					modUnit.setCost(newCost);
+					double newSumNormError = playAllDockets(assessUnits);
+
+					// If this reduced error from parity, keep new cost
+					if (newSumNormError < oldSumNormError) {
+						printf(modUnit.getName() 
+							+ (newCost > oldCost ? " raised to " : " lowered to ")
+							+ modUnit.getCost() + "\n");
+						oldSumNormError = newSumNormError;
+						adjustGain = true;
+						adjustedAnyUnit = true;
+					}
+					else {
+						modUnit.setCost(oldCost);
+					}
+				} while (adjustGain);
+				
+				// If we adjusted a unit, restart search with new shuffle
+				if (adjustedAnyUnit) break;
+			}	
+		} while (adjustedAnyUnit);
+		
+		// Print table of new values
+		printf("\nFinal suggested costs:\n\n");
+		List<Unit> testedUnits = new ArrayList<Unit>
+			(unitList.getSublist(baseUnitNum, assessUnitNum));
+		int nameColSize = getMaxNameLength(testedUnits) + 1;
+		printWideField("Unit", nameColSize);
+		printf(getSepChar() + "Cost\n");
+		for (Unit unit: testedUnits) {
+			printWideField(unit.getName(), nameColSize);
+			printf(getSepChar() + "" + unit.getCost() + "\n");
+		}
+	}
+
+	/**
+	*  Get new cost for full auto-balancer.
+	*/
+	int getNewCost (int oldCost, boolean up) {
+		if (!usePreferredValues)
+			return up ? oldCost + 1 : oldCost - 1;		
+		else 
+			return up ? PreferredValues.inc(oldCost) : PreferredValues.dec(oldCost);
+	}
+
+	/**
+	*  Battle two specified unit types with detailed in-game reports.
+	*/
+	void zoomInGame () {
+		UnitList unitList = UnitList.getInstance();
+		if (zoomGameUnit1 <= 0 || zoomGameUnit2 <= 0) {
+			System.err.println("Error: Zoom-in game requires two units set (use -y and -z switches).");
+		}
+		else if (zoomGameUnit1 > unitList.size() || zoomGameUnit2 > unitList.size()) {
+			System.err.println("Error: Zoom-in game has unit out of range for database.");
+		}		
+		else {		
+			Unit unit1 = unitList.get(zoomGameUnit1 - 1);
+			Unit unit2 = unitList.get(zoomGameUnit2 - 1);
+			playGame(unit1, unit2);
+		}
 	}
 
 	/**
@@ -1405,6 +1417,14 @@ public class BookOfWar {
 	*/
 	int toPercent (double d) {
 		return (int) Math.round(d * 100); 	
+	}
+
+	/**
+	*  Normalize an error value to positive.
+	*  (We may try either squared-error or absolute-error here.)
+	*/
+	double normalError(double error) {
+		return Math.pow(error, 2);
 	}
 
 	//-----------------------------------------------------------------
