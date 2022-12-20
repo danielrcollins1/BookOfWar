@@ -341,11 +341,9 @@ public class BookOfWar {
 
 	/**
 	*  Make general assessment table.
-	*
-	*  Absolute total error is used here, instead of sum squared error,
-	*  because the latter has much more variation under random trials. 
 	*/
 	void makeAssessmentTable (List<Unit> unitList1, List<Unit> unitList2) {
+		assert(!unitList1.isEmpty() && !unitList2.isEmpty());
   
 		// Get formatting info
 		String sepChar = "" + getSepChar();
@@ -489,6 +487,7 @@ public class BookOfWar {
 				
 			// Try to improve price of any unit in list
 			for (Unit modUnit: unitsToTest) {
+				int startCost = modUnit.getCost();
 		
 				// Keep trying to adjust this unit while we see improvement
 				boolean adjustGain;
@@ -509,15 +508,17 @@ public class BookOfWar {
 							+ modUnit.getCost() + "\n");
 						oldSumNormError = newSumNormError;
 						adjustGain = true;
-						adjustedAnyUnit = true;
 					}
 					else {
 						modUnit.setCost(oldCost);
 					}
 				} while (adjustGain);
 				
-				// If we adjusted a unit, restart search with new shuffle
-				if (adjustedAnyUnit) break;
+				// If we really adjusted this unit, go back to shuffle & restart
+				if (modUnit.getCost() != startCost) {
+					adjustedAnyUnit = true;
+					break;				
+				}
 			}	
 		} while (adjustedAnyUnit);
 		
