@@ -3,6 +3,10 @@
 ******************************************************************************/
 
 public class PreferredValues {
+
+	/**
+	*  Base array for preferred values (note mostly divisors of 60).
+	*/
 	static final int PREFER_VALS[] = {1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20};
 	static final int HIGHER_INC = 5;
 
