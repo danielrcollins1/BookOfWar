@@ -1,6 +1,9 @@
 /******************************************************************************
 *  Special ability types.
 *  - Names should be nouns or noun phrases.
+*
+*  @author   Daniel R. Collins
+*  @since    2022-12-10
 ******************************************************************************/
 
 public enum SpecialType {
@@ -15,7 +18,7 @@ public enum SpecialType {
 	Invisibility, Detection, Teleport, Regeneration, 
 	FireImmunity, ColdImmunity, VoltImmunity, FireVulnerability,
 	Flight, Swimming, BreathWeapon, Whirlwind, Spells,
-	Solo, SweepAttacks, SilverToHit, MagicToHit, MagicResistance;
+	SweepAttacks, SilverToHit, MagicToHit, MagicResistance, WeatherControl;
 	
 	//--------------------------------------------------------------------------
 	//  Methods

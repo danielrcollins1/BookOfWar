@@ -3,6 +3,9 @@ import java.util.regex.Matcher;
 
 /******************************************************************************
 *  Parameterized special ability for a unit.
+*
+*  @author   Daniel R. Collins
+*  @since    2022-12-10
 ******************************************************************************/
 
 public class SpecialAbility {

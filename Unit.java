@@ -3,7 +3,7 @@ import java.util.*;
 /******************************************************************************
 *  One unit of figures.
 *
-*  @author   Daniel R. Collins (dcollins@superdan.net)
+*  @author   Daniel R. Collins
 *  @since    2009-11-27
 ******************************************************************************/
 
@@ -32,7 +32,7 @@ public class Unit {
 	// Unit in-play records
 	int figures, frontFiles, damageTaken, figsLostInTurn, specialCharges;
 	boolean routed, visible;
-	Hero hero;
+	Solo solo;
 
 	//--------------------------------------------------------------------------
 	//  Constructors
@@ -101,10 +101,10 @@ public class Unit {
 	public int getFigsLostInTurn() { return figsLostInTurn; };
 	public int getCharges() { return specialCharges; }
 	public boolean hasMissiles() { return range > 0; };
-	public boolean hasHero() { return hero != null && !hero.isBeaten(); };
+	public boolean hasSolo() { return solo != null && !solo.isBeaten(); };
 	public boolean isBeaten() { return figures == 0 || routed; };
 	public boolean isVisible() { return visible; };
-	public Hero getHero() { return hero; };
+	public Solo getSolo() { return solo; };
 
 	/**
 	*  Parse alignment code.
@@ -302,14 +302,16 @@ public class Unit {
 	*  Is this unit a wizard?
 	*/
 	public boolean isWizard () {
-		return (this instanceof Hero && ((Hero)this).isWizard());
+		//return (this instanceof Hero && ((Hero)this).isWizard());
+		return false;
 	}
 
 	/**
 	*  Is this unit wizard(s), or have an attached wizard?
 	*/
 	public boolean hasAnyWizard () {
-		return (isWizard() || hasHero() && getHero().isWizard());
+		//return (isWizard() || hasHero() && getHero().isWizard());
+		return false;
 	}
 
 	/**

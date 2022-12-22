@@ -2,11 +2,12 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Collections;
+import java.io.IOException; 
 
 /******************************************************************************
 *  Book of War simulation for cost-balancing purposes.
 *
-*  @author   Daniel R. Collins (dcollins@superdan.net)
+*  @author   Daniel R. Collins
 *  @since    2009-11-27
 ******************************************************************************/
 
@@ -14,6 +15,16 @@ public class BookOfWar {
 	enum Weather {Sunny, Cloudy, Rainy};
 	enum Terrain {Open, Gulley, Rough, Hill, Woods, Marsh, Stream, Pond};
 	enum SimMode {TableAssess, AutoBalance, FullBalance, ZoomGame};
+
+	//-----------------------------------------------------------------
+	//  Filename constants
+	//-----------------------------------------------------------------
+
+	/** Basic unit list filename. */
+	static final String BASIC_UNIT_FILE = "UnitTypes.csv";
+	
+	/** Solo unit list filename. */
+	static final String SOLO_UNIT_FILE = "SoloTypes.csv";
 	
 	//-----------------------------------------------------------------
 	//  Parameter defaults
@@ -60,6 +71,12 @@ public class BookOfWar {
 	/** Mode of action for simulator. */
 	SimMode simMode;
 
+	/** List of basic unit types. */
+	UnitList unitList;
+
+	/** List of solo unit types. */
+	UnitList soloList;
+
 	/** Assess to this unit number (unit types 1 to n). */
 	int assessUnitNum;
 
@@ -78,8 +95,8 @@ public class BookOfWar {
 	/** Print results table in CSV format? */
 	boolean printFormatCSV;
 
-	/** Flag to escape after parsing arguments. */
-	boolean exitAfterArgs;
+	/** Flag to escape after startup procedures. */
+	boolean exitAfterStartup;
 	
 	//-----------------------------------------------------------------
 	//  In-game variables
@@ -108,10 +125,13 @@ public class BookOfWar {
 	*  Construct the simulator.
 	*/
 	public BookOfWar () {
-		random = new Random();
-		simMode = DEFAULT_SIM_MODE;
-		assessUnitNum = Integer.MAX_VALUE;
-		trialsPerMatchup = DEFAULT_TRIALS_PER_MATCHUP;
+		readUnitData();
+		if (!exitAfterStartup) {
+			random = new Random();
+			simMode = DEFAULT_SIM_MODE;
+			assessUnitNum = unitList.size();
+			trialsPerMatchup = DEFAULT_TRIALS_PER_MATCHUP;
+		}
 	}
 
 	/**
@@ -121,6 +141,8 @@ public class BookOfWar {
 	public BookOfWar (BookOfWar src) {
 		random = new Random();			
 		simMode = src.simMode;
+		unitList = src.unitList;
+		soloList = src.unitList;
 		assessUnitNum = src.assessUnitNum;
 		baseUnitNum = src.baseUnitNum;
 		trialsPerMatchup = src.trialsPerMatchup;
@@ -128,7 +150,7 @@ public class BookOfWar {
 		zoomGameUnit2 = src.zoomGameUnit2;
 		usePreferredValues = src.usePreferredValues;
 		printFormatCSV = src.printFormatCSV;
-		exitAfterArgs = src.exitAfterArgs;
+		exitAfterStartup = src.exitAfterStartup;
 	}
 
 	//-----------------------------------------------------------------
@@ -140,12 +162,14 @@ public class BookOfWar {
 	*/
 	public static void main (String[] args) {
 		BookOfWar book = new BookOfWar();
-		book.parseArgs(args);
-		if (book.exitAfterArgs) {
-			book.printUsage();
-		}
-		else {
-			book.run();
+		if (!book.exitAfterStartup) {
+			book.parseArgs(args);
+			if (!book.exitAfterStartup) {
+				book.run();
+			}
+			else {
+				book.printUsage();
+			}		
 		}
 	}
 
@@ -183,11 +207,11 @@ public class BookOfWar {
 					case 'v': printFormatCSV = true; break;
 					case 'y': zoomGameUnit1 = getParamInt(s); break;
 					case 'z': zoomGameUnit2 = getParamInt(s); break;
-					default: exitAfterArgs = true; break;
+					default: exitAfterStartup = true; break;
 				}
 			}
 			else {
-				exitAfterArgs = true;
+				exitAfterStartup = true;
 			}
 		}
 	}
@@ -204,7 +228,7 @@ public class BookOfWar {
 				System.err.println("Error: Could not read integer argument: " + s);
 			}
 		}
-		exitAfterArgs = true;
+		exitAfterStartup = true;
 		return -1;
 	}
 
@@ -219,31 +243,55 @@ public class BookOfWar {
 			case 3: simMode = SimMode.FullBalance; return;
 			case 4: simMode = SimMode.ZoomGame; return;
 		}
-		exitAfterArgs = true;
+		exitAfterStartup = true;
+	}
+
+	/**
+	*  Read the unit type data files.
+	*/
+	void readUnitData () {
+	
+		// Get basic units
+		try {
+			unitList = new UnitList(BASIC_UNIT_FILE, UnitList.Type.Unit);
+		}
+		catch (IOException e) {
+			System.err.println("Could not read basic unit type list.");
+			exitAfterStartup = true;		
+		}
+	
+		// Get solo units
+		try {
+			soloList = new UnitList(SOLO_UNIT_FILE, UnitList.Type.Solo);
+		}
+		catch (IOException e) {
+			System.err.println("Could not read solo unit type list.");
+			exitAfterStartup = true;		
+		}
+	}
+
+	/**
+	*  Post a startup failure message.
+	*/
+	void postStartupFailMsg (String msg) {
+		System.err.println(msg);
+		exitAfterStartup = true;	
 	}
 
 	/**
 	*  Validate values of assessed and base unit numbers.
 	*/
-	boolean checkArgUnitNums () {
-		UnitList unitList = UnitList.getInstance();
-		if (assessUnitNum <= 0) {
-			System.err.println("Error: Assessed unit set must be positive (fix -a switch).");
-			return false;
-		}
-		if (baseUnitNum < 0) {
-			System.err.println("Error: Base unit set must be nonnegative (fix -b switch).");
-			return false;
-		}
-		else if (baseUnitNum >= unitList.size()) {
-			System.err.println("Error: Base unit set must be less than database size (fix -b switch).");
-			return false;
-		}
-		else if (assessUnitNum <= baseUnitNum) {
-			System.err.println("Error: Assessed unit set must be more than base units (fix -a or -b switch).");
-			return false;
-		}
-		return true;
+	void checkArgUnitNums () {
+		if (assessUnitNum <= 0)
+			postStartupFailMsg("Error: Assessed unit set must be positive (fix -a switch).");
+		else if (assessUnitNum > unitList.size())
+			postStartupFailMsg("Error: Assessed unit set must be no more thn database size (fix -a switch).");
+		else if (baseUnitNum < 0)
+			postStartupFailMsg("Error: Base unit set must be nonnegative (fix -b switch).");
+		else if (baseUnitNum >= unitList.size())
+			postStartupFailMsg("Error: Base unit set must be less than database size (fix -b switch).");
+		else if (assessUnitNum <= baseUnitNum)
+			postStartupFailMsg("Error: Assessed unit set must be more than base units (fix -a or -b switch).");
 	}
 	
 	/**
@@ -261,7 +309,6 @@ public class BookOfWar {
 	*  Run the simulator in selected mode.
 	*/
 	void run () {
-		if (!checkArgUnitNums()) return;
  		switch (simMode) {
  			case TableAssess: assessmentTable(); break;
  			case AutoBalance: autoBalancer(); break;
@@ -274,7 +321,6 @@ public class BookOfWar {
 	*  Create table of assessed win percents.
 	*/
 	void assessmentTable () {
-		UnitList unitList = UnitList.getInstance();
 		List<Unit> assessUnits = unitList.getSublist(0, assessUnitNum);
 		makeAssessmentTable(assessUnits, assessUnits);
 	}
@@ -283,7 +329,6 @@ public class BookOfWar {
 	*  Auto-balance unit costs.
 	*/
 	void autoBalancer() {
-		UnitList unitList = UnitList.getInstance();
 		if (!checkBaseUnitsPositive()) return;
 		List<Unit> baseUnits = unitList.getSublist(0, baseUnitNum);
 		List<Unit> assessUnits = unitList.getSublist(baseUnitNum, assessUnitNum);
@@ -470,7 +515,6 @@ public class BookOfWar {
 
 		// Initialize list to balance
 		printf("Initializing full auto-balancer...\n");
-		UnitList unitList = UnitList.getInstance();
 		List<Unit> assessUnits = unitList.getSublist(0, assessUnitNum);
 		double oldSumNormError = playAllDockets(assessUnits);
 		
@@ -549,7 +593,6 @@ public class BookOfWar {
 	*  Battle two specified unit types with detailed in-game reports.
 	*/
 	void zoomInGame () {
-		UnitList unitList = UnitList.getInstance();
 		if (zoomGameUnit1 <= 0 || zoomGameUnit2 <= 0) {
 			System.err.println("Error: Zoom-in game requires two units set (use -y and -z switches).");
 		}
@@ -1070,8 +1113,6 @@ public class BookOfWar {
 		double defWidth = priorContact ? defender.getPerimeter() : defender.getTotalWidth();
 		int figsAtk = (atkWidth <= defWidth ? attacker.getFiles() :
 			(int) Math.ceil(defWidth / attacker.getFigWidth()));
-		if ((defender instanceof Hero) && (figsAtk > defender.getFigures()))
-			figsAtk = defender.getFigures();
 		int atkDice = meleeAttackDice(attacker, defender, figsAtk);
 
 		// Compute attack bonus
@@ -1201,10 +1242,6 @@ public class BookOfWar {
  			bonus -= 1;
 		}
 
-		// Solo heroes attacked in normal melee
-		if (!ranged && (defender instanceof Hero) && !(attacker instanceof Hero))
-			bonus += 1;
-
 		// Mounted archers assumed to hit as normal men (e.g.: elephants)
 		if (ranged && attacker.hasSpecial(SpecialType.Mounts)) {
 			bonus -= attacker.getHealth() / 3; // cut any bonus from health
@@ -1225,7 +1262,6 @@ public class BookOfWar {
 	*  Is the defender immune to this attack?
 	*/
 	boolean isAttackImmune (Unit attacker, Unit defender) {
-		assert(!(attacker instanceof Hero));
 		if (!defender.isVisible())
 			return true; // Invisible can't be attacked
 		if (defender.hasSpecial(SpecialType.SilverToHit) && !useSilverWeapons 
@@ -1309,7 +1345,7 @@ public class BookOfWar {
 			bonus += unit.getSpecialParam(SpecialType.MoraleBonus);
 
 		// Leadership
-		if (unit.hasHero())
+		if (unit.hasSolo())
 			bonus +=1 ;
 
 		return bonus;		
