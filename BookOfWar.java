@@ -1101,6 +1101,7 @@ public class BookOfWar {
 	*  Play out one ranged attack.
 	*/
 	void rangedAttack (Unit attacker, Unit defender, boolean fullRate) {
+		assert(distance > 0 || attacker.hasSpecial(SpecialType.MeleeShot));
 		makeVisible(attacker);
 
 		// Check for defender immune
