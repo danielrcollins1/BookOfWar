@@ -14,4 +14,4 @@ Titan,30,15,6,2,1,1,0,0,3,N,Spells
 "Dragon, Gold",20,9,6,1,1,1,0,0,3,L,"Flight (24), BreathWeapon"
 Balrog,20,6,6,1,1,1,0,0,3,C,"Flight (15), MagicResistance"
 Hero & Griffon,20,12,6,1,1,1,0,0,3,N,Flight (30)
-Wraith & Wyvern,20,9,6,1,1,1,0,0,3,C,"Flight (24), BreathWeapon"
+Wraith & Wyvern,20,9,6,1,1,1,0,0,3,C,Flight (24)
