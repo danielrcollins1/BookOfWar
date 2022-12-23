@@ -1,4 +1,5 @@
-import java.util.*;
+import java.util.Set;
+import java.util.HashSet;
 
 /******************************************************************************
 *  One unit of figures.
@@ -8,41 +9,43 @@ import java.util.*;
 ******************************************************************************/
 
 public class Unit {
-	enum Alignment {Lawful, Neutral, Chaotic};
+	enum Alignment { Lawful, Neutral, Chaotic };
 
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 	//  Constants
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 
 	/**
 	*  Conversion from internal width units to inches.
 	*/
-	final int WIDTH_UNITS_PER_INCH = 4;
+	static final int WIDTH_UNITS_PER_INCH = 4;
 
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 	//  Fields
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 
 	// Unit type statistics
-	String name;
-	int cost, move, armor, health, attacks, damage, rate, range, width;
-	Alignment alignment;
-	Set<SpecialAbility> specialSet;
+	private String name;
+	private int cost, move, armor, health, 
+		attacks, damage, rate, range, width;
+	private Alignment alignment;
+	private Set<SpecialAbility> specialSet;
 
 	// Unit in-play records
-	int figures, frontFiles, damageTaken, figsLostInTurn, specialCharges;
-	boolean routed, visible;
-	Solo solo;
+	private int figures, frontFiles, 
+		damageTaken, figsLostInTurn, specialCharges;
+	private boolean routed, visible;
+	private Solo solo;
 
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 	//  Constructors
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 
 	/**
-	* Constructor (from String array).
-	* @param s String array.
+	*  Constructor (from string array).
+	*  @param s descriptor string array.
 	*/
-	public Unit (String[] s) {
+	public Unit(String[] s) {
 		name = s[0];
 		cost = Integer.parseInt(s[1]);
 		move = Integer.parseInt(s[2]);
@@ -58,9 +61,10 @@ public class Unit {
 	}
 
 	/**
-	* Constructor (copy).
+	*  Constructor (copy).
+	*  @param src source unit to copy.
 	*/
-	public Unit (Unit src) {
+	public Unit(Unit src) {
 		name = src.name;
 		cost = src.cost;
 		move = src.move;
@@ -76,9 +80,9 @@ public class Unit {
 		// In-play records not copied
 	}
 
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 	//  Methods
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 
 	// Unit type statistics
 	public String getName() { return name; };
@@ -104,16 +108,19 @@ public class Unit {
 	public Solo getSolo() { return solo; };
 
 	// Methods to be overridden by sublass
-	public boolean isFearless () { return false; }
+	public boolean isFearless() { return false; }
 	
 	/**
 	*  Parse alignment code.
+	*  @param s alignment descriptor.
+	*  @return alignment enumeration.
 	*/
-	private Alignment parseAlignment (String s) {
+	private Alignment parseAlignment(String s) {
 		if (s.length() > 0) {
 			switch (s.charAt(0)) {
 				case 'L': return Alignment.Lawful;
 				case 'C': return Alignment.Chaotic;
+				default: return Alignment.Neutral;
 			}
 		}
 		return Alignment.Neutral;
@@ -121,13 +128,15 @@ public class Unit {
 
 	/**
 	*  Parse specials list.
+	*  @param specialString descriptor of special abilities.
 	*/
-	private void parseSpecials (String specialString) {
+	private void parseSpecials(String specialString) {
 		specialSet = new HashSet<SpecialAbility>();
 		if (!specialString.equals("-")) {
 			String[] splits = specialString.split(", ");
 			for (String s: splits) {
-				SpecialAbility ability = SpecialAbility.createFromString(s);
+				SpecialAbility ability 
+					= SpecialAbility.createFromString(s);
 				if (ability != null) {
 					specialSet.add(ability);
 				}
@@ -136,83 +145,97 @@ public class Unit {
 	}
 
 	/**
-	*  Set a new cost (for auto-balancer).
+	*  Set a new cost.
+	*  @param newCost the new cost.
 	*/
-	public void setCost (int cost) {
-		this.cost = cost;
+	public void setCost(int newCost) {
+		cost = newCost;
 	}
 
 	/**
 	*  Initialize figures.
+	*  @param numFigs number of figures for unit.
 	*/
-	public void setFigures (int figures) {
-		this.figures = figures;
-		this.routed = false;
-		this.damageTaken = 0;
+	public void setFigures(int numFigs) {
+		figures = numFigs;
+		routed = false;
+		damageTaken = 0;
 	}
 
 	/**
 	*  Initialize frontage.
+	*  @param files number of files for unit.
 	*/
-	public void setFiles (int files) {
-		assert(files > 0);
-		assert(files <= figures);
+	public void setFiles(int files) {
+		assert files > 0;
+		assert files <= figures;
 		frontFiles = files;	
 	}
 	
 	/**
-	*  Get the figure width in inches.
+	*  Get one figure's width.
+	*  @return one figure's width in inches.
 	*/
 	public double getFigWidth() { 
 		return (double) width / WIDTH_UNITS_PER_INCH; 
 	};
 
 	/**
-	*  Get the figure length in inches (double width for mounts).
+	*  Get one figure's length.
+	*  @return one figure's length in inches.
 	*/
 	public double getFigLength() {
-		return hasSpecial(SpecialType.Mounts) ? 
-			2 * getFigWidth() : getFigWidth();
+		return hasSpecial(SpecialType.Mounts) 
+			? 2 * getFigWidth() : getFigWidth();
 	}
 
 	/**
 	*  Compute how many effective ranks we have.
+	*  @return number of ranks in unit.
 	*/
 	public int getRanks() {
 		int files = getFiles();
-		if (files < 1) return 0;
+		if (files < 1) {
+			return 0;
+		}
 		int ranks = figures / files;
 		int backrow = figures % files;
-		if (backrow * 2 >= files && files > 1) ranks++;
+		if (backrow * 2 >= files) {
+			ranks++;
+		}
 		return ranks;	
 	}
 
 	/**
-	*  Compute width of unit in inches.
+	*  Compute width of unit.
+	*  @return width of unit in inches.
 	*/
-	public double getTotalWidth () {
+	public double getTotalWidth() {
 		return getFiles() * getFigWidth();
 	}
 
 	/**
-	*  Compute length of unit in inches.
+	*  Compute length of unit.
+	*  @return length of unit in inches.
 	*/
-	public double getTotalLength () {
+	public double getTotalLength() {
 		return getRanks() * getFigLength();
 	}
 
 	/**
 	*  Compute perimeter around entire unit.
+	*  @return perimeter around unit in inches.
 	*/
-	public double getPerimeter () {
+	public double getPerimeter() {
 		return 2 * (getTotalWidth() + getTotalLength());
 	}
 
 	/**
 	*  Remove a certain number of figures.
-	*  @return Number lost (capped by number in unit).
+	*  @param lost number requested to be removed.
+	*  @return number actually lost (capped by number in unit).
 	*/
-	private int removeFigures (int lost) {
+	private int removeFigures(int lost) {
 		lost = Math.min(lost, figures);
 		figures -= lost;
 		figsLostInTurn += lost;
@@ -224,9 +247,11 @@ public class Unit {
 
 	/**
 	*  Take damage; returns figures killed.
+	*  @param points damage inflicted on unit.
+	*  @return number of figures lost.
 	*/
-	public int takeDamage (int points) {
-		assert(points >= 0);		
+	public int takeDamage(int points) {
+		assert points >= 0;
 		damageTaken += points;
 		int figsKilled = damageTaken / health;
 		damageTaken = damageTaken % health;
@@ -236,14 +261,16 @@ public class Unit {
 	/**
 	*  Clear out figures lost in a turn.
 	*/
-	public void clearFigsLostInTurn () {
+	public void clearFigsLostInTurn() {
 		figsLostInTurn = 0;	
-		}
+	}
 
 	/**
 	*  Get a special ability matching a given type.
+	*  @param type special ability type.
+	*  @return special ability object (or null)
 	*/
-	public SpecialAbility getAbilityByType (SpecialType type) {
+	public SpecialAbility getAbilityByType(SpecialType type) {
 		for (SpecialAbility a: specialSet) {
 			if (a.getType() == type) {
 				return a;
@@ -254,16 +281,20 @@ public class Unit {
 
 	/**
 	*  Find if unit has a special of a given type.
+	*  @param type special ability type.
+	*  @return true if unit has that type of ability.
 	*/
-	public boolean hasSpecial (SpecialType type) {
+	public boolean hasSpecial(SpecialType type) {
 		SpecialAbility ability = getAbilityByType(type);
 		return ability != null;	
 	}
 
 	/**
 	*  Get the parameter for a given special type.
+	*  @param type special ability type.
+	*  @return parameter value of special ability.
 	*/
-	public int getSpecialParam (SpecialType type) {
+	public int getSpecialParam(SpecialType type) {
 		SpecialAbility ability = getAbilityByType(type);
 		return ability == null ? 0 : ability.getParam();
 	}
@@ -285,7 +316,7 @@ public class Unit {
 	/**
 	*  Regenerate 1 hit.
 	*/
-	public void regenerate () {
+	public void regenerate() {
 		if (damageTaken > 0) {
 			damageTaken -= 1;
 		}
@@ -293,63 +324,74 @@ public class Unit {
 
 	/**
 	*  Set unit visibility.
+	*  @param newVisible true if unit becomes visible.
 	*/
-	public void setVisible (boolean visible) {
-		this.visible = visible;
+	public void setVisible(boolean newVisible) {
+		visible = newVisible;
 	}
 
 	/**
 	*  Set routed status.
+	*  @param newRouted true if unit becomes routed.
 	*/
-	public void setRouted (boolean routed) {
-		this.routed = routed;
+	public void setRouted(boolean newRouted) {
+		routed = newRouted;
 	}
 
 	/**
 	*  Get the unit's flying movement.
+	*  @return flying speed in inches.
 	*/
-	public int getFlyMove () {
+	public int getFlyMove() {
 		return getSpecialParam(SpecialType.Flight);
 	}
 
 	/**
 	*  Check if this unit has same name as another unit.
+	*  @param other unit to compare.
+	*  @return true if this unit has the same name.
 	*/
-	public boolean isSameType (Unit other) {
+	public boolean isSameType(Unit other) {
 		return name.equals(other.name);	
 	}
 
 	/**
-	*  Return an "s" for a number more than 1.
+	*  Return a plural suffix if needed.
+	*  @param n a number.
+	*  @return "s" if n is not one.
 	*/
-	public String plural (int n) {
-		return (n == 1 ? "" : "s");
+	public String plural(int n) {
+		return n == 1 ? "" : "s";
 	}
 
 	/**
-	*  Returns a string representation of this object.
+	*  Get a string representation of this object.
+	*  @return string representation of this unit.
 	*/
 	public String toString() {
-		return name + " (" + figures + " fig" + plural(figures) + ", "
+		return name + "(" + figures + " fig" + plural(figures) + ", "
 			+ getRanks() + " rank" + plural(getRanks()) + ")";
 	}
 	
 	/**
-	*  Returns a short abbreviation for this unit.
+	*  Get a short abbreviation of this unit's name.
+	*  @return short abbreviation for unit.
 	*/
 	public String getAbbreviation() {
 		String s = "" + name.charAt(0);
 		for (int i = 1; i < name.length() - 1; i++) {
-			if (name.charAt(i) == ' ' && s.length() < 2)
+			if (name.charAt(i) == ' ' && s.length() < 2) {
 				s = s + name.charAt(i + 1);
+			}
 		}
 		return s;
 	}
 	
 	/**
-	* Main test method.
+	*  Main test method.
+	*  @param args command-line arguments.
 	*/
-	public static void main (String[] args) {
+	public static void main(String[] args) {
 		String[] desc = {"Light Infantry", "4", "12", "4", 
 			"1", "1", "1", "0", "0", "3", "N", "-"};
 		Unit unit = new Unit(desc);
