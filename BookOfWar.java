@@ -72,10 +72,10 @@ public class BookOfWar {
 	SimMode simMode;
 
 	/** List of basic unit types. */
-	UnitList unitList;
+	List<Unit> unitList;
 
 	/** List of solo unit types. */
-	UnitList soloList;
+	List<Solo> soloList;
 
 	/** Assess to this unit number (unit types 1 to n). */
 	int assessUnitNum;
@@ -125,7 +125,8 @@ public class BookOfWar {
 	*  Construct the simulator.
 	*/
 	public BookOfWar () {
-		readUnitData();
+		loadBasicUnits();
+		loadSoloUnits();
 		if (!exitAfterStartup) {
 			random = new Random();
 			simMode = DEFAULT_SIM_MODE;
@@ -142,7 +143,7 @@ public class BookOfWar {
 		random = new Random();			
 		simMode = src.simMode;
 		unitList = src.unitList;
-		soloList = src.unitList;
+		soloList = src.soloList;
 		assessUnitNum = src.assessUnitNum;
 		baseUnitNum = src.baseUnitNum;
 		trialsPerMatchup = src.trialsPerMatchup;
@@ -247,22 +248,32 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Read the unit type data files.
+	*  Read the basic unit data.
 	*/
-	void readUnitData () {
-	
-		// Get basic units
+	void loadBasicUnits () {
 		try {
-			unitList = new UnitList(BASIC_UNIT_FILE, UnitList.Type.Unit);
+			String[][] table = CSVReader.readFile(BASIC_UNIT_FILE);
+			unitList = new ArrayList<Unit>(table.length - 1);
+			for (int i = 1; i < table.length; i++) {
+				unitList.add(new Unit(table[i]));
+			}
 		}
 		catch (IOException e) {
 			System.err.println("Could not read basic unit type list.");
 			exitAfterStartup = true;		
 		}
-	
-		// Get solo units
+	}
+
+	/**
+	*  Read the solo unit data.
+	*/
+	void loadSoloUnits () {
 		try {
-			soloList = new UnitList(SOLO_UNIT_FILE, UnitList.Type.Solo);
+			String[][] table = CSVReader.readFile(SOLO_UNIT_FILE);
+			soloList = new ArrayList<Solo>(table.length - 1);
+			for (int i = 1; i < table.length; i++) {
+				soloList.add(new Solo(table[i]));
+			}
 		}
 		catch (IOException e) {
 			System.err.println("Could not read solo unit type list.");
@@ -321,7 +332,7 @@ public class BookOfWar {
 	*  Create table of assessed win percents.
 	*/
 	void assessmentTable () {
-		List<Unit> assessUnits = unitList.getSublist(0, assessUnitNum);
+		List<Unit> assessUnits = unitList.subList(0, assessUnitNum);
 		makeAssessmentTable(assessUnits, assessUnits);
 	}
 
@@ -330,8 +341,8 @@ public class BookOfWar {
 	*/
 	void autoBalancer() {
 		if (!checkBaseUnitsPositive()) return;
-		List<Unit> baseUnits = unitList.getSublist(0, baseUnitNum);
-		List<Unit> assessUnits = unitList.getSublist(baseUnitNum, assessUnitNum);
+		List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
+		List<Unit> assessUnits = unitList.subList(baseUnitNum, assessUnitNum);
 		makeAutoBalancedTable(baseUnits, assessUnits);
 	}
 
@@ -515,7 +526,7 @@ public class BookOfWar {
 
 		// Initialize list to balance
 		printf("Initializing full auto-balancer...\n");
-		List<Unit> assessUnits = unitList.getSublist(0, assessUnitNum);
+		List<Unit> assessUnits = unitList.subList(0, assessUnitNum);
 		double oldSumNormError = playAllDockets(assessUnits);
 		
 		// Iterate attempts at improving some unit
@@ -526,7 +537,7 @@ public class BookOfWar {
 
 			// Make shuffled list of units to test
 			List<Unit> unitsToTest = new ArrayList<Unit>
-				(unitList.getSublist(baseUnitNum, assessUnitNum));
+				(unitList.subList(baseUnitNum, assessUnitNum));
 			Collections.shuffle(unitsToTest);
 				
 			// Try to improve price of any unit in list
@@ -569,7 +580,7 @@ public class BookOfWar {
 		// Print table of new values
 		printf("\nFinal suggested costs:\n\n");
 		List<Unit> testedUnits = 
-			unitList.getSublist(baseUnitNum, assessUnitNum);
+			unitList.subList(baseUnitNum, assessUnitNum);
 		int nameColSize = getMaxNameLength(testedUnits);
 		printWideField("Unit", nameColSize);
 		printf(getSepChar() + "Cost\n");
