@@ -53,64 +53,92 @@ public class CSVReader {
 
 	/**	
 	*  Split one line with proper quote handling.
-	*  @param line Line to split.
+	*  @param line text line to split.
 	*  @return array of split strings.
 	*/
-	public static String[] splitLine(String line) {
+	private static String[] splitLine(String line) {
 		int ptr = 0;
 		line = trimTrailingDelimit(line);
 		List<String> fieldList = new ArrayList<String>();
 		while (ptr < line.length()) {
-
-			// Field is non-quoted
 			if (line.charAt(ptr) != QUOTE) {
-				int count = 0;
-				char[] chars = new char[line.length()];
-				while (ptr < line.length() && line.charAt(ptr) != COMMA) {
-					chars[count++] = line.charAt(ptr++);
-				}				
-				fieldList.add(new String(chars, 0, count));
-				ptr++;
+				ptr = parseNonQuoteField(fieldList, line, ptr);
 			}
-
-			// Field is quoted
 			else {
-				ptr++;
-				int count = 0;
-				char[] chars = new char[line.length()];
-				while (ptr < line.length()) {
-				
-					// Handle non-quote character
-					if (line.charAt(ptr) != QUOTE) {
-						chars[count++] = line.charAt(ptr++);
-					}
-
-					// Handle quote markers
-					else {
-
-						// Double quotes become one quote
-						if (ptr + 1 < line.length() && line.charAt(ptr + 1) == QUOTE) {
-							chars[count++] = QUOTE;
-							ptr += 2;
-						}
-
-						// Single quotes mark end of field
-						else {
-							fieldList.add(new String(chars, 0, count));
-							while (ptr < line.length() && line.charAt(ptr) != COMMA) {
-								ptr++; // Eat to next comma
-							}
-							ptr++;
-							break;
-						}
-					}
-				}
+				ptr = parseQuotedField(fieldList, line, ptr);
 			}
  		}
-		
-		// Return list as normal array
 		String[] format = new String[0];
 		return fieldList.toArray(format);
+	}
+
+	/**
+	*  Parse a non-quoted CSV field.
+	*  @param fieldList string list to append.
+	*  @param line text line to parse.
+	*  @param ptr starting position in line.
+	*  @return ending positon in line.
+	*/
+	private static int parseNonQuoteField(
+		List<String> fieldList, String line, int ptr) 
+	{
+		int count = 0;
+		char[] chars = new char[line.length()];
+		while (ptr < line.length() && line.charAt(ptr) != COMMA) {
+			chars[count++] = line.charAt(ptr++);
+		}				
+		fieldList.add(new String(chars, 0, count));
+		return ptr + 1;
+	}
+
+	/**
+	*  Parse a quoted CSV field.
+	*  @param fieldList string list to append.
+	*  @param line text line to parse.
+	*  @param ptr starting position in line.
+	*  @return ending positon in line.
+	*/
+	private static int parseQuotedField(
+		List<String> fieldList, String line, int ptr) 
+	{
+		ptr++;
+		int count = 0;
+		char[] chars = new char[line.length()];
+		while (ptr < line.length()) {
+				
+			// Handle non-quote character
+			if (line.charAt(ptr) != QUOTE) {
+				chars[count++] = line.charAt(ptr++);
+			}
+
+			// Handle quote markers
+			else {
+
+				// Double quotes become one quote
+				if (ptr + 1 < line.length() 
+					&& line.charAt(ptr + 1) == QUOTE) 
+				{
+					chars[count++] = QUOTE;
+					ptr += 2;
+				}
+
+				// Single quotes mark end of field
+				else {
+					fieldList.add(
+						new String(chars, 0, count));
+
+					// Eat to next comma
+					while (ptr < line.length() 
+						&& line.charAt(ptr) != COMMA) 
+					{
+						ptr++;
+					}
+					ptr++;
+					break;
+				}
+			}
+		}
+		return ptr;
 	}
 
 	/**
