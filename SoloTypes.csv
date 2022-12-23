@@ -1,21 +1,17 @@
 Unit,Cost,Move,Armor,Health,Atk,Dam,Rate,Range,Width,Align,Special
-Superhero,50,6,7,1,1,1,0,0,1,N,SweepAttacks (2)
-"Lord, 12th Level",50,6,7,1,1,1,0,0,1,N,SweepAttacks (3)
-"Lord, 16th Level",50,6,8,2,1,1,0,0,1,N,"SweepAttacks (4), DamageInc"
-"Lord, 20th Level",50,6,8,2,1,1,0,0,1,N,"SweepAttacks (5), DamageInc"
-"Wizard, 11th Level",50,12,6,1,0,0,0,0,1,N,Spells
-"Wizard, 13th Level",50,12,6,1,0,0,0,0,1,N,Spells
-"Wizard, 16th Level",50,12,6,1,0,0,0,0,1,N,Spells
-Cloud Giant,50,12,5,1,1,1,0,0,3,N,Detection (12)
-Storm Giant,50,15,5,1,1,1,0,0,3,N,WeatherControl
-Titan,50,15,6,2,1,1,0,0,3,N,Spells
-"Dragon, Blue",50,9,6,1,1,1,0,0,3,N,"Flight (24), BreathWeapon"
-"Dragon, Red",50,9,6,1,1,1,0,0,3,C,"Flight (24), BreathWeapon"
-"Dragon, Gold",50,9,6,1,1,1,0,0,3,L,"Flight (24), BreathWeapon"
-Balrog,50,6,6,1,1,1,0,0,3,C,"Flight (15), MagicResistance"
-Hero & Griffon,50,12,6,1,1,1,0,0,3,N,Flight (30)
-Wraith & Wyvern,50,9,6,1,1,1,0,0,3,C,"Flight (24), BreathWeapon"
-"Elemental, Air",50,36,6,1,0,0,0,0,3,N,"MagicToHit, Flight (36), Whirlwind"
-"Elemental, Earth",50,6,6,1,1,1,0,0,3,N,MagicToHit
-"Elemental, Fire",50,12,6,1,1,1,0,0,3,N,MagicToHit
-"Elemental, Water",50,6,6,1,1,1,0,0,3,N,"MagicToHit, Swimming (18)"
+Superhero,30,6,7,1,1,1,0,0,1,N,SweepAttacks (2)
+"Lord, 12th Level",30,6,7,1,1,1,0,0,1,N,SweepAttacks (3)
+"Lord, 16th Level",55,6,7,2,1,1,0,0,1,N,"SweepAttacks (4), DamageInc"
+"Lord, 20th Level",55,6,7,2,1,1,0,0,1,N,"SweepAttacks (5), DamageInc"
+"Wizard, 11th Level",1,12,6,1,0,0,0,0,1,N,Spells
+"Wizard, 13th Level",1,12,6,1,0,0,0,0,1,N,Spells
+"Wizard, 16th Level",1,12,6,1,0,0,0,0,1,N,Spells
+Cloud Giant,12,12,5,1,1,1,0,0,3,N,Detection (12)
+Storm Giant,12,15,5,1,1,1,0,0,3,N,WeatherControl
+Titan,30,15,6,2,1,1,0,0,3,N,Spells
+"Dragon, Blue",20,9,6,1,1,1,0,0,3,N,"Flight (24), BreathWeapon"
+"Dragon, Red",20,9,6,1,1,1,0,0,3,C,"Flight (24), BreathWeapon"
+"Dragon, Gold",20,9,6,1,1,1,0,0,3,L,"Flight (24), BreathWeapon"
+Balrog,20,6,6,1,1,1,0,0,3,C,"Flight (15), MagicResistance"
+Hero & Griffon,20,12,6,1,1,1,0,0,3,N,Flight (30)
+Wraith & Wyvern,20,9,6,1,1,1,0,0,3,C,"Flight (24), BreathWeapon"

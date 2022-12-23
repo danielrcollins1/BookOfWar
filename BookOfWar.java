@@ -89,6 +89,9 @@ public class BookOfWar {
 	/** Units for zoom-in game (1-based index into Units list). */
 	private int zoomGameUnit1, zoomGameUnit2;
 
+	/** Balance the Solo unit types? */
+	private boolean soloBalancing;
+
 	/** Use round number prices in autobalancer? */
 	private boolean usePreferredValues;
 	
@@ -187,6 +190,7 @@ public class BookOfWar {
 		System.out.println("\t-m sim mode (1 = table-assess, 2 = auto-balance,\n"
 									+ "\t\t 3 = full auto-balance, 4 = zoom-in game)");
 		System.out.println("\t-p use preferred values in full auto-balancer");
+		System.out.println("\t-s balance the solo vs. basic unit types");
 		System.out.println("\t-t trials per matchup (default=" + DEFAULT_TRIALS_PER_MATCHUP + ")");
 		System.out.println("\t-v print assessment table in CSV format");
 		System.out.println("\t-y zoom-in game 1st unit index (1-based)");
@@ -205,6 +209,7 @@ public class BookOfWar {
 					case 'b': baseUnitNum = getParamInt(s); break;
 					case 'm': parseSimMode(s); break;
 					case 'p': usePreferredValues = true; break;					
+					case 's': soloBalancing = true; break;
 					case 't': trialsPerMatchup = getParamInt(s); break;
 					case 'v': printFormatCSV = true; break;
 					case 'y': zoomGameUnit1 = getParamInt(s); break;
@@ -339,8 +344,15 @@ public class BookOfWar {
 	*  Create table of assessed win percents.
 	*/
 	void assessmentTable() {
-		List<Unit> assessUnits = unitList.subList(0, assessUnitNum);
-		makeAssessmentTable(assessUnits, assessUnits);
+		if (!soloBalancing) {
+			List<Unit> assessUnits = unitList.subList(0, assessUnitNum);
+			makeAssessmentTable(assessUnits, assessUnits);
+		}
+		else {
+			List<Unit> assessUnits = new ArrayList<Unit>(soloList);
+			List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
+			makeAssessmentTable(assessUnits, baseUnits);
+		}
 	}
 
 	/**
@@ -350,9 +362,16 @@ public class BookOfWar {
 		if (!checkBaseUnitsPositive()) {
 			return;
 		}
-		List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
-		List<Unit> assessUnits = unitList.subList(baseUnitNum, assessUnitNum);
-		makeAutoBalancedTable(baseUnits, assessUnits);
+		if (!soloBalancing) {
+			List<Unit> assessUnits = unitList.subList(baseUnitNum, assessUnitNum);
+			List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
+			makeAutoBalancedTable(assessUnits, baseUnits);
+		}
+		else {
+			List<Unit> assessUnits = new ArrayList<Unit>(soloList);
+			List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
+			makeAutoBalancedTable(assessUnits, baseUnits);
+		}
 	}
 
 	/**
@@ -460,7 +479,7 @@ public class BookOfWar {
 	/**
 	*  Make auto-balanced table of estimated best costs.
 	*/
-	void makeAutoBalancedTable(List<Unit> baseUnits, List<Unit> newUnits) {
+	void makeAutoBalancedTable(List<Unit> newUnits, List<Unit> baseUnits) {
 		assert baseUnits != newUnits;
 
 		// Get name field size
@@ -623,9 +642,11 @@ public class BookOfWar {
 		else if (zoomGameUnit1 > unitList.size() || zoomGameUnit2 > unitList.size()) {
 			System.err.println("Error: Zoom-in game has unit out of range for database.");
 		}		
-		else {		
-			Unit unit1 = unitList.get(zoomGameUnit1 - 1);
-			Unit unit2 = unitList.get(zoomGameUnit2 - 1);
+		else {
+			Unit unit1 = soloBalancing
+				? new Solo(soloList.get(zoomGameUnit1 - 1))
+				: new Unit(unitList.get(zoomGameUnit1 - 1));
+			Unit unit2 = new Unit(unitList.get(zoomGameUnit2 - 1));
 			playGame(unit1, unit2);
 		}
 	}
@@ -690,7 +711,7 @@ public class BookOfWar {
 		Thread[] threads = new Thread[numOpp];
 		SeriesRunner[] runners = new SeriesRunner[numOpp];
 		for (int i = 0; i < numOpp; i++) {
-			runners[i] = new SeriesRunner(this, unit, enemies.get(i));		
+			runners[i] = new SeriesRunner(this, unit, enemies.get(i));
 			threads[i] = new Thread(runners[i]);
 			threads[i].start();		
 		}
@@ -1385,17 +1406,29 @@ public class BookOfWar {
 	*  Is the defender immune to this attack?
 	*/
 	boolean isAttackImmune(Unit attacker, Unit defender) {
-		if (!defender.isVisible()) {
-			return true; // Invisible can't be attacked
+
+		// Units that auto-hit (solos) assumed to bypass protections
+		if (attacker.autoHits()) {
+			return false;
 		}
+
+		// Invisible units can't be attacked
+		if (!defender.isVisible()) {
+			return true;
+		}
+
+		// Check silver-to-hit (AD&D rule: 4HD+ bypasses)
 		if (defender.hasSpecial(SpecialType.SilverToHit) && !useSilverWeapons
 				&& attacker.getHealth() < 4 && !attacker.hasSpecial(SpecialType.SilverToHit)) {
-			return true; // AD&D rule vs. silver
+			return true;
 		}
+		
+		// Check magic-to-hit (AD&D rule: 6HD+ bypasses +2 to hit)
 		if (defender.hasSpecial(SpecialType.MagicToHit)
 				&& attacker.getHealth() < 6 && !attacker.hasSpecial(SpecialType.MagicToHit)) {
-			return true; // AD&D rule vs. +2 to hit
+			return true;
 		}
+
 		return false;
 	}
 
@@ -1917,7 +1950,8 @@ class	SeriesRunner implements Runnable {
 	// Constructor
 	SeriesRunner(BookOfWar pBowSim, Unit pTestUnit, Unit pOppUnit) {
 		bowSim = new BookOfWar(pBowSim);
-		testUnit = new Unit(pTestUnit);
+		testUnit = pTestUnit instanceof Solo
+			? new Solo((Solo) pTestUnit) : new Unit(pTestUnit);
 		oppUnit = new Unit(pOppUnit);
 	}
 

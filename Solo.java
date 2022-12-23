@@ -28,6 +28,15 @@ public class Solo extends Unit {
 		super(s);
 	}
 
+	/**
+	*  Constructor (copy).
+	*  @param src source solo to copy.
+	*/
+	public Solo(Solo src) {
+		super(src);
+		hostUnit = src.hostUnit;	
+	}
+
 	//----------------------------------------------------------------------
 	//  Methods
 	//----------------------------------------------------------------------
