@@ -98,11 +98,14 @@ public class Unit {
 	public int getFigsLostInTurn() { return figsLostInTurn; };
 	public int getCharges() { return specialCharges; }
 	public boolean hasMissiles() { return range > 0; };
-	public boolean hasSolo() { return solo != null && !solo.isBeaten(); };
-	public boolean isBeaten() { return figures == 0 || routed; };
 	public boolean isVisible() { return visible; };
+	public boolean isBeaten() { return figures == 0 || routed; };
+	public boolean hasSolo() { return solo != null && !solo.isBeaten(); };
 	public Solo getSolo() { return solo; };
 
+	// Methods to be overridden by sublass
+	public boolean isFearless () { return false; }
+	
 	/**
 	*  Parse alignment code.
 	*/
@@ -294,22 +297,6 @@ public class Unit {
 	public void setVisible (boolean visible) {
 		this.visible = visible;
 	}
-
-// 	/**
-// 	*  Is this unit a wizard?
-// 	*/
-// 	public boolean isWizard () {
-// 		return (this instanceof Hero && ((Hero)this).isWizard());
-// 		return false;
-// 	}
-// 
-// 	/**
-// 	*  Is this unit wizard(s), or have an attached wizard?
-// 	*/
-// 	public boolean hasAnyWizard () {
-// 		return (isWizard() || hasHero() && getHero().isWizard());
-// 		return false;
-// 	}
 
 	/**
 	*  Set routed status.

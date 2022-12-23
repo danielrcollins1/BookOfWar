@@ -7,22 +7,27 @@
 
 public class Solo extends Unit {
 
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 	//  Constructor(s)
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 
 	/**
-	*  Constructor (from string descriptor)
+	*  Constructor (from string descriptor).
+	*  @param s Descriptor string array.
 	*/
-	public Solo (String[] s) {
+	public Solo(String[] s) {
 		super(s);
 	}
 
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 	//  Methods
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 
 	/** Solos cannot recursively have their own solos. */
 	@Override public boolean hasSolo() { return false; };
 	@Override public Solo getSolo() { return null; }
+	
+	/** Solos never check morale. */
+	@Override public boolean isFearless() { return true; }
+	
 }

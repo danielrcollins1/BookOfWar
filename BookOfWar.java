@@ -1314,7 +1314,11 @@ public class BookOfWar {
 	*/
 	void checkMorale (Unit unit) {
 		if (unit.getFigures() == 0 
-			|| unit.getFigsLostInTurn() == 0) return;
+			|| unit.getFigsLostInTurn() == 0
+			|| unit.isFearless()) 
+		{
+			return;
+		}
 
 		// Compute bonus
 		int hitDice = unit.getHealth();
