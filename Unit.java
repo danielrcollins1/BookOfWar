@@ -347,15 +347,6 @@ public class Unit {
 	}
 
 	/**
-	*  Check if this unit has same name as another unit.
-	*  @param other unit to compare.
-	*  @return true if this unit has the same name.
-	*/
-	public boolean isSameType(Unit other) {
-		return name.equals(other.name);	
-	}
-
-	/**
 	*  Return a plural suffix if needed.
 	*  @param n a number.
 	*  @return "s" if n is not one.

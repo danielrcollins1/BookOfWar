@@ -1809,7 +1809,7 @@ class	SeriesRunner implements Runnable {
 	// Interface run function
 	@Override
 	public void run() {
-		testUnitWinRatio = testUnit.isSameType(oppUnit) ?
+		testUnitWinRatio = testUnit.equals(oppUnit) ?
 			0.5 : bowSim.playSeries(testUnit, oppUnit);
 	}
 	
