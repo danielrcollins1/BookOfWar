@@ -8,9 +8,9 @@
 
 public enum SpecialType {
 
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 	//  Enumeration
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 
 	Pikes, Shields, Mounts, SplitMove, MoraleBonus,
 	WoodsCover, GiantDodging, LightWeakness, GiantClass,
@@ -20,14 +20,16 @@ public enum SpecialType {
 	Flight, Swimming, BreathWeapon, Whirlwind, Spells,
 	SweepAttacks, SilverToHit, MagicToHit, MagicResistance, WeatherControl;
 	
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 	//  Methods
-	//--------------------------------------------------------------------------
+	//----------------------------------------------------------------------
 
 	/**
 	*  Find special type matching a string.
+	*  @param s Name of special ability type.
+	*  @return Value of special type (or null).
 	*/
-	static public SpecialType findByName (String s) {
+	public static SpecialType findByName(String s) {
 		for (SpecialType t: SpecialType.values()) {
 			if (s.equals(t.name())) {
 				return t;
