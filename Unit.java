@@ -35,7 +35,7 @@ public class Unit {
 	private int figures, frontFiles, 
 		damageTaken, figsLostInTurn, specialCharges;
 	private boolean routed, visible;
-	private Solo solo;
+	private Solo leader;
 
 	//----------------------------------------------------------------------
 	//  Constructors
@@ -104,11 +104,14 @@ public class Unit {
 	public boolean hasMissiles() { return range > 0; };
 	public boolean isVisible() { return visible; };
 	public boolean isBeaten() { return figures == 0 || routed; };
-	public boolean hasSolo() { return solo != null && !solo.isBeaten(); };
-	public Solo getSolo() { return solo; };
+	public Solo getLeader() { return leader; };
 
 	// Methods to be overridden by sublass
 	public boolean isFearless() { return false; }
+	public boolean isEmbedded() { return false; }
+	public boolean isSmallTarget() { return false; }
+	public boolean isSweepable() { return health <= 1; }
+	public boolean autoHits() { return false; }
 	
 	/**
 	*  Parse alignment code.
@@ -171,6 +174,14 @@ public class Unit {
 		assert files <= figures;
 		frontFiles = files;	
 	}
+
+	/**
+	*  Get one figure's raw width.
+	*  @return one figure's width in database pips.
+	*/
+	public int getFigWidthPips() { 
+		return width;
+	};
 	
 	/**
 	*  Get one figure's width.
@@ -345,6 +356,14 @@ public class Unit {
 	public int getFlyMove() {
 		return getSpecialParam(SpecialType.Flight);
 	}
+
+	/**
+	*  Does this unit have a leader?
+	*  @return true if unit has an active leader.
+	*/
+	public boolean hasLeader() { 
+		return leader != null && !leader.isBeaten(); 
+	};
 
 	/**
 	*  Return a plural suffix if needed.

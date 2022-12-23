@@ -165,6 +165,7 @@ public class BookOfWar {
 		BookOfWar book = new BookOfWar();
 		if (!book.exitAfterStartup) {
 			book.parseArgs(args);
+			book.checkArgUnitNums();
 			if (!book.exitAfterStartup) {
 				book.run();
 			}
@@ -297,7 +298,7 @@ public class BookOfWar {
 			postStartupFailMsg("Error: Assessed unit set must be positive (fix -a switch).");
 		}
 		else if (assessUnitNum > unitList.size()) {
-			postStartupFailMsg("Error: Assessed unit set must be no more thn database size (fix -a switch).");
+			postStartupFailMsg("Error: Assessed unit set must be no more than database size (fix -a switch).");
 		}
 		else if (baseUnitNum < 0) {
 			postStartupFailMsg("Error: Base unit set must be nonnegative (fix -b switch).");
@@ -1012,7 +1013,7 @@ public class BookOfWar {
 	void checkPikeInterrupt(Unit attacker, Unit defender) {
 		if (isPikeAvailable(defender) 
 				&& !(random.nextDouble() < pikeFlankingChance)
-				&& !(getsRearAttack(attacker))) 
+				&& !(getsRearAttack(attacker, defender))) 
 		{
 			reportDetail("** PIKES INTERRUPT ATTACK **");
 			pikesInterrupt = true;
@@ -1160,22 +1161,28 @@ public class BookOfWar {
 			return;
 		}
 
-		// Compute number of dice to roll
+		// Compute number of figures attacking
 		// (normally assumes wrap, but no rear bonus)
 		double atkWidth = attacker.getTotalWidth();
-		double defWidth = priorContact ? defender.getPerimeter() : defender.getTotalWidth();
+		double defWidth = priorContact 
+			? defender.getPerimeter() : defender.getTotalWidth();
 		int figsAtk = atkWidth <= defWidth ? attacker.getFiles() 
 			: (int) Math.ceil(defWidth / attacker.getFigWidth());
-		int atkDice = meleeAttackDice(attacker, defender, figsAtk);
+		if (defender.isSmallTarget()) {
+			figsAtk = Math.min(figsAtk, defender.getFigures());
+		}
 
-		// Compute attack bonus
+		// Compute number of dice & attack bonus
+		int numAtkDice = meleeAttackDice(attacker, defender, figsAtk);
 		int atkBonus = baseAtkBonus(attacker) 
 			+ miscAtkBonus(attacker, defender, false);
 
-		// Roll the attack dice
+		// Roll the attack dice (if needed)
 		int numHits = 0;
-		for (int i = 0; i < atkDice; i++) {
-			if (rollToHit(atkBonus, defender.getArmor())) {
+		for (int i = 0; i < numAtkDice; i++) {
+			if (attacker.autoHits()
+				|| rollToHit(atkBonus, defender.getArmor())) 
+			{
 				numHits++;
 			}
 		}
@@ -1197,9 +1204,18 @@ public class BookOfWar {
 
 	/**
 	*  Play out one ranged attack.
+	*  Note that embedded leaders are not touched here.
 	*/
 	void rangedAttack(Unit attacker, Unit defender, boolean fullRate) {
+
+		// Check preconditions
+		assert attacker.hasMissiles();
+		assert distance <= attacker.getRange();
 		assert distance > 0 || attacker.hasSpecial(SpecialType.MeleeShot);
+		assert !attacker.autoHits(); // solos not handled
+		assert !defender.isEmbedded();
+
+		// Make attacker visible
 		makeVisible(attacker);
 
 		// Check for defender immune
@@ -1207,14 +1223,9 @@ public class BookOfWar {
 			return;
 		}
 
-		// Measure range & get modifier (if any)
-		int rangeMod = 0;
-		if (distance > attacker.getRange()) {
-			return; // out-of-range
-		}
-		if (distance > attacker.getRange() / 2) {
-			rangeMod = -1;
-		}
+		// Measure range & get modifier
+		int rangeMod = distance <= attacker.getRange() / 2
+			? 0 : -1;
 
 		// Compute number of dice to roll
 		int figsAtk = attacker.getFigures();
@@ -1236,6 +1247,11 @@ public class BookOfWar {
 			}
 		}
 		
+		// Confirm hits if needed
+		if (defender.isSmallTarget()) {
+			numHits = confirmRangedHits(defender, numHits);
+		}
+		
 		// Apply damage
 		int damagePerHit = attacker.getDamage();
 		if (attacker.hasSpecial(SpecialType.Mounts)) {
@@ -1252,6 +1268,22 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Confirm a ranged hits for small (solo) targets.
+	*  Use the size parameter as chance in 6 to score hit.
+	*  @return the number of confirmed hits
+	*/
+	int confirmRangedHits(Unit defender, int numHits) {
+		assert defender.isSmallTarget();
+		int confirmed = 0;
+		for (int i = 0; i < numHits; i++) {
+			if (d6() <= defender.getFigWidthPips()) {
+				confirmed++;
+			}
+		}
+		return confirmed;
+	}
+
+	/**
 	*  Count melee attack dice (with special modifiers).
 	*/
 	int meleeAttackDice(Unit attacker, Unit defender, int figsAtk) {
@@ -1259,19 +1291,15 @@ public class BookOfWar {
 		// Initialize
 		int atkDice = figsAtk * attacker.getAttacks();
 
-		// Pikes get half dice in bad terrain
-		if (attacker.hasSpecial(SpecialType.Pikes) 
-				&& (terrain != Terrain.Open || weather == Weather.Rainy)) {
+		// Mounts & pikes get half dice in bad terrain
+		if ((attacker.hasSpecial(SpecialType.Mounts) 
+				|| attacker.hasSpecial(SpecialType.Pikes))
+			&& (terrain != Terrain.Open || weather == Weather.Rainy)) 
+		{
 			atkDice /= 2;
 		}
 
-		// Mounted gets half dice in bad terrain
-		if (attacker.hasSpecial(SpecialType.Mounts) 
-				&& (terrain != Terrain.Open || weather == Weather.Rainy)) {
-			atkDice /= 2;
-		}
-
-		// Return (at least 1 die)
+		// Return at least 1 die
 		return Math.max(atkDice, 1);
 	}
 
@@ -1311,18 +1339,46 @@ public class BookOfWar {
 
 		// Mounted archers assumed to hit as normal men (e.g.: elephants)
 		if (ranged && attacker.hasSpecial(SpecialType.Mounts)) {
-			bonus -= attacker.getHealth() / 3; // cut any bonus from health
+			bonus -= baseAtkBonus(attacker);
 		}
 
-		// Flyers, teleporters can get rear attacks
-		if (attacker.getFlyMove() >= 30) {
-			bonus += 1; // fast flyers always
+		// Melee rear attack bonus
+		if (!ranged && getsRearAttack(attacker, defender)) {
+			bonus += 1;
 		}
-		else if (getsRearAttack(attacker) && !priorContact) {
-			bonus += 1; // others 1st turn only
-		}
-
+		
 		return bonus;
+	}
+
+	/**
+	*  Is this a case where we get the melee rear attack bonus?
+	*/
+	boolean getsRearAttack (Unit attacker, Unit defender) {
+
+		// Embedded targets are not susceptible
+		if (defender.isEmbedded()) {
+			return false;
+		}
+
+		// Small non-embedded targets always suffer it
+		if (defender.isSmallTarget()) {
+			return true;
+		}	
+
+		// Fast flyers always get it
+		if (attacker.getFlyMove() >= 30) {
+			return true;
+		}
+		
+		// Slow flyers & teleporters get it on first contact only
+		if ((attacker.hasSpecial(SpecialType.Flight)
+				|| attacker.hasSpecial(SpecialType.Teleport))
+			&& !priorContact)
+		{
+			return true;
+		}
+			
+		return false;
 	}
 	
 	/**
@@ -1351,14 +1407,6 @@ public class BookOfWar {
 			&& terrain == Terrain.Open
 			&& weather != Weather.Rainy
 			&& !priorContact;
-	}
-
-	/**
-	*  Does this unit get an automatic rear attack?
-	*/
-	boolean getsRearAttack(Unit unit) {
-		return unit.hasSpecial(SpecialType.Flight)
-			|| unit.hasSpecial(SpecialType.Teleport);	
 	}
 
 	/**
@@ -1411,19 +1459,21 @@ public class BookOfWar {
 			default: break;
 		}
 
+		// Leadership
+		if (unit.hasLeader()) {
+			bonus += 1;
+		}
+
 		// Light weakness (orcs & goblins)
-		if (unit.hasSpecial(SpecialType.LightWeakness) && weather == Weather.Sunny) {
+		if (unit.hasSpecial(SpecialType.LightWeakness) 
+			&& weather == Weather.Sunny) 
+		{
 			bonus -= 1;
 		}
 
 		// Special ability bonuses
 		if (unit.hasSpecial(SpecialType.MoraleBonus)) {
 			bonus += unit.getSpecialParam(SpecialType.MoraleBonus);
-		}
-
-		// Leadership
-		if (unit.hasSolo()) {
-			bonus +=1 ;
 		}
 
 		return bonus;		
