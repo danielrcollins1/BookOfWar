@@ -12,110 +12,110 @@ import java.io.IOException;
 ******************************************************************************/
 
 public class BookOfWar {
-	enum Weather {Sunny, Cloudy, Rainy};
-	enum Terrain {Open, Gulley, Rough, Hill, Woods, Marsh, Stream, Pond};
-	enum SimMode {TableAssess, AutoBalance, FullBalance, ZoomGame};
+	enum Weather { Sunny, Cloudy, Rainy };
+	enum Terrain { Open, Gulley, Rough, Hill, Woods, Marsh, Stream, Pond };
+	enum SimMode { TableAssess, AutoBalance, FullBalance, ZoomGame };
 
 	//-----------------------------------------------------------------
 	//  Filename constants
 	//-----------------------------------------------------------------
 
 	/** Basic unit list filename. */
-	static final String BASIC_UNIT_FILE = "UnitTypes.csv";
+	private static final String BASIC_UNIT_FILE = "UnitTypes.csv";
 	
 	/** Solo unit list filename. */
-	static final String SOLO_UNIT_FILE = "SoloTypes.csv";
+	private static final String SOLO_UNIT_FILE = "SoloTypes.csv";
 	
 	//-----------------------------------------------------------------
 	//  Parameter defaults
 	//-----------------------------------------------------------------
 
 	/** Default trials per matchup. */
-	final int DEFAULT_TRIALS_PER_MATCHUP = 10000;
+	private static final int DEFAULT_TRIALS_PER_MATCHUP = 10000;
 
 	/** Default simulation mode. */
-	final SimMode DEFAULT_SIM_MODE = SimMode.TableAssess;
+	private static final SimMode DEFAULT_SIM_MODE = SimMode.TableAssess;
 
 	//-----------------------------------------------------------------
 	//  Constant fields
 	//-----------------------------------------------------------------
 
 	/** Budget minimum (basis 50). */
-	final int budgetMin = 50;
+	private final int budgetMin = 50;
 
 	/** Budget maximum (basis 100). */
-	final int budgetMax = 100;
+	private final int budgetMax = 100;
 
 	/** Balances swords vs. pikes & cavalry (basis 1.00). */
-	final double terrainMultiplier = 1.00;
+	private final double terrainMultiplier = 1.00;
 
 	/** Balances pikes vs. swords & cavalry (basis 0.20). */
-	final double pikeFlankingChance = 0.30;
+	private final double pikeFlankingChance = 0.30;
 
 	/** Limit per-hit damage by target's health? */
-	final boolean capDamageByHealth = false;
+	private final boolean capDamageByHealth = false;
 
 	/** Buy silver weapons for all troop types? */
-	final boolean useSilverWeapons = false;
+	private final boolean useSilverWeapons = false;
 	
 	/** Target for morale check success (per Vol-1, p. 12). */
-	final int MORALE_TARGET = 9;
+	private static final int MORALE_TARGET = 9;
 	
 	//-----------------------------------------------------------------
 	//  Out-of-game settings
 	//-----------------------------------------------------------------
 
 	/** Random number generator. */
-	Random random;
+	private Random random;
 
 	/** Mode of action for simulator. */
-	SimMode simMode;
+	private SimMode simMode;
 
 	/** List of basic unit types. */
-	List<Unit> unitList;
+	private List<Unit> unitList;
 
 	/** List of solo unit types. */
-	List<Solo> soloList;
+	private List<Solo> soloList;
 
 	/** Assess to this unit number (unit types 1 to n). */
-	int assessUnitNum;
+	private int assessUnitNum;
 
 	/** Base unit set for comparisons (unit types 1 to n). */
-	int baseUnitNum;
+	private int baseUnitNum;
 
 	/** Number of trials per matchup. */
-	int trialsPerMatchup;
+	private int trialsPerMatchup;
 
 	/** Units for zoom-in game (1-based index into Units list). */
-	int zoomGameUnit1, zoomGameUnit2;
+	private int zoomGameUnit1, zoomGameUnit2;
 
 	/** Use round number prices in autobalancer? */
-	boolean usePreferredValues;
+	private boolean usePreferredValues;
 	
 	/** Print results table in CSV format? */
-	boolean printFormatCSV;
+	private boolean printFormatCSV;
 
 	/** Flag to escape after startup procedures. */
-	boolean exitAfterStartup;
+	private boolean exitAfterStartup;
 	
 	//-----------------------------------------------------------------
 	//  In-game variables
 	//-----------------------------------------------------------------
 
 	/** Distance between opposing units. */
-	int distance;
+	private int distance;
 
 	/** Weather category for battle. */
-	Weather weather;
+	private Weather weather;
 
 	/** Uniform terrain for battle. */
-	Terrain terrain;
+	private Terrain terrain;
 	
 	/** Are the units already in contact? */
-	boolean priorContact;
+	private boolean priorContact;
 
 	/** Are pikes making an interrupting defense now? */
-	boolean pikesInterrupt;
+	private boolean pikesInterrupt;
 
 	//-----------------------------------------------------------------
 	//  Constructor(s)
@@ -124,7 +124,7 @@ public class BookOfWar {
 	/**
 	*  Construct the simulator.
 	*/
-	public BookOfWar () {
+	public BookOfWar() {
 		loadBasicUnits();
 		loadSoloUnits();
 		if (!exitAfterStartup) {
@@ -139,7 +139,7 @@ public class BookOfWar {
 	*  Copy constructor.
 	*  Copies only out-of-game setings.
 	*/
-	public BookOfWar (BookOfWar src) {
+	public BookOfWar(BookOfWar src) {
 		random = new Random();			
 		simMode = src.simMode;
 		unitList = src.unitList;
@@ -161,7 +161,7 @@ public class BookOfWar {
 	/**
 	*  Run the main method.
 	*/
-	public static void main (String[] args) {
+	public static void main(String[] args) {
 		BookOfWar book = new BookOfWar();
 		if (!book.exitAfterStartup) {
 			book.parseArgs(args);
@@ -177,7 +177,7 @@ public class BookOfWar {
 	/**
 	*  Print usage.
 	*/
-	public void printUsage () {
+	public void printUsage() {
 		System.out.println();
 		System.out.println("Usage: BookOfWar [options]");
 		System.out.println("  Options include:");
@@ -196,7 +196,7 @@ public class BookOfWar {
 	/**
 	*  Parse arguments.
 	*/
-	public void parseArgs (String[] args) {
+	public void parseArgs(String[] args) {
 		for (String s: args) {
 			if (s.charAt(0) == '-') {
 				switch (s.charAt(1)) {
@@ -220,7 +220,7 @@ public class BookOfWar {
 	/**
 	*  Get integer following equals sign in command parameter.
 	*/
-	int getParamInt (String s) {
+	int getParamInt(String s) {
 		if (s.charAt(2) == '=') {
 			try {
 				return Integer.parseInt(s.substring(3));
@@ -236,21 +236,21 @@ public class BookOfWar {
 	/**
 	*  Parse the simulation mode.
 	*/
-	void parseSimMode (String s) {
+	void parseSimMode(String s) {
 		int num = getParamInt(s);
 		switch (num) {
 			case 1: simMode = SimMode.TableAssess; return;
 			case 2: simMode = SimMode.AutoBalance; return;
 			case 3: simMode = SimMode.FullBalance; return;
 			case 4: simMode = SimMode.ZoomGame; return;
+			default: exitAfterStartup = true; return;
 		}
-		exitAfterStartup = true;
 	}
 
 	/**
 	*  Read the basic unit data.
 	*/
-	void loadBasicUnits () {
+	void loadBasicUnits() {
 		try {
 			String[][] table = CSVReader.readFile(BASIC_UNIT_FILE);
 			unitList = new ArrayList<Unit>(table.length - 1);
@@ -267,7 +267,7 @@ public class BookOfWar {
 	/**
 	*  Read the solo unit data.
 	*/
-	void loadSoloUnits () {
+	void loadSoloUnits() {
 		try {
 			String[][] table = CSVReader.readFile(SOLO_UNIT_FILE);
 			soloList = new ArrayList<Solo>(table.length - 1);
@@ -284,7 +284,7 @@ public class BookOfWar {
 	/**
 	*  Post a startup failure message.
 	*/
-	void postStartupFailMsg (String msg) {
+	void postStartupFailMsg(String msg) {
 		System.err.println(msg);
 		exitAfterStartup = true;	
 	}
@@ -292,23 +292,28 @@ public class BookOfWar {
 	/**
 	*  Validate values of assessed and base unit numbers.
 	*/
-	void checkArgUnitNums () {
-		if (assessUnitNum <= 0)
+	void checkArgUnitNums() {
+		if (assessUnitNum <= 0) {
 			postStartupFailMsg("Error: Assessed unit set must be positive (fix -a switch).");
-		else if (assessUnitNum > unitList.size())
+		}
+		else if (assessUnitNum > unitList.size()) {
 			postStartupFailMsg("Error: Assessed unit set must be no more thn database size (fix -a switch).");
-		else if (baseUnitNum < 0)
+		}
+		else if (baseUnitNum < 0) {
 			postStartupFailMsg("Error: Base unit set must be nonnegative (fix -b switch).");
-		else if (baseUnitNum >= unitList.size())
+		}
+		else if (baseUnitNum >= unitList.size()) {
 			postStartupFailMsg("Error: Base unit set must be less than database size (fix -b switch).");
-		else if (assessUnitNum <= baseUnitNum)
+		}
+		else if (assessUnitNum <= baseUnitNum) {
 			postStartupFailMsg("Error: Assessed unit set must be more than base units (fix -a or -b switch).");
+		}
 	}
 	
 	/**
 	*  Check base unit set positive (for auto-balancer).
 	*/
-	boolean checkBaseUnitsPositive () {
+	boolean checkBaseUnitsPositive() {
 		if (baseUnitNum <= 0) {
 			System.err.println("Error: Base unit set must be positive (fix -b switch).");
 			return false;
@@ -319,19 +324,20 @@ public class BookOfWar {
 	/**
 	*  Run the simulator in selected mode.
 	*/
-	void run () {
+	void run() {
  		switch (simMode) {
  			case TableAssess: assessmentTable(); break;
  			case AutoBalance: autoBalancer(); break;
 			case FullBalance: fullAutoBalancer(); break;
  			case ZoomGame: zoomInGame(); break;
+			default: System.err.println("Unknown simulation mode"); break;
  		}
 	}
 
 	/**
 	*  Create table of assessed win percents.
 	*/
-	void assessmentTable () {
+	void assessmentTable() {
 		List<Unit> assessUnits = unitList.subList(0, assessUnitNum);
 		makeAssessmentTable(assessUnits, assessUnits);
 	}
@@ -340,7 +346,9 @@ public class BookOfWar {
 	*  Auto-balance unit costs.
 	*/
 	void autoBalancer() {
-		if (!checkBaseUnitsPositive()) return;
+		if (!checkBaseUnitsPositive()) {
+			return;
+		}
 		List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
 		List<Unit> assessUnits = unitList.subList(baseUnitNum, assessUnitNum);
 		makeAutoBalancedTable(baseUnits, assessUnits);
@@ -349,9 +357,10 @@ public class BookOfWar {
 	/**
 	*  Report detail for a zoom-in game.
 	*/
-	void reportDetail (String s) {
-		if (simMode == SimMode.ZoomGame) 
+	void reportDetail(String s) {
+		if (simMode == SimMode.ZoomGame) {
 			System.out.println(s);
+		}
 	}
 	
 	/**
@@ -371,7 +380,7 @@ public class BookOfWar {
 	/**
 	*  Print formatted entry in a wide table column (left-justified).
 	*/
-	void printWideField (String text, int fieldWidth) {
+	void printWideField(String text, int fieldWidth) {
 		if (printFormatCSV) {
 			printf(text);
 		}			
@@ -384,9 +393,9 @@ public class BookOfWar {
 	/**
 	*  Get maximum name length in a list of units.
 	*/
-	int getMaxNameLength (List<Unit> unitList) {
+	int getMaxNameLength(List<Unit> pUnitList) {
 		int maxLength = 0;
-		for (Unit u: unitList) {
+		for (Unit u: pUnitList) {
 			int nameLength = u.getName().length();
 			if (nameLength > maxLength) {
 				maxLength = nameLength;
@@ -398,8 +407,8 @@ public class BookOfWar {
 	/**
 	*  Make general assessment table.
 	*/
-	void makeAssessmentTable (List<Unit> unitList1, List<Unit> unitList2) {
-		assert(!unitList1.isEmpty() && !unitList2.isEmpty());
+	void makeAssessmentTable(List<Unit> unitList1, List<Unit> unitList2) {
+		assert !unitList1.isEmpty() && !unitList2.isEmpty();
   
 		// Get formatting info
 		String sepChar = "" + getSepChar();
@@ -450,8 +459,8 @@ public class BookOfWar {
 	/**
 	*  Make auto-balanced table of estimated best costs.
 	*/
-	void makeAutoBalancedTable (List<Unit> baseUnits, List<Unit> newUnits) {
-		assert(baseUnits != newUnits);
+	void makeAutoBalancedTable(List<Unit> baseUnits, List<Unit> newUnits) {
+		assert baseUnits != newUnits;
 
 		// Get name field size
 		int nameColSize = getMaxNameLength(newUnits);
@@ -474,14 +483,15 @@ public class BookOfWar {
 	*  Set auto-balanced cost for a new unit.
 	*  Searches for sumWinPctErr closest to zero (0). 
 	*/
-	void setAutoBalancedCost (Unit newUnit, List<Unit> baseUnits) {
+	void setAutoBalancedCost(Unit newUnit, List<Unit> baseUnits) {
 		int lowCost = 1, highCost = newUnit.getCost();
 
 		// Check lower bound for cost
 		newUnit.setCost(lowCost);
 		double lowCostWinPctErr = playDocket(newUnit, baseUnits);
-		if (lowCostWinPctErr < 0)
+		if (lowCostWinPctErr < 0) {
 			return;
+		}
 
 		// Find upper bound for cost
 		newUnit.setCost(highCost);
@@ -494,7 +504,7 @@ public class BookOfWar {
 			
 		// Binary search for best cost
 		while (highCost - lowCost > 1) {
-			int midCost = (highCost + lowCost)/2;			
+			int midCost = (highCost + lowCost) / 2;			
 			newUnit.setCost(midCost);
 			double midWinPctErr = playDocket(newUnit, baseUnits);
 			if (midWinPctErr < 0) {
@@ -508,7 +518,7 @@ public class BookOfWar {
 		}
 
 		// Final check for which is better
-		assert(lowCostWinPctErr >= 0 && highCostWinPctErr <= 0);
+		assert lowCostWinPctErr >= 0 && highCostWinPctErr <= 0;
 		int bestCost = lowCostWinPctErr < -highCostWinPctErr ? lowCost : highCost;
 		newUnit.setCost(!usePreferredValues ? bestCost : PreferredValues.getClosest(bestCost));
 	}
@@ -536,8 +546,8 @@ public class BookOfWar {
 			adjustedAnyUnit = false;
 
 			// Make shuffled list of units to test
-			List<Unit> unitsToTest = new ArrayList<Unit>
-				(unitList.subList(baseUnitNum, assessUnitNum));
+			List<Unit> unitsToTest = new ArrayList<Unit>(
+				unitList.subList(baseUnitNum, assessUnitNum));
 			Collections.shuffle(unitsToTest);
 				
 			// Try to improve price of any unit in list
@@ -593,17 +603,19 @@ public class BookOfWar {
 	/**
 	*  Get new cost for full auto-balancer.
 	*/
-	int getNewCost (int oldCost, boolean up) {
-		if (!usePreferredValues)
-			return up ? oldCost + 1 : oldCost - 1;		
-		else 
+	int getNewCost(int oldCost, boolean up) {
+		if (!usePreferredValues) {
+			return up ? oldCost + 1 : oldCost - 1;
+		}
+		else {
 			return up ? PreferredValues.inc(oldCost) : PreferredValues.dec(oldCost);
+		}
 	}
 
 	/**
 	*  Battle two specified unit types with detailed in-game reports.
 	*/
-	void zoomInGame () {
+	void zoomInGame() {
 		if (zoomGameUnit1 <= 0 || zoomGameUnit2 <= 0) {
 			System.err.println("Error: Zoom-in game requires two units set (use -y and -z switches).");
 		}
@@ -646,10 +658,10 @@ public class BookOfWar {
 	*  Play repeated series of every unit in a list against every other unit.
 	*  Returns grand total of normalized win percent error.
 	*/
-	double playAllDockets (List<Unit> unitList) {
+	double playAllDockets(List<Unit> pUnitList) {
 		double sumNormError = 0.0;
-		for (Unit unit: unitList) {
-			double error = playDocket(unit, unitList);
+		for (Unit unit: pUnitList) {
+			double error = playDocket(unit, pUnitList);
 			sumNormError += normalError(error);
 		}
 		return sumNormError;
@@ -660,7 +672,7 @@ public class BookOfWar {
 	*  Returns sum win percentage error for the test unit.
 	*/
 	double playDocket(Unit unit, List<Unit> enemies) {
-		double results[] = playDocketThreads(unit, enemies);
+		double[] results = playDocketThreads(unit, enemies);
 		return sumErrArray(results);
 	}
 
@@ -670,12 +682,12 @@ public class BookOfWar {
 	*  Multithreaded: Spawns separate thread per series matchup.
 	*  Returns array of win ratios for test unit vs. each enemy in list.
 	*/
-	double[] playDocketThreads (Unit unit, List<Unit> enemies) {
+	double[] playDocketThreads(Unit unit, List<Unit> enemies) {
 
 		// Run series threads
 		int numOpp = enemies.size();
-		Thread threads[] = new Thread[numOpp];
-		SeriesRunner runners[] = new SeriesRunner[numOpp];
+		Thread[] threads = new Thread[numOpp];
+		SeriesRunner[] runners = new SeriesRunner[numOpp];
 		for (int i = 0; i < numOpp; i++) {
 			runners[i] = new SeriesRunner(this, unit, enemies.get(i));		
 			threads[i] = new Thread(runners[i]);
@@ -684,7 +696,7 @@ public class BookOfWar {
 		waitForThreads(threads);
 
 		// Compile results array
-		double results[] = new double[numOpp];
+		double[] results = new double[numOpp];
 		for (int i = 0; i < numOpp; i++) {
 			results[i] = runners[i].getTestUnitWinRatio();
 		}		
@@ -695,11 +707,13 @@ public class BookOfWar {
 	*  Play series of games between a pair of units.
 	*  Return ratio of wins by first unit.
 	*/
-	double playSeries (Unit unit1, Unit unit2) {
+	double playSeries(Unit unit1, Unit unit2) {
 		int unitOneWins = 0;
 		for (int i = 0; i < trialsPerMatchup; i++) {
 			boolean win1 = playGame(unit1, unit2);
-			if (win1) unitOneWins++;
+			if (win1) {
+				unitOneWins++;
+			}
 		}
 		return (double) unitOneWins / trialsPerMatchup;
 	}
@@ -708,7 +722,7 @@ public class BookOfWar {
 	*  Play out one game.
 	*  Return true if first unit wins.
 	*/
-	boolean playGame (Unit unit1, Unit unit2) {
+	boolean playGame(Unit unit1, Unit unit2) {
 
 		// Set up game
 		initBattlefield();
@@ -722,8 +736,9 @@ public class BookOfWar {
 		// Battle until one side wins
 		while (bothUnitsLive(unit1, unit2)) {
 			oneTurn(unit1, unit2);
-			if (bothUnitsLive(unit1, unit2))
+			if (bothUnitsLive(unit1, unit2)) {
 				oneTurn(unit2, unit1);
+			}
 		}
 
 		// Report on winner
@@ -735,23 +750,29 @@ public class BookOfWar {
 	/**
 	*  Check if both units in game still live.
 	*/
-	boolean bothUnitsLive (Unit unit1, Unit unit2) {
+	boolean bothUnitsLive(Unit unit1, Unit unit2) {
 		return getWinner(unit1, unit2) == null;
 	}
 
 	/**
 	*  Determine victorious unit.
 	*/
-	Unit getWinner (Unit unit1, Unit unit2) {
-		if (unit1.isBeaten()) return unit2;
-		if (unit2.isBeaten()) return unit1;
-		return null;
+	Unit getWinner(Unit unit1, Unit unit2) {
+		if (unit1.isBeaten()) {
+			return unit2;
+		}
+		else if (unit2.isBeaten()) {
+			return unit1;
+		}
+		else {
+			return null;
+		}
 	}
 
 	/**
 	*  Initialize battlefield (terrain, weather, distance, etc.).
 	*/
-	void initBattlefield () {
+	void initBattlefield() {
 		randomizeTerrain();
 		randomizeWeather();
 		distance = 25 + random.nextInt(25);
@@ -764,7 +785,7 @@ public class BookOfWar {
 	/**
 	*  Randomize budget & initialize opposing units.
 	*/
-	void initUnitsByBudget (Unit unit1, Unit unit2) {
+	void initUnitsByBudget(Unit unit1, Unit unit2) {
 
 		// Get random budget
 		int range = budgetMax - budgetMin;
@@ -790,8 +811,8 @@ public class BookOfWar {
 	/**
 	*  Initialize one unit by budget.
 	*/
-	void initUnit (Unit unit, int budget) {
-		assert(unit.getCost() <= budget);
+	void initUnit(Unit unit, int budget) {
+		assert unit.getCost() <= budget;
 
 // 		// Buy any attached hero
 // 		if (unit.hasHero()) {
@@ -833,7 +854,7 @@ public class BookOfWar {
 	/**
 	*  Set ranks and files for a unit.
 	*/
-	void setRanksAndFiles (Unit unit) {
+	void setRanksAndFiles(Unit unit) {
 
 		// Based on experience at table & need for maneuvarability,
 		// we fill out 5 files up to 3 ranks (up to 15 figures).
@@ -854,29 +875,32 @@ public class BookOfWar {
 	/**
 	*  Play out one turn of action for one attacking unit.
 	*/
-	void oneTurn (Unit attacker, Unit defender) {
+	void oneTurn(Unit attacker, Unit defender) {
 
 		// Initialize
 		defender.clearFigsLostInTurn();
 
 		// Take action by type
-		if (actAsRanged(attacker, defender))
+		if (actAsRanged(attacker, defender)) {
 			oneTurnRanged(attacker, defender);
-		else
+		}
+		else {
 			oneTurnMelee(attacker, defender);
+		}
 
 		// Check morale
 		checkMorale(defender);
 
 		// Check regeneration
-		if (defender.hasSpecial(SpecialType.Regeneration))
+		if (defender.hasSpecial(SpecialType.Regeneration)) {
 			defender.regenerate();
+		}
 	}
 
 	/**
 	*  Should this attacker pursue ranged shooting at this time?
 	*/
-	boolean actAsRanged (Unit attacker, Unit defender) {
+	boolean actAsRanged(Unit attacker, Unit defender) {
 		return distance > 0
 			&& attacker.hasMissiles()
 			&& minDistanceToShoot(attacker, defender) > 0
@@ -888,16 +912,18 @@ public class BookOfWar {
 	*  Either full-speed or half-speed only
 	*  Returns distance actually moved
 	*/
-	int moveSeekRange (Unit attacker, Unit defender, int goalDist, boolean fullSpeed) {
+	int moveSeekRange(Unit attacker, Unit defender, int goalDist, boolean fullSpeed) {
 
 		// Compute distance to move
-		assert(0 <= goalDist && goalDist < distance);
+		assert 0 <= goalDist && goalDist < distance;
 		int maxMove = getMove(attacker);
-		if (!fullSpeed && maxMove > 1) maxMove /= 2;
+		if (!fullSpeed && maxMove > 1) {
+			maxMove /= 2;
+		}
 		int moveDist = Math.min(distance - goalDist, maxMove);
 
 		// Make the move
-		assert(0 < moveDist && moveDist <= distance);
+		assert 0 < moveDist && moveDist <= distance;
 		distance -= moveDist;
 		reportDetail(attacker + " move to distance " + distance);
 		checkVisibility(attacker, defender);
@@ -914,9 +940,9 @@ public class BookOfWar {
 	*    & requires some wheeling to make happen
 	*  So: Only get one-quarter of full movement
 	*/
-	int moveBackward (Unit attacker) {
-		assert(distance > 0);
-		assert(attacker.hasSpecial(SpecialType.SplitMove));
+	int moveBackward(Unit attacker) {
+		assert distance > 0;
+		assert attacker.hasSpecial(SpecialType.SplitMove);
 		int moveDist = getMove(attacker) / 4;
 		distance += moveDist;
 		reportDetail(attacker + " move back to distance " + distance);
@@ -926,7 +952,7 @@ public class BookOfWar {
 	/**
 	*  Apply damage from attack & report.
 	*/
-	void applyDamage (Unit attacker, Unit defender, boolean ranged, int hits) {
+	void applyDamage(Unit attacker, Unit defender, boolean ranged, int hits) {
 		String startReport = attacker 
 			+ (ranged ? " shoot " : " attack ") + defender + ": ";
 
@@ -940,7 +966,7 @@ public class BookOfWar {
 	/**
 	*  Play out one turn for melee troops.
 	*/
-	void oneTurnMelee (Unit attacker, Unit defender) {
+	void oneTurnMelee(Unit attacker, Unit defender) {
 		int distMoved = 0;
 	
 		// Charge to contact
@@ -971,7 +997,7 @@ public class BookOfWar {
 	*  Try to make shot in melee, if possible.
 	*/
 	void checkMeleeShot(Unit attacker, Unit defender, int distMoved) {
-		assert(distance == 0);
+		assert distance == 0;
 		if (attacker.hasSpecial(SpecialType.MeleeShot) 
 			&& minDistanceToShoot(attacker, defender) > 0
 			&& distMoved <= getMove(attacker) / 2)
@@ -983,7 +1009,7 @@ public class BookOfWar {
 	/**
 	*  Check for pikes interrupt attack on defense.
 	*/
-	void checkPikeInterrupt (Unit attacker, Unit defender) {
+	void checkPikeInterrupt(Unit attacker, Unit defender) {
 		if (isPikeAvailable(defender) 
 				&& !(random.nextDouble() < pikeFlankingChance)
 				&& !(getsRearAttack(attacker))) 
@@ -1000,7 +1026,7 @@ public class BookOfWar {
 	/**
 	*  Play out one turn for ranged troops (AI-flavored).
 	*/
-	void oneTurnRanged (Unit attacker, Unit defender) {
+	void oneTurnRanged(Unit attacker, Unit defender) {
 		int distMoved = 0;
 
 		// Check relative firing ranges
@@ -1034,14 +1060,17 @@ public class BookOfWar {
 	*  Try to use split-move-and-fire, if possible.
 	*/
 	void checkSplitMove(Unit attacker, boolean outranged) {
-		if (attacker.hasSpecial(SpecialType.SplitMove) && !outranged)
+		if (attacker.hasSpecial(SpecialType.SplitMove) && !outranged) {
 			moveBackward(attacker);
+		}
 	}
 
 	/**
 	*  Find minimum distance to have any chance of shooting enemy.
 	*/
-	int minDistanceToShoot (Unit attacker, Unit defender) {
+	int minDistanceToShoot(Unit attacker, Unit defender) {
+
+		// Check factors prohibiting fire
 		if (!attacker.hasMissiles() 
 			|| !terrainPermitShots()
 			|| isAttackImmune(attacker, defender)
@@ -1049,27 +1078,35 @@ public class BookOfWar {
 		{
       	return 0;
       }
-		int baseToHit = defender.getArmor() - attacker.getHealth() / 3
+
+		// Get base to-hit target
+		int baseToHit = defender.getArmor() 
+			- baseAtkBonus(attacker)
 			- miscAtkBonus(attacker, defender, true);
-		if (baseToHit > 6)
+
+		// Determine minimum distance
+		if (baseToHit > 6) {
 			return 0;                     	   // Melee only
-		else if (baseToHit == 6)
+		}
+		else if (baseToHit == 6) {
 			return attacker.getRange() / 2;     // Short only
-		else
+		}
+		else {
 			return attacker.getRange();         // Full range
+		}
 	}
 
 	/**
 	*  Does terrain permit shooting?
 	*/
-	boolean terrainPermitShots () {
+	boolean terrainPermitShots() {
 		return !(terrain == Terrain.Woods || terrain == Terrain.Gulley);
 	}
 
 	/**
 	*  Find maximum distance to move, including terrain & weather.
 	*/
-	int getMove (Unit unit) {
+	int getMove(Unit unit) {
 		int moveCost;
 
 		// Terrain mods
@@ -1082,20 +1119,24 @@ public class BookOfWar {
 		}
 			
 		// Swimmers ignore streams
-		if (unit.hasSpecial(SpecialType.Swimming) && terrain == Terrain.Stream)
+		if (unit.hasSpecial(SpecialType.Swimming) && terrain == Terrain.Stream) {
 			moveCost = 1;
+		}
 
 		// Flyers ignore everything
-		if (unit.hasSpecial(SpecialType.Flight))
+		if (unit.hasSpecial(SpecialType.Flight)) {
 			moveCost = 1;
+		}
 
 		// Weather mods
-		if (weather == Weather.Rainy)
-			moveCost *= 2;		
+		if (weather == Weather.Rainy) {
+			moveCost *= 2;
+		}
 
 		// Mounted penalties double
-		if (unit.hasSpecial(SpecialType.Mounts) && moveCost > 1)
+		if (unit.hasSpecial(SpecialType.Mounts) && moveCost > 1) {
 			moveCost *= 2;
+		}
 
 		// Teleporters wait to pounce
 		if (unit.hasSpecial(SpecialType.Teleport)) {
@@ -1105,74 +1146,85 @@ public class BookOfWar {
 
 		// Return move (at least 1 inch)
 		int move = Math.max(unit.getMove(), unit.getFlyMove()) / moveCost;
-		if (move < 1) move = 1;
-		return move;
+		return Math.max(move, 1);
 	}
 
 	/**
 	*  Play out one melee attack.
 	*/
-	void meleeAttack (Unit attacker, Unit defender) {
+	void meleeAttack(Unit attacker, Unit defender) {
 		makeVisible(attacker);
 
 		// Check for defender immune
-		if (isAttackImmune(attacker, defender)) return;
+		if (isAttackImmune(attacker, defender)) {
+			return;
+		}
 
 		// Compute number of dice to roll
 		// (normally assumes wrap, but no rear bonus)
 		double atkWidth = attacker.getTotalWidth();
 		double defWidth = priorContact ? defender.getPerimeter() : defender.getTotalWidth();
-		int figsAtk = (atkWidth <= defWidth ? attacker.getFiles() :
-			(int) Math.ceil(defWidth / attacker.getFigWidth()));
+		int figsAtk = atkWidth <= defWidth ? attacker.getFiles() 
+			: (int) Math.ceil(defWidth / attacker.getFigWidth());
 		int atkDice = meleeAttackDice(attacker, defender, figsAtk);
 
 		// Compute attack bonus
-		int atkBonus = basicAtkBonus(attacker) 
+		int atkBonus = baseAtkBonus(attacker) 
 			+ miscAtkBonus(attacker, defender, false);
 
 		// Roll the attack dice
 		int numHits = 0;
 		for (int i = 0; i < atkDice; i++) {
-			if (rollToHit(atkBonus, defender.getArmor()))
+			if (rollToHit(atkBonus, defender.getArmor())) {
 				numHits++;
+			}
 		}
 
 		// Apply damage
 		int damagePerHit = attacker.getDamage();
-		if (pikesInterrupt)
+		if (pikesInterrupt) {
 			damagePerHit *= 2;
-		if (capDamageByHealth)
+		}
+		if (capDamageByHealth) {
 			damagePerHit = Math.min(damagePerHit, defender.getHealth());
+		}
 		int damageTotal = numHits * damagePerHit;
-		if (attacker.hasSpecial(SpecialType.DamageInc))
+		if (attacker.hasSpecial(SpecialType.DamageInc)) {
 			damageTotal += damageTotal / 2;
+		}
 		applyDamage(attacker, defender, false, damageTotal);
 	}
 
 	/**
 	*  Play out one ranged attack.
 	*/
-	void rangedAttack (Unit attacker, Unit defender, boolean fullRate) {
-		assert(distance > 0 || attacker.hasSpecial(SpecialType.MeleeShot));
+	void rangedAttack(Unit attacker, Unit defender, boolean fullRate) {
+		assert distance > 0 || attacker.hasSpecial(SpecialType.MeleeShot);
 		makeVisible(attacker);
 
 		// Check for defender immune
-		if (isAttackImmune(attacker, defender)) return;
+		if (isAttackImmune(attacker, defender)) {
+			return;
+		}
 
 		// Measure range & get modifier (if any)
 		int rangeMod = 0;
-		if (distance > attacker.getRange())
+		if (distance > attacker.getRange()) {
 			return; // out-of-range
-		if (distance > attacker.getRange() / 2)
+		}
+		if (distance > attacker.getRange() / 2) {
 			rangeMod = -1;
+		}
 
 		// Compute number of dice to roll
 		int figsAtk = attacker.getFigures();
 		int atkDice = figsAtk * attacker.getRate();
-		if (!fullRate) atkDice /= 2;
+		if (!fullRate) {
+			atkDice /= 2;
+		}
 
 		// Compute attack bonus
-		int atkBonus = basicAtkBonus(attacker) 
+		int atkBonus = baseAtkBonus(attacker)
 			+ miscAtkBonus(attacker, defender, true) 
 			+ rangeMod;
 
@@ -1186,10 +1238,12 @@ public class BookOfWar {
 		
 		// Apply damage
 		int damagePerHit = attacker.getDamage();
-		if (attacker.hasSpecial(SpecialType.Mounts))
+		if (attacker.hasSpecial(SpecialType.Mounts)) {
 			damagePerHit = 1; // elephant archers
-		if (attacker.hasSpecial(SpecialType.BigStones))
+		}
+		if (attacker.hasSpecial(SpecialType.BigStones)) {
 			damagePerHit += 1; // stone giants
+		}
 		if (capDamageByHealth) {
 			damagePerHit = Math.min(damagePerHit, defender.getHealth());
 		}
@@ -1200,20 +1254,20 @@ public class BookOfWar {
 	/**
 	*  Count melee attack dice (with special modifiers).
 	*/
-	int meleeAttackDice (Unit attacker, Unit defender, int figsAtk) {
+	int meleeAttackDice(Unit attacker, Unit defender, int figsAtk) {
 
 		// Initialize
 		int atkDice = figsAtk * attacker.getAttacks();
 
 		// Pikes get half dice in bad terrain
-		if (attacker.hasSpecial(SpecialType.Pikes) &&
-				(terrain != Terrain.Open || weather == Weather.Rainy)) {
+		if (attacker.hasSpecial(SpecialType.Pikes) 
+				&& (terrain != Terrain.Open || weather == Weather.Rainy)) {
 			atkDice /= 2;
 		}
 
 		// Mounted gets half dice in bad terrain
-		if (attacker.hasSpecial(SpecialType.Mounts) &&
-				(terrain != Terrain.Open || weather == Weather.Rainy)) {
+		if (attacker.hasSpecial(SpecialType.Mounts) 
+				&& (terrain != Terrain.Open || weather == Weather.Rainy)) {
 			atkDice /= 2;
 		}
 
@@ -1222,25 +1276,27 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Get basic attack bonus (one-third of health).
+	*  Get base attack bonus (one-third of health).
 	*/
-	int basicAtkBonus (Unit attacker) {
+	int baseAtkBonus(Unit attacker) {
 		return attacker.getHealth() / 3;
 	}
 
 	/**
 	*  Find miscellaneous to-hit bonuses.
 	*/
-	int miscAtkBonus (Unit attacker, Unit defender, boolean ranged) {
+	int miscAtkBonus(Unit attacker, Unit defender, boolean ranged) {
 		int bonus = 0;
 
 		// Rainy day weather missile penalty
-		if (ranged && weather == Weather.Rainy) 
+		if (ranged && weather == Weather.Rainy)  {
 			bonus -= 1;
+		}
 
 		// Orcs & goblins penalty in sunlight
-		if (attacker.hasSpecial(SpecialType.LightWeakness) && weather == Weather.Sunny)
+		if (attacker.hasSpecial(SpecialType.LightWeakness) && weather == Weather.Sunny) {
 			bonus -= 1;
+		}
 
  		// Halfling ranged attack bonus
  		if (attacker.hasSpecial(SpecialType.ShotBonus) && ranged) {
@@ -1272,22 +1328,25 @@ public class BookOfWar {
 	/**
 	*  Is the defender immune to this attack?
 	*/
-	boolean isAttackImmune (Unit attacker, Unit defender) {
-		if (!defender.isVisible())
+	boolean isAttackImmune(Unit attacker, Unit defender) {
+		if (!defender.isVisible()) {
 			return true; // Invisible can't be attacked
-		if (defender.hasSpecial(SpecialType.SilverToHit) && !useSilverWeapons 
-				&& attacker.getHealth() < 4 && !attacker.hasSpecial(SpecialType.SilverToHit))
+		}
+		if (defender.hasSpecial(SpecialType.SilverToHit) && !useSilverWeapons
+				&& attacker.getHealth() < 4 && !attacker.hasSpecial(SpecialType.SilverToHit)) {
 			return true; // AD&D rule vs. silver
+		}
 		if (defender.hasSpecial(SpecialType.MagicToHit)
-				&& attacker.getHealth() < 6 && !attacker.hasSpecial(SpecialType.MagicToHit))
+				&& attacker.getHealth() < 6 && !attacker.hasSpecial(SpecialType.MagicToHit)) {
 			return true; // AD&D rule vs. +2 to hit
+		}
 		return false;
 	}
 
 	/**
 	*  Is this unit able to make the special pike attack?
 	*/
-	boolean isPikeAvailable (Unit unit) {
+	boolean isPikeAvailable(Unit unit) {
 		return unit.hasSpecial(SpecialType.Pikes)
 			&& terrain == Terrain.Open
 			&& weather != Weather.Rainy
@@ -1297,7 +1356,7 @@ public class BookOfWar {
 	/**
 	*  Does this unit get an automatic rear attack?
 	*/
-	boolean getsRearAttack (Unit unit) {
+	boolean getsRearAttack(Unit unit) {
 		return unit.hasSpecial(SpecialType.Flight)
 			|| unit.hasSpecial(SpecialType.Teleport);	
 	}
@@ -1305,14 +1364,14 @@ public class BookOfWar {
 	/**
 	*  Roll to hit for one attack.
 	*/
-	boolean rollToHit (int bonus, int armor) {
+	boolean rollToHit(int bonus, int armor) {
 		return d6() + bonus >= armor;
 	}
 
 	/**
 	*  Check morale (sets field if failed).
 	*/
-	void checkMorale (Unit unit) {
+	void checkMorale(Unit unit) {
 		if (unit.getFigures() == 0 
 			|| unit.getFigsLostInTurn() == 0
 			|| unit.isFearless()) 
@@ -1342,26 +1401,30 @@ public class BookOfWar {
 	/**
 	*  Find miscellaneous morale bonuses.
 	*/
-	int miscMoraleBonus (Unit unit) {
+	int miscMoraleBonus(Unit unit) {
 		int bonus = 0;
 
 		// Alignment
-		if (unit.getAlignment() == Unit.Alignment.Lawful)
-			bonus += 1;
-		if (unit.getAlignment() == Unit.Alignment.Chaotic)
-			bonus -= 1;
+		switch (unit.getAlignment()) {
+			case Lawful: bonus += 1; break;
+			case Chaotic: bonus -= 1; break;
+			default: break;
+		}
 
 		// Light weakness (orcs & goblins)
-		if (unit.hasSpecial(SpecialType.LightWeakness) && weather == Weather.Sunny)
+		if (unit.hasSpecial(SpecialType.LightWeakness) && weather == Weather.Sunny) {
 			bonus -= 1;
+		}
 
 		// Special ability bonuses
-		if (unit.hasSpecial(SpecialType.MoraleBonus))
+		if (unit.hasSpecial(SpecialType.MoraleBonus)) {
 			bonus += unit.getSpecialParam(SpecialType.MoraleBonus);
+		}
 
 		// Leadership
-		if (unit.hasSolo())
+		if (unit.hasSolo()) {
 			bonus +=1 ;
+		}
 
 		return bonus;		
 	}
@@ -1369,7 +1432,7 @@ public class BookOfWar {
 	/**
 	*  Check for visibility in both directions
 	*/
-	void checkVisibility (Unit attacker, Unit defender) {
+	void checkVisibility(Unit attacker, Unit defender) {
 		checkVision(attacker, defender);
 		checkVision(defender, attacker);
 	}
@@ -1377,9 +1440,9 @@ public class BookOfWar {
 	/**
 	*  Check for one side spotting the other
 	*/
-	void checkVision (Unit spotter, Unit target) {
-		if (!target.isVisible() && 
-			spotter.getSpecialParam(SpecialType.Detection) >= distance)
+	void checkVision(Unit spotter, Unit target) {
+		if (!target.isVisible() 
+			&& spotter.getSpecialParam(SpecialType.Detection) >= distance)
 		{
 			target.setVisible(true);		
 		}
@@ -1390,7 +1453,7 @@ public class BookOfWar {
 	*    Assume just one terrain type across entire field.
 	*    Percents match coverage of entire table.
 	*/
-	void randomizeTerrain () {
+	void randomizeTerrain() {
 		int roll = (int) (random.nextDouble() / terrainMultiplier * 100);
 
 		// These percents are for entire table
@@ -1408,13 +1471,13 @@ public class BookOfWar {
 	/**
 	*  Randomize weather.
 	*/
-	void randomizeWeather () {
+	void randomizeWeather() {
 		switch (d6()) {
 			case 1: case 2: 
 				weather = Weather.Sunny; break;
 			case 3: case 4: case 5: 
 				weather = Weather.Cloudy; break;
-			case 6: 
+			default: 
 				weather = Weather.Rainy; break;
 		}
 	}
@@ -1422,14 +1485,14 @@ public class BookOfWar {
 	/**
 	*  Roll a 6-sided die.
 	*/
-	int d6 () {
+	int d6() {
 		return random.nextInt(6) + 1;
 	}
 
 	/**
 	*  Find greatest common denominator of two integers.
 	*/
-	int gcd (int a, int b) {
+	int gcd(int a, int b) {
 		while (b > 0) {
 			int temp = b;
 			b = a % b;
@@ -1441,23 +1504,25 @@ public class BookOfWar {
 	/**
 	*  Find least common multiple of two integers.
 	*/
-	int lcm (int a, int b) {
+	int lcm(int a, int b) {
 		return a * (b / gcd(a, b));
 	}
 
 	/**
 	*  Find the closest multiple of two integers to some target value.
 	*/
-	int closestCommonMultiple (int a, int b, int target) {
+	int closestCommonMultiple(int a, int b, int target) {
 		return closestMultiple(lcm(a, b), target);
 	}
 
 	/**
 	*  Find the closest multiple of one integer to some target value.
 	*/
-	int closestMultiple (int num, int target) {
-		int q = target/num;
-		if (q == 0) return num;
+	int closestMultiple(int num, int target) {
+		int q = target / num;
+		if (q == 0) {
+			return num;
+		}
 		int lowerBound = q * num;
 		int upperBound = (q + 1) * num;
 		int lowerError = target - lowerBound;
@@ -1468,7 +1533,7 @@ public class BookOfWar {
 	/**
 	*  Convert double to integer percent.
 	*/
-	int toPercent (double d) {
+	int toPercent(double d) {
 		return (int) Math.round(d * 100); 	
 	}
 
@@ -1488,7 +1553,7 @@ public class BookOfWar {
 	/**
 	*  Make an invisible attacker become visible.
 	*/
-	void makeVisible (Unit atk) {
+	void makeVisible(Unit atk) {
 		if (!atk.isVisible()) {
 			atk.setVisible(true);		
 			reportDetail(atk + " become visible!");
@@ -1776,7 +1841,7 @@ public class BookOfWar {
 	/**
 	*  Wait for all threads in an array to finish
 	*/
-	void waitForThreads (Thread[] threads) {
+	void waitForThreads(Thread[] threads) {
 		while (isAnyThreadLive(threads)) {
 			try {
 				Thread.sleep(10);
@@ -1795,26 +1860,26 @@ public class BookOfWar {
 class	SeriesRunner implements Runnable {
 
 	// Member records
-	BookOfWar bowSim;
-	Unit testUnit, oppUnit;
-	double testUnitWinRatio;
+	private BookOfWar bowSim;
+	private Unit testUnit, oppUnit;
+	private double testUnitWinRatio;
 
 	// Constructor
-	public SeriesRunner(BookOfWar bowSim, Unit testUnit, Unit oppUnit) {
-		this.bowSim = new BookOfWar(bowSim);
-		this.testUnit = new Unit(testUnit);
-		this.oppUnit = new Unit(oppUnit);
+	SeriesRunner(BookOfWar pBowSim, Unit pTestUnit, Unit pOppUnit) {
+		bowSim = new BookOfWar(pBowSim);
+		testUnit = new Unit(pTestUnit);
+		oppUnit = new Unit(pOppUnit);
 	}
 
 	// Interface run function
 	@Override
 	public void run() {
-		testUnitWinRatio = testUnit.equals(oppUnit) ?
-			0.5 : bowSim.playSeries(testUnit, oppUnit);
+		testUnitWinRatio = testUnit.equals(oppUnit) 
+			? 0.5 : bowSim.playSeries(testUnit, oppUnit);
 	}
 	
 	// Get win ratio result
-	public double getTestUnitWinRatio () {
+	public double getTestUnitWinRatio() {
 		return testUnitWinRatio;
 	}
 }
