@@ -27,7 +27,7 @@ public class Unit {
 	String name;
 	int cost, move, armor, health, attacks, damage, rate, range, width;
 	Alignment alignment;
-	List<SpecialAbility> specialList;
+	Set<SpecialAbility> specialSet;
 
 	// Unit in-play records
 	int figures, frontFiles, damageTaken, figsLostInTurn, specialCharges;
@@ -72,10 +72,7 @@ public class Unit {
 		range = src.range;
 		width = src.width;
 		alignment = src.alignment;
-		specialList = new ArrayList<SpecialAbility>(src.specialList.size());
-		for (SpecialAbility s: src.specialList) {
-			specialList.add(new SpecialAbility(s));		
-		}
+		specialSet = new HashSet<SpecialAbility>(src.specialSet);
 		// In-play records not copied
 	}
 
@@ -123,13 +120,13 @@ public class Unit {
 	*  Parse specials list.
 	*/
 	private void parseSpecials (String specialString) {
-		specialList = new ArrayList<SpecialAbility>();
+		specialSet = new HashSet<SpecialAbility>();
 		if (!specialString.equals("-")) {
 			String[] splits = specialString.split(", ");
 			for (String s: splits) {
 				SpecialAbility ability = SpecialAbility.createFromString(s);
 				if (ability != null) {
-					specialList.add(ability);
+					specialSet.add(ability);
 				}
 			}
 		}
@@ -244,7 +241,7 @@ public class Unit {
 	*  Get a special ability matching a given type.
 	*/
 	public SpecialAbility getAbilityByType (SpecialType type) {
-		for (SpecialAbility a: specialList) {
+		for (SpecialAbility a: specialSet) {
 			if (a.getType() == type) {
 				return a;
 			}
@@ -298,21 +295,21 @@ public class Unit {
 		this.visible = visible;
 	}
 
-	/**
-	*  Is this unit a wizard?
-	*/
-	public boolean isWizard () {
-		//return (this instanceof Hero && ((Hero)this).isWizard());
-		return false;
-	}
-
-	/**
-	*  Is this unit wizard(s), or have an attached wizard?
-	*/
-	public boolean hasAnyWizard () {
-		//return (isWizard() || hasHero() && getHero().isWizard());
-		return false;
-	}
+// 	/**
+// 	*  Is this unit a wizard?
+// 	*/
+// 	public boolean isWizard () {
+// 		return (this instanceof Hero && ((Hero)this).isWizard());
+// 		return false;
+// 	}
+// 
+// 	/**
+// 	*  Is this unit wizard(s), or have an attached wizard?
+// 	*/
+// 	public boolean hasAnyWizard () {
+// 		return (isWizard() || hasHero() && getHero().isWizard());
+// 		return false;
+// 	}
 
 	/**
 	*  Set routed status.
