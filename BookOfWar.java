@@ -128,14 +128,11 @@ public class BookOfWar {
 	*  Construct the simulator.
 	*/
 	public BookOfWar() {
+		random = new Random();
+		simMode = DEFAULT_SIM_MODE;
+		trialsPerMatchup = DEFAULT_TRIALS_PER_MATCHUP;
 		loadBasicUnits();
 		loadSoloUnits();
-		if (!exitAfterStartup) {
-			random = new Random();
-			simMode = DEFAULT_SIM_MODE;
-			assessUnitNum = unitList.size();
-			trialsPerMatchup = DEFAULT_TRIALS_PER_MATCHUP;
-		}
 	}
 
 	/**
@@ -299,25 +296,38 @@ public class BookOfWar {
 	*  Validate values of assessed and base unit numbers.
 	*/
 	void checkArgUnitNums() {
-		if (assessUnitNum <= 0) {
+	
+		// Set default if needed
+		int assessMaxSize = soloBalancing 
+			? soloList.size() : unitList.size();
+		if (assessUnitNum == 0) {
+			assessUnitNum = assessMaxSize;
+		}
+		
+		// Check assessment set size
+		if (assessUnitNum < 0) {
 			postStartupFailMsg("Error: Assessed unit set must be positive (fix -a switch).");
 		}
-		else if (assessUnitNum > unitList.size()) {
+		else if (assessUnitNum > assessMaxSize) {
 			postStartupFailMsg("Error: Assessed unit set must be no more than database size (fix -a switch).");
 		}
-		else if (baseUnitNum < 0) {
+
+		// Check base set size
+		if (baseUnitNum < 0) {
 			postStartupFailMsg("Error: Base unit set must be nonnegative (fix -b switch).");
 		}
-		else if (baseUnitNum >= unitList.size()) {
-			postStartupFailMsg("Error: Base unit set must be less than database size (fix -b switch).");
+		else if (baseUnitNum > unitList.size()) {
+			postStartupFailMsg("Error: Base unit set must be no more than database size (fix -b switch).");
 		}
-		else if (assessUnitNum <= baseUnitNum) {
+		
+		// Check relation between sets
+		if (!soloBalancing && baseUnitNum >= assessUnitNum) {
 			postStartupFailMsg("Error: Assessed unit set must be more than base units (fix -a or -b switch).");
 		}
 	}
 	
 	/**
-	*  Check base unit set positive (for auto-balancer).
+	*  Check base unit set positive (for certain cases).
 	*/
 	boolean checkBaseUnitsPositive() {
 		if (baseUnitNum <= 0) {
@@ -349,9 +359,12 @@ public class BookOfWar {
 			makeAssessmentTable(assessUnits, assessUnits);
 		}
 		else {
-			List<Unit> assessUnits = new ArrayList<Unit>(soloList);
-			List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
-			makeAssessmentTable(assessUnits, baseUnits);
+			if (checkBaseUnitsPositive()) {
+				List<Unit> assessUnits = 
+					new ArrayList<Unit>(soloList.subList(0, assessUnitNum));
+				List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
+				makeAssessmentTable(assessUnits, baseUnits);
+			}
 		}
 	}
 
@@ -359,18 +372,18 @@ public class BookOfWar {
 	*  Auto-balance unit costs.
 	*/
 	void autoBalancer() {
-		if (!checkBaseUnitsPositive()) {
-			return;
-		}
-		if (!soloBalancing) {
-			List<Unit> assessUnits = unitList.subList(baseUnitNum, assessUnitNum);
-			List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
-			makeAutoBalancedTable(assessUnits, baseUnits);
-		}
-		else {
-			List<Unit> assessUnits = new ArrayList<Unit>(soloList);
-			List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
-			makeAutoBalancedTable(assessUnits, baseUnits);
+		if (checkBaseUnitsPositive()) {
+			if (!soloBalancing) {
+				List<Unit> assessUnits = unitList.subList(baseUnitNum, assessUnitNum);
+				List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
+				makeAutoBalancedTable(assessUnits, baseUnits);
+			}
+			else {
+				List<Unit> assessUnits = 
+					new ArrayList<Unit>(soloList.subList(0, assessUnitNum));
+				List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
+				makeAutoBalancedTable(assessUnits, baseUnits);
+			}
 		}
 	}
 
@@ -636,10 +649,12 @@ public class BookOfWar {
 	*  Battle two specified unit types with detailed in-game reports.
 	*/
 	void zoomInGame() {
+		int maxFirstIndex = soloBalancing
+			? soloList.size() : unitList.size();
 		if (zoomGameUnit1 <= 0 || zoomGameUnit2 <= 0) {
-			System.err.println("Error: Zoom-in game requires two units set (use -y and -z switches).");
+			System.err.println("Error: Zoom-in game requires two unit indexes (use -y and -z switches).");
 		}
-		else if (zoomGameUnit1 > unitList.size() || zoomGameUnit2 > unitList.size()) {
+		else if (zoomGameUnit1 > maxFirstIndex || zoomGameUnit2 > unitList.size()) {
 			System.err.println("Error: Zoom-in game has unit out of range for database.");
 		}		
 		else {
