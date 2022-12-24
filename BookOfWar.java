@@ -1312,19 +1312,20 @@ public class BookOfWar {
 		// Initialize
 		int atkDice = figsAtk * attacker.getAttacks();
 
+		// Sweep attacks replace normal attacks
+		if (defender.isSweepable()
+			&& attacker.hasSpecial(SpecialType.SweepAttack))
+		{
+			atkDice = figsAtk 
+				* attacker.getSpecialParam(SpecialType.SweepAttack);
+		}
+
 		// Mounts & pikes get half dice in bad terrain
 		if ((attacker.hasSpecial(SpecialType.Mounts) 
 				|| attacker.hasSpecial(SpecialType.Pikes))
 			&& (terrain != Terrain.Open || weather == Weather.Rainy)) 
 		{
 			atkDice /= 2;
-		}
-
-		// Sweep attacks multiply damage
-		if (defender.isSweepable()
-			&& attacker.hasSpecial(SpecialType.SweepAttacks))
-		{
-			atkDice *= attacker.getSpecialParam(SpecialType.SweepAttacks);
 		}
 
 		// Return at least 1 die

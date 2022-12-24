@@ -18,7 +18,8 @@ public enum SpecialType {
 	Invisibility, Detection, Teleport, Regeneration, 
 	FireImmunity, ColdImmunity, VoltImmunity, FireVulnerability,
 	Flight, Swimming, BreathWeapon, Whirlwind, Spells,
-	SweepAttacks, SilverToHit, MagicToHit, MagicResistance, WeatherControl;
+	SweepAttack, SilverToHit, MagicToHit, MagicResistance, 
+	WeatherControl, Fear;
 	
 	//----------------------------------------------------------------------
 	//  Methods
