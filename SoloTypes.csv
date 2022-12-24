@@ -1,8 +1,8 @@
 Unit,Cost,Move,Armor,Health,Atk,Dam,Rate,Range,Width,Align,Special
-Superhero,30,6,7,1,1,1,0,0,1,N,SweepAttacks (2)
-"Lord, 12th Level",30,6,7,1,1,1,0,0,1,N,SweepAttacks (3)
-"Lord, 16th Level",55,6,7,2,1,1,0,0,1,N,"SweepAttacks (4), DamageInc"
-"Lord, 20th Level",55,6,7,2,1,1,0,0,1,N,"SweepAttacks (5), DamageInc"
+Superhero,40,6,7,1,1,1,0,0,1,N,SweepAttacks (2)
+"Lord, 12th Level",45,6,7,1,1,1,0,0,1,N,SweepAttacks (3)
+"Lord, 16th Level",120,6,7,2,1,1,0,0,1,N,"SweepAttacks (4), DamageInc"
+"Lord, 20th Level",130,6,7,2,1,1,0,0,1,N,"SweepAttacks (5), DamageInc"
 "Wizard, 11th Level",1,12,6,1,0,0,0,0,1,N,Spells
 "Wizard, 13th Level",1,12,6,1,0,0,0,0,1,N,Spells
 "Wizard, 16th Level",1,12,6,1,0,0,0,0,1,N,Spells
