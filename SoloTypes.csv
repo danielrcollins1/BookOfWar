@@ -1,16 +1,16 @@
 Unit,Cost,Move,Armor,Health,Atk,Dam,Rate,Range,Width,Align,Special
 Superhero,40,9,7,1,1,1,0,0,1,N,SweepAttack (2)
-"Lord, 12th Level",45,9,7,1,1,1,0,0,1,N,SweepAttack (3)
-"Lord, 16th Level",100,9,7,2,1,1,0,0,1,N,SweepAttack (4)
-"Lord, 20th Level",120,9,7,2,1,1,0,0,1,N,SweepAttack (5)
-"Wizard, 11th Level",1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
-"Wizard, 13th Level",1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
-"Wizard, 16th Level",1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
+Lord 12th Level,45,9,7,1,1,1,0,0,1,N,SweepAttack (3)
+Lord 16th Level,95,9,7,2,1,1,0,0,1,N,SweepAttack (4)
+Lord 20th Level,105,9,7,2,1,1,0,0,1,N,SweepAttack (5)
+Wizard 11th Level,1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
+Wizard 13th Level,1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
+Wizard 16th Level,1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
 Storm Giant,15,15,5,1,1,1,0,0,2,N,WeatherControl
 Titan,35,15,6,2,1,1,0,0,2,N,Spells
-"Dragon, Blue",20,9,6,1,1,1,0,0,2,N,"Flight (24), Detection (15), BreathWeapon"
-"Dragon, Red",20,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), BreathWeapon"
-"Dragon, Gold",20,9,6,1,1,1,0,0,2,L,"Flight (24), Detection (15), BreathWeapon"
+Blue Dragon,20,9,6,1,1,1,0,0,2,N,"Flight (24), Detection (15), Fear (4), BreathWeapon"
+Red Dragon,20,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), Fear (4), BreathWeapon"
+Gold Dragon,20,9,6,1,1,1,0,0,2,L,"Flight (24), Detection (15), Fear (4), BreathWeapon"
 Balrog,20,6,6,1,1,1,0,0,2,C,"Flight (15), MagicResistance"
 Lord & Griffon,65,12,6,2,2,1,0,0,2,N,"Flight (30), Detection (24), SweepAttack (3)"
-Lich & Wyvern,35,9,6,2,1,1,0,0,2,C,"Flight (24), Detection (24), Spells, Fear"
+Lich & Wyvern,35,9,6,2,1,1,0,0,2,C,"Flight (24), Detection (24), Spells, Fear (5)"
