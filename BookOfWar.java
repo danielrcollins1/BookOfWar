@@ -1320,6 +1320,13 @@ public class BookOfWar {
 			atkDice /= 2;
 		}
 
+		// Sweep attacks multiply damage
+		if (defender.isSweepable()
+			&& attacker.hasSpecial(SpecialType.SweepAttacks))
+		{
+			atkDice *= attacker.getSpecialParam(SpecialType.SweepAttacks);
+		}
+
 		// Return at least 1 die
 		return Math.max(atkDice, 1);
 	}
@@ -1407,14 +1414,14 @@ public class BookOfWar {
 	*/
 	boolean isAttackImmune(Unit attacker, Unit defender) {
 
-		// Units that auto-hit (solos) assumed to bypass protections
-		if (attacker.autoHits()) {
-			return false;
-		}
-
 		// Invisible units can't be attacked
 		if (!defender.isVisible()) {
 			return true;
+		}
+
+		// Units that auto-hit (solos) assumed to bypass protections
+		if (attacker.autoHits()) {
+			return false;
 		}
 
 		// Check silver-to-hit (AD&D rule: 4HD+ bypasses)
@@ -1446,7 +1453,11 @@ public class BookOfWar {
 	*  Roll to hit for one attack.
 	*/
 	boolean rollToHit(int bonus, int armor) {
-		return d6() + bonus >= armor;
+		int die = d6();
+		int total = die + bonus;
+		//reportDetail("Attack roll: die " + die + " + " + bonus
+		//	+ " = " + total + " vs. armor " + armor);
+		return total >= armor;
 	}
 
 	/**

@@ -307,7 +307,7 @@ public class Unit {
 	*/
 	public int getSpecialParam(SpecialType type) {
 		SpecialAbility ability = getAbilityByType(type);
-		return ability == null ? 0 : ability.getParam();
+		return ability != null ? ability.getParam() : 0;
 	}
 
 	/**
