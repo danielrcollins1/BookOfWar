@@ -77,6 +77,9 @@ public class Unit {
 		width = src.width;
 		alignment = src.alignment;
 		specialSet = new HashSet<SpecialAbility>(src.specialSet);
+		if (src.leader != null) {
+			leader = new Solo(src.leader);
+		}
 		// In-play records not copied
 	}
 
