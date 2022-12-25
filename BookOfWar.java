@@ -921,7 +921,7 @@ public class BookOfWar {
 		takeOneTurnAction(attacker, defender);
 
 		// Check morale
-		checkMorale(defender);
+		checkMoraleEndTurn(defender);
 
 		// Check regeneration
 		if (defender.hasSpecial(SpecialType.Regeneration)) {
@@ -966,9 +966,10 @@ public class BookOfWar {
 	*  Returns distance actually moved
 	*/
 	int moveSeekRange(Unit attacker, Unit defender, int goalDist, boolean fullSpeed) {
+		assert distance > 0;
+		assert 0 <= goalDist && goalDist < distance;
 
 		// Compute distance to move
-		assert 0 <= goalDist && goalDist < distance;
 		int maxMove = getMove(attacker);
 		if (!fullSpeed && maxMove > 1) {
 			maxMove /= 2;
@@ -981,7 +982,7 @@ public class BookOfWar {
 		reportDetail(attacker + " move to distance " + distance);
 		checkVisibility(attacker, defender);
 		if (distance == 0) {
-			checkPikeInterrupt(attacker, defender);
+			checkInitialContact(attacker, defender);
 		}
 		return moveDist;
 	}
@@ -1038,7 +1039,7 @@ public class BookOfWar {
 
  		// Attack if in contact
  		if (distance == 0) {
-			if (!attacker.isBeaten()) {
+			if (!attacker.isBeaten() && !defender.isBeaten()) {
 	 			meleeAttack(attacker, defender);
 				checkMeleeShot(attacker, defender, distMoved);
 			}
@@ -1060,6 +1061,23 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Make special checks on initial contact.
+	*/
+	void checkInitialContact(Unit attacker, Unit defender) {
+		assert distance == 0 && !priorContact;
+
+		// Check for attacker fear ability
+		if (attacker.hasSpecial(SpecialType.Fear)) {
+			checkFearAbility(attacker, defender);		
+		}
+		
+		// Check for defender pikes
+		if (defender.hasSpecial(SpecialType.Pikes)) {
+			checkPikeInterrupt(attacker, defender);
+		}	
+	}
+
+	/**
 	*  Check for pikes interrupt attack on defense.
 	*/
 	void checkPikeInterrupt(Unit attacker, Unit defender) {
@@ -1071,7 +1089,7 @@ public class BookOfWar {
 			pikesInterrupt = true;
 			attacker.clearFigsLostInTurn();
 			meleeAttack(defender, attacker);
-			checkMorale(attacker);
+			checkMoraleEndTurn(attacker);
 			pikesInterrupt = false;
 		}
 	}
@@ -1493,27 +1511,36 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Check morale (sets field if failed).
+	*  Check morale at end of turn.
 	*/
-	void checkMorale(Unit unit) {
-		if (unit.getFigures() == 0 
-			|| unit.getFigsLostInTurn() == 0
-			|| unit.isFearless()) 
-		{
+	void checkMoraleEndTurn(Unit unit) {
+		if (unit.getFigsLostInTurn() > 0) {
+			int rateOfLoss = unit.getFigures() / unit.getFigsLostInTurn();
+			checkMorale(unit, rateOfLoss);
+		}
+	}
+
+	/**
+	*  Make a morale check given the rate of loss.
+	*  Sets routed field if failed.
+	*/
+	void checkMorale(Unit unit, int rateOfLoss) {
+
+		// Check waivers
+		if (unit.isBeaten() || unit.isFearless()) {
 			return;
 		}
 
 		// Compute bonus
-		int hitDice = unit.getHealth();
-		int rateOfLoss = unit.getFigures() / unit.getFigsLostInTurn();
+		int health = unit.getHealth();
 		int miscBonus = miscMoraleBonus(unit);
-		int bonus = hitDice + rateOfLoss + miscBonus;
+		int bonus = rateOfLoss + health + miscBonus;
 
 		// Make the roll
 		int roll = d6() + d6();
 		int total = roll + bonus;
 
-		// Report and assessment
+		// Check and report
 		reportDetail("Morale check (" + unit + "): " 
 			+ roll + " + " + bonus + " = " + total);
 		if (total < MORALE_TARGET) {
@@ -1701,6 +1728,15 @@ public class BookOfWar {
 		}
 	
 		return false;	
+	}
+
+	/**
+	*  Check the fear effect of dragons as they charge to melee.
+	*/
+	void checkFearAbility(Unit attacker, Unit defender) {
+		assert distance == 0 && !priorContact;
+		assert attacker.hasSpecial(SpecialType.Fear);
+		checkMorale(defender, 0);
 	}
 
 // 	/**
