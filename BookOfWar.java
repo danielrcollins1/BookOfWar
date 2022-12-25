@@ -917,13 +917,8 @@ public class BookOfWar {
 		// Initialize
 		defender.clearFigsLostInTurn();
 
-		// Take action by type
-		if (actAsRanged(attacker, defender)) {
-			oneTurnRanged(attacker, defender);
-		}
-		else {
-			oneTurnMelee(attacker, defender);
-		}
+		// Take one turn of action
+		takeOneTurnAction(attacker, defender);
 
 		// Check morale
 		checkMorale(defender);
@@ -935,13 +930,34 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Should this attacker pursue ranged shooting at this time?
+	*  Take one turn of action by type of unit.
 	*/
-	boolean actAsRanged(Unit attacker, Unit defender) {
-		return distance > 0
+	void takeOneTurnAction(Unit attacker, Unit defender) {
+		if (tryOneTurnCaster(attacker, defender)) {
+			return;
+		}
+		else if (tryOneTurnRanged(attacker, defender)) {
+			return;
+		}
+		else {
+			oneTurnMelee(attacker, defender);
+		}
+	}
+
+	/**
+	*  Check if we should act as a ranged attacker ths turn.
+	*  @return true if we took an action.
+	*/
+	boolean tryOneTurnRanged(Unit attacker, Unit defender) {
+		if (distance > 0
 			&& attacker.hasMissiles()
 			&& minDistanceToShoot(attacker, defender) > 0
-			&& !attacker.hasSpecial(SpecialType.MeleeShot);
+			&& !attacker.hasSpecial(SpecialType.MeleeShot))
+		{
+			oneTurnRanged(attacker, defender);
+			return true;		
+		}
+		return false;
 	}
 
 	/**
@@ -1656,8 +1672,7 @@ public class BookOfWar {
 	}
 
 	//-----------------------------------------------------------------
-	//  Methods for special abilities
-	//  (Hero attacks, wizard spells, dragon breath, etc.)
+	//  Methods for magic caster abilities.
 	//-----------------------------------------------------------------
 
 	/**
@@ -1668,6 +1683,24 @@ public class BookOfWar {
 			atk.setVisible(true);		
 			reportDetail(atk + " become visible!");
 		}
+	}
+
+	/**
+	*  Check if a unit should act as a caster this turn.
+	*  @return true if we took an action.
+	*/
+	boolean tryOneTurnCaster(Unit attacker, Unit defender) {
+
+		// Storm giants make rain
+		if (attacker.hasSpecial(SpecialType.WeatherControl)
+				&& weather != Weather.Rainy) 
+		{
+			weather = Weather.Rainy;
+			reportDetail(attacker + " use Weather Control to make weather Rainy");
+			return true;
+		}
+	
+		return false;	
 	}
 
 // 	/**
