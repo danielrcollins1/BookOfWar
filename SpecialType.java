@@ -16,10 +16,12 @@ public enum SpecialType {
 	WoodsCover, GiantDodging, LightWeakness, GiantClass,
 	ShotBonus, MeleeShot, NoRainShot, BigStones, DamageInc, 
 	Invisibility, Detection, Teleport, Regeneration, 
-	FireImmunity, ColdImmunity, VoltImmunity, FireVulnerability,
-	Flight, Swimming, BreathWeapon, Whirlwind, Spells,
+	Flight, Swimming, Whirlwind, Spells,
 	SweepAttack, SilverToHit, MagicToHit, MagicResistance, 
-	WeatherControl, Fear;
+	WeatherControl, Fear, 
+	FireBreath, VoltBreath, ColdBreath, AcidBreath, PoisonBreath, 
+	MultiBreath, FireImmunity, VoltImmunity, ColdImmunity, AcidImmunity,
+	PoisonImmunity, FireVulnerability;
 	
 	//----------------------------------------------------------------------
 	//  Methods
@@ -37,5 +39,18 @@ public enum SpecialType {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	*  Is this a type of breath weapon?
+	*  @return true if this is a breath weapon.
+	*/
+	public boolean isBreathWeapon() {
+		switch (this) {
+			case FireBreath: case ColdBreath: case AcidBreath:
+			case VoltBreath: case PoisonBreath: case MultiBreath:
+				return true;
+			default: return false;
+		}	
 	}
 }

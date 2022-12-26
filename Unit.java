@@ -32,9 +32,9 @@ public class Unit {
 	private Set<SpecialAbility> specialSet;
 
 	// Unit in-play records
-	private int figures, frontFiles, 
-		damageTaken, figsLostInTurn, specialCharges;
-	private boolean routed, visible;
+	private int figures, frontFiles, damageTaken, figsLostInTurn;
+	private boolean routed, visible, savedVsFear;
+	protected int specialCharges;
 	private Solo leader;
 
 	//----------------------------------------------------------------------
@@ -80,7 +80,7 @@ public class Unit {
 		if (src.leader != null) {
 			leader = new Solo(src.leader);
 		}
-		// In-play records not copied
+		// Other in-play records not copied
 	}
 
 	//----------------------------------------------------------------------
@@ -115,6 +115,7 @@ public class Unit {
 	public boolean isSmallTarget() { return false; }
 	public boolean isSweepable() { return health <= 1; }
 	public boolean autoHits() { return false; }
+	public boolean getsSaves() { return false; }
 	
 	/**
 	*  Parse alignment code.
@@ -314,6 +315,27 @@ public class Unit {
 	}
 
 	/**
+	*  Get a breath weapon, if any.
+	*  @return this unit's breath weapon (or null).
+	*/
+	public SpecialAbility getBreathWeapon() {
+		for (SpecialAbility ability: specialSet) {
+			if (ability.getType().isBreathWeapon()) {
+				return ability;
+			}
+		}
+		return null;
+	}
+
+	/**
+	*  Does this unit have any type of breath weapon?
+	*  @return true f we have a breath weapon.
+	*/
+	public boolean hasBreathWeapon() {
+		return getBreathWeapon() != null;
+	}
+
+	/**
 	*  Decrement special ability charges.
 	*/
 	public void decrementCharges() {
@@ -369,6 +391,22 @@ public class Unit {
 	};
 
 	/**
+	*  Has this unit saved against fear magic?
+	*  @return true if we have made a save.
+	*/
+	public boolean hasSavedVsFear() {
+		return savedVsFear;	
+	}
+
+	/**
+	*  Record whether this unit has saved versus fear.
+	*  @param madeSave true if we have saved versus fear.
+	*/
+	public void setSavedVsFear(boolean madeSave) {
+		savedVsFear = madeSave;
+	}
+
+	/**
 	*  Return a plural suffix if needed.
 	*  @param n a number.
 	*  @return "s" if n is not one.
@@ -382,7 +420,7 @@ public class Unit {
 	*  @return string representation of this unit.
 	*/
 	public String toString() {
-		return name + "(" + figures + " fig" + plural(figures) + ", "
+		return name + " (" + figures + " fig" + plural(figures) + ", "
 			+ getRanks() + " rank" + plural(getRanks()) + ")";
 	}
 	

@@ -4,13 +4,17 @@ Lord 12th Level,45,9,7,1,1,1,0,0,1,N,SweepAttack (3)
 Lord 16th Level,95,9,7,2,1,1,0,0,1,N,SweepAttack (4)
 Lord 20th Level,105,9,7,2,1,1,0,0,1,N,SweepAttack (5)
 Lord & Griffon,65,12,6,2,2,1,0,0,2,N,"Flight (30), Detection (24), SweepAttack (3)"
-Storm Giant,15,15,5,1,1,1,0,0,2,N,WeatherControl
-Blue Dragon,25,9,6,1,1,1,0,0,2,N,"Flight (24), Detection (15), Fear, BreathWeapon"
-Red Dragon,25,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), Fear, BreathWeapon"
-Gold Dragon,25,9,6,1,1,1,0,0,2,L,"Flight (24), Detection (15), Fear, BreathWeapon"
-Balrog,20,6,6,1,1,1,0,0,2,C,"Flight (15), MagicResistance"
-Lich & Wyvern,35,9,6,2,1,1,0,0,2,C,"Flight (24), Detection (24), Spells, Fear"
+White Dragon,70,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), ColdBreath (10), Fear"
+Black Dragon,80,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), AcidBreath (10), Fear"
+Green Dragon,80,9,6,1,1,1,0,0,2,N,"Flight (24), Detection (15), PoisonBreath (10), Fear"
+Blue Dragon,80,9,6,1,1,1,0,0,2,N,"Flight (24), Detection (15), VoltBreath (10), Fear"
+Red Dragon,70,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), FireBreath (11), Fear"
+Gold Dragon,80,9,6,1,1,1,0,0,2,L,"Flight (24), Detection (15), MultiBreath (12), Fear"
+VO Large Gold Dragon,120,9,6,2,1,1,0,0,2,L,"Flight (24), Detection (15), MultiBreath (20), Fear"
 Wizard 11th Level,1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
 Wizard 13th Level,1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
 Wizard 16th Level,1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
+Lich & Wyvern,35,9,6,2,1,1,0,0,2,C,"Flight (24), Detection (24), Spells, Fear"
 Titan,35,15,6,2,1,1,0,0,2,N,Spells
+Balrog,20,6,6,1,1,1,0,0,2,C,"Flight (15), MagicResistance"
+Storm Giant,150,15,5,1,1,1,0,0,2,N,WeatherControl

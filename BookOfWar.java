@@ -15,6 +15,7 @@ public class BookOfWar {
 	enum Weather { Sunny, Cloudy, Rainy };
 	enum Terrain { Open, Gulley, Rough, Hill, Woods, Marsh, Stream, Pond };
 	enum SimMode { TableAssess, AutoBalance, FullBalance, ZoomGame };
+	enum EnergyType { Fire, Volt, Acid, Cold, Poison, Multi };
 
 	//-----------------------------------------------------------------
 	//  Filename constants
@@ -330,6 +331,13 @@ public class BookOfWar {
 	*  Check base unit set positive (for certain cases).
 	*/
 	boolean checkBaseUnitsPositive() {
+	
+		// Set default if needed
+		if (soloBalancing && baseUnitNum == 0) {
+			baseUnitNum = unitList.size();
+		}
+	
+		// Check base set size
 		if (baseUnitNum <= 0) {
 			System.err.println("Error: Base unit set must be positive (fix -b switch).");
 			return false;
@@ -885,6 +893,7 @@ public class BookOfWar {
 		unit.setVisible(!invisible);
 
 		// Prepare any special abilities
+		unit.setSavedVsFear(false);
 		unit.refreshCharges();
 	}
 
@@ -1040,6 +1049,7 @@ public class BookOfWar {
  		// Attack if in contact
  		if (distance == 0) {
 			if (!attacker.isBeaten() && !defender.isBeaten()) {
+				checkMeleeSpecials(attacker, defender);
 	 			meleeAttack(attacker, defender);
 				checkMeleeShot(attacker, defender, distMoved);
 			}
@@ -1066,11 +1076,6 @@ public class BookOfWar {
 	void checkInitialContact(Unit attacker, Unit defender) {
 		assert distance == 0 && !priorContact;
 
-		// Check for attacker fear ability
-		if (attacker.hasSpecial(SpecialType.Fear)) {
-			checkFearAbility(attacker, defender);		
-		}
-		
 		// Check for defender pikes
 		if (defender.hasSpecial(SpecialType.Pikes)) {
 			checkPikeInterrupt(attacker, defender);
@@ -1231,18 +1236,8 @@ public class BookOfWar {
 			return;
 		}
 
-		// Compute number of figures attacking
-		// (normally assumes wrap, but no rear bonus)
-		double atkWidth = attacker.getTotalWidth();
-		double defWidth = priorContact 
-			? defender.getPerimeter() : defender.getTotalWidth();
-		int figsAtk = atkWidth <= defWidth ? attacker.getFiles() 
-			: (int) Math.ceil(defWidth / attacker.getFigWidth());
-		if (defender.isSmallTarget()) {
-			figsAtk = Math.min(figsAtk, defender.getFigures());
-		}
-
 		// Compute number of dice & attack bonus
+		int figsAtk = countFiguresInContact(attacker, defender);
 		int numAtkDice = meleeAttackDice(attacker, defender, figsAtk);
 		int atkBonus = baseAtkBonus(attacker) 
 			+ miscAtkBonus(attacker, defender, false);
@@ -1270,6 +1265,23 @@ public class BookOfWar {
 			damageTotal += damageTotal / 2;
 		}
 		applyDamage(attacker, defender, false, damageTotal);
+	}
+
+	/**
+	*  Compute number of attacking figures in contact.
+	*  Assumes wrapping after initial contact.
+	*/
+	int countFiguresInContact(Unit attacker, Unit defender) {
+		assert distance == 0;
+		double atkWidth = attacker.getTotalWidth();
+		double defWidth = priorContact 
+			? defender.getPerimeter() : defender.getTotalWidth();
+		int figsAtk = atkWidth <= defWidth ? attacker.getFiles() 
+			: (int) Math.ceil(defWidth / attacker.getFigWidth());
+		if (defender.isSmallTarget()) {
+			figsAtk = Math.min(figsAtk, defender.getFigures());
+		}
+		return figsAtk;
 	}
 
 	/**
@@ -1731,12 +1743,112 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Check the fear effect of dragons as they charge to melee.
+	*  Check for special abilities joint with melee atacks.
+	*/
+	void checkMeleeSpecials(Unit attacker, Unit defender) {
+
+		// Check for attacker fear ability
+		if (attacker.hasSpecial(SpecialType.Fear)) {
+			checkFearAbility(attacker, defender);
+		}
+
+		// Check for breath weapon
+		if (attacker.hasBreathWeapon() & attacker.getCharges() > 0) {
+			useBreathWeapon(attacker, defender);
+		}
+	}
+
+	/**
+	*  Check the fear effect of dragons as they charge into melee.
 	*/
 	void checkFearAbility(Unit attacker, Unit defender) {
-		assert distance == 0 && !priorContact;
+		assert distance == 0;
 		assert attacker.hasSpecial(SpecialType.Fear);
-		checkMorale(defender, 0);
+		if (!defender.isFearless()
+			&& !defender.hasSavedVsFear())
+		{
+			reportDetail(defender + " confronts fear ability");
+			checkMorale(defender, 0);
+			defender.setSavedVsFear(true);			
+		}
+	}
+
+	/**
+	*  Cast energy damage on a number of figures in a unit.
+	*/
+	void castEnergy(Unit unit, int numFigs, int dmgPerFig, EnergyType energy) {
+
+		// Check for ways to avoid damage
+		if (unit.getsSaves()
+			|| isEnergyImmune(unit, energy))
+		{
+			return;
+		}
+
+		// Magic area damage is capped by figure health
+		dmgPerFig = Math.min(dmgPerFig, unit.getHealth());
+		int damage = dmgPerFig * numFigs;
+		int figsLost = unit.takeDamage(damage);
+		reportDetail(unit + " lost " + figsLost + " figures from " + energy);
+	}
+
+	/**
+	*  Use a breath weapon.
+	*/
+	void useBreathWeapon(Unit attacker, Unit defender) {
+
+		// Check preconditions
+		assert distance == 0;
+		assert attacker.hasBreathWeapon();
+		assert attacker.getCharges() > 0;	
+	
+		// Determine how many figures hit (2" length)
+		final double breathLength = 2.0;
+		int hitPerAtkr = (int)(breathLength / defender.getFigLength());
+		hitPerAtkr = Math.min(hitPerAtkr, defender.getRanks());
+		hitPerAtkr = Math.max(hitPerAtkr, 1);
+		int numHit = hitPerAtkr * countFiguresInContact(attacker, defender);
+
+		// Cast the energy
+		SpecialAbility breath = attacker.getBreathWeapon();
+		reportDetail(attacker + " uses " + breath);
+		castEnergy(defender, numHit, breath.getParam(),
+			getBreathEnergy(breath.getType()));
+		attacker.decrementCharges();
+	}
+
+	/**
+	*  Convert a breath weapon to an energy type.
+	*/
+	EnergyType getBreathEnergy(SpecialType breathType) {
+		assert breathType.isBreathWeapon();	
+		switch (breathType) {
+			case FireBreath: return EnergyType.Fire;
+			case VoltBreath: return EnergyType.Volt;
+			case ColdBreath: return EnergyType.Cold;
+			case AcidBreath: return EnergyType.Acid;
+			case PoisonBreath: return EnergyType.Poison;
+			case MultiBreath: return EnergyType.Multi;
+			default: System.err.println("Unknown breath weapon type.");
+				return null;
+		}
+	}
+
+	/**
+	*  Is this unit immune to this energy type?
+	*/
+	boolean isEnergyImmune(Unit unit, EnergyType energy) {
+		switch (energy) {
+			case Fire: return unit.hasSpecial(SpecialType.FireImmunity);
+			case Volt: return unit.hasSpecial(SpecialType.VoltImmunity);
+			case Cold: return unit.hasSpecial(SpecialType.ColdImmunity);
+			case Acid: return unit.hasSpecial(SpecialType.AcidImmunity);
+			case Poison: return unit.hasSpecial(SpecialType.PoisonImmunity);
+			case Multi: return unit.hasSpecial(SpecialType.FireImmunity)
+								&& unit.hasSpecial(SpecialType.PoisonImmunity);
+			default: System.err.println("Unknown energy type.");
+						return false;
+		}
 	}
 
 // 	/**
