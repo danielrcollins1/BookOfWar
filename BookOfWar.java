@@ -1215,9 +1215,18 @@ public class BookOfWar {
 		}
 
 		// Teleporters wait to pounce
-		if (unit.hasSpecial(SpecialType.Teleport)) {
+		if (unit.hasSpecial(SpecialType.Teleport)
+			&& unit.getCharges() > 0) 
+		{
 			int teleportRange = unit.getSpecialParam(SpecialType.Teleport);
-			return distance < teleportRange ? distance : 1;
+			if (distance < teleportRange) {
+				reportDetail(unit + " * TELEPORTS * into combat");
+				unit.decrementCharges();
+				return distance;
+			}
+			else {
+				return 1;
+			}
 		}
 
 		// Return move (at least 1 inch)
@@ -1863,20 +1872,20 @@ public class BookOfWar {
 	*/
 	void checkWhirlwindAttack(Unit attacker, Unit defender) {
 
-		// Whirlwind only works on 1-health targets.
+		// Only works on 1-health opponents (if not, concede).
 		if (defender.getHealth() > 1) {
 			reportDetail(attacker + " * RETREATS *");
 			attacker.setRouted(true);
 			return;
 		}
 
-		// Must be in range.
+		// Must be in range (if not, move half).
 		if (distance >= getMove(attacker)) {
 			distance -= getMove(attacker) / 2;
 			return;
 		}
 
-		// Whirlwind only works on alternate turns.
+		// Only works on alternate turns (if not, move back a bit).
 		if (d6() <= 3) {
 			distance += 6;
 			return;
@@ -1885,8 +1894,8 @@ public class BookOfWar {
 		// Do the attack: goes through defender in straight line
 		// Sweeps away half of the figures it touches
 		int numKilled = 0;
-		int numFigsHit = defender.getRanks();
-		for (int i = 0; i < numFigsHit; i++) {
+		int numFigsTouched = defender.getRanks();
+		for (int i = 0; i < numFigsTouched; i++) {
 			if (d6() <= 3) {
 				numKilled++;
 			}

@@ -62,19 +62,4 @@ public class Solo extends Unit {
 
 	/** Solos get saving throws versus magic damage. */
 	@Override public boolean getsSaves() { return true; }
-
-	/** 
-	*  Solos may have special ability charges. 
-	*/
-	@Override public void refreshCharges() { 
-
-		// Dragon breath 3 times/game.		
-		if (hasBreathWeapon()) {
-			specialCharges = 3;
-			return;
-		}
-
-		// No special chages.	
-		specialCharges = 0;
-	}
 }

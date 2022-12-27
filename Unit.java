@@ -343,10 +343,24 @@ public class Unit {
 	}
 
 	/**
-	*  Refresh special ability charges.
+	*  Refresh special ability charges pre-game.
 	*/
-	public void refreshCharges() { 
-		specialCharges = 0;
+	public void refreshCharges() {
+
+		// Unicrn teleport 1 time/game.
+		if (hasSpecial(SpecialType.Teleport)) {
+			specialCharges = 1;
+		}	
+	
+		// Dragon breath usable 3 times/game.
+		else if (hasBreathWeapon()) {
+			specialCharges = 3;
+		}
+	
+		// Otherwise nothing.
+		else {	
+			specialCharges = 0;
+		}
 	}
 	
 	/**
