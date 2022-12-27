@@ -18,3 +18,7 @@ Lich & Wyvern,35,9,6,2,1,1,0,0,2,C,"Flight (24), Detection (24), Spells, Fear"
 Titan,35,15,6,2,1,1,0,0,2,N,Spells
 Balrog,20,6,6,1,1,1,0,0,2,C,"Flight (15), MagicResistance"
 Storm Giant,150,15,5,1,1,1,0,0,2,N,WeatherControl
+Air Elemental,50,36,6,1,0,0,0,0,2,N,"MagicToHit, Flight (36), Whirlwind"
+Earth Elemental,50,6,6,1,1,1,0,0,2,N,MagicToHit
+Fire Elemental,50,12,6,1,1,1,0,0,2,N,MagicToHit
+Water Elemental,50,6,6,1,1,1,0,0,2,N,"MagicToHit, Swimming (18)"

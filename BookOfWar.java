@@ -1074,7 +1074,7 @@ public class BookOfWar {
 	*  Make special checks on initial contact.
 	*/
 	void checkInitialContact(Unit attacker, Unit defender) {
-		assert distance == 0 && !priorContact;
+		assert distance == 0;
 
 		// Check for defender pikes
 		if (defender.hasSpecial(SpecialType.Pikes)) {
@@ -1233,6 +1233,7 @@ public class BookOfWar {
 
 		// Check for defender immune
 		if (isAttackImmune(attacker, defender)) {
+			reportDetail(attacker + " prevented from attacking " + defender);
 			return;
 		}
 
@@ -1732,12 +1733,18 @@ public class BookOfWar {
 
 		// Storm giants make rain
 		if (attacker.hasSpecial(SpecialType.WeatherControl)
-				&& weather != Weather.Rainy) 
+			&& weather != Weather.Rainy) 
 		{
 			weather = Weather.Rainy;
 			reportDetail(attacker + " use Weather Control to make weather Rainy");
 			return true;
 		}
+		
+		// Air Elementals Whirlwind attack
+		if (attacker.hasSpecial(SpecialType.Whirlwind)) {
+			checkWhirlwindAttack(attacker, defender);
+			return true;
+		}			
 	
 		return false;	
 	}
@@ -1849,6 +1856,47 @@ public class BookOfWar {
 			default: System.err.println("Unknown energy type.");
 						return false;
 		}
+	}
+
+	/**
+	*  Check if we can do a Whirlwind pass-through attack on a target unit.
+	*/
+	void checkWhirlwindAttack(Unit attacker, Unit defender) {
+
+		// Whirlwind only works on 1-health targets.
+		if (defender.getHealth() > 1) {
+			reportDetail(attacker + " * RETREATS *");
+			attacker.setRouted(true);
+			return;
+		}
+
+		// Must be in range.
+		if (distance >= getMove(attacker)) {
+			distance -= getMove(attacker) / 2;
+			return;
+		}
+
+		// Whirlwind only works on alternate turns.
+		if (d6() <= 3) {
+			distance += 6;
+			return;
+		}	
+	
+		// Do the attack: goes through defender in straight line
+		// Sweeps away half of the figures it touches
+		int numKilled = 0;
+		int numFigsHit = defender.getRanks();
+		for (int i = 0; i < numFigsHit; i++) {
+			if (d6() <= 3) {
+				numKilled++;
+			}
+		}
+		reportDetail(attacker + " whirlwind sweeps away " + numKilled + " figures");
+		defender.takeDamage(numKilled);
+		
+		// Move as much as possible to other side of target
+		distance = getMove(attacker) - distance;
+		return;
 	}
 
 // 	/**
