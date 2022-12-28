@@ -111,11 +111,12 @@ public class Unit {
 
 	// Methods to be overridden by sublass
 	public boolean isFearless() { return false; }
-	public boolean isEmbedded() { return false; }
 	public boolean isSmallTarget() { return false; }
 	public boolean isSweepable() { return health <= 1; }
 	public boolean autoHits() { return false; }
 	public boolean getsSaves() { return false; }
+	public boolean hasHost() { return false; }
+	public Unit getHost() { return null; }
 	
 	/**
 	*  Parse alignment code.
@@ -347,7 +348,7 @@ public class Unit {
 	*/
 	public void refreshCharges() {
 
-		// Unicrn teleport 1 time/game.
+		// Unicorn teleport 1 time/game.
 		if (hasSpecial(SpecialType.Teleport)) {
 			specialCharges = 1;
 		}	
@@ -355,6 +356,11 @@ public class Unit {
 		// Dragon breath usable 3 times/game.
 		else if (hasBreathWeapon()) {
 			specialCharges = 3;
+		}
+
+		// Wizards with top spell slots by level.
+		else if (hasSpecial(SpecialType.Spells)) {
+			specialCharges = getSpecialParam(SpecialType.Spells);
 		}
 	
 		// Otherwise nothing.

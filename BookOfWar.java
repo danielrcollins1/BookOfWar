@@ -1299,7 +1299,7 @@ public class BookOfWar {
 
 	/**
 	*  Play out one ranged attack.
-	*  Note that embedded leaders are not touched here.
+	*  Note that hosted leaders are not touched here.
 	*/
 	void rangedAttack(Unit attacker, Unit defender, boolean fullRate) {
 
@@ -1308,7 +1308,7 @@ public class BookOfWar {
 		assert distance <= attacker.getRange();
 		assert distance > 0 || attacker.hasSpecial(SpecialType.MeleeShot);
 		assert !attacker.autoHits(); // solos not handled
-		assert !defender.isEmbedded();
+		assert !defender.hasHost();
 
 		// Make attacker visible
 		makeVisible(attacker);
@@ -1459,7 +1459,7 @@ public class BookOfWar {
 	boolean getsRearAttack (Unit attacker, Unit defender) {
 
 		// Embedded targets are not susceptible
-		if (defender.isEmbedded()) {
+		if (defender.hasHost()) {
 			return false;
 		}
 
@@ -1754,8 +1754,7 @@ public class BookOfWar {
 		if (attacker.hasSpecial(SpecialType.WeatherControl)
 			&& weather != Weather.Rainy) 
 		{
-			weather = Weather.Rainy;
-			reportDetail(attacker + " use Weather Control to make weather Rainy");
+			castControlWeather(attacker, defender);
 			return true;
 		}
 		
@@ -1764,6 +1763,15 @@ public class BookOfWar {
 			doWhirlwindTurn(attacker, defender);
 			return true;
 		}			
+
+		// Wizard top-level spell casting
+		if (attacker.hasSpecial(SpecialType.Spells)
+			&& attacker.getCharges() > 0)
+		{
+			if (doSpellTurn(attacker, defender)) {
+				return true;
+			}		
+		}
 		
 		// Wizards with magic wands
 		if (attacker.hasSpecial(SpecialType.Wand)) {
@@ -1967,6 +1975,107 @@ public class BookOfWar {
 		
 		// See if error is within length of target
 		return shotError <= target.getTotalLength() / 2;
+	}
+
+	/**
+	*  Cast a Control Weather spell to our benefit.
+	*/
+	void castControlWeather(Unit attacker, Unit defender) {
+		assert attacker.hasSpecial(SpecialType.Spells)
+			|| attacker.hasSpecial(SpecialType.WeatherControl);
+		assert weather != getBestWeather(attacker, defender);
+		weather = getBestWeather(attacker, defender);
+		reportDetail(attacker + " makes it " + weather + " via * CONTROL WEATHER *");
+	}
+
+	/**
+	*  Determine the best weather value for this attacker.
+	*/
+	Weather getBestWeather(Unit attacker, Unit defender) {
+		Unit friendly = attacker.hasHost()
+			? attacker.getHost() : attacker;
+		int thirst = getThirst(friendly) - getThirst(defender);
+		if (thirst < 0) {
+			return Weather.Sunny;
+		}
+		else if (thirst == 0) {
+			return Weather.Cloudy;
+		}
+		else {
+			return Weather.Rainy;
+		}
+	}
+
+	/**
+	*  Check how thirsty (rain-desiring) a given unit is.
+	*  @return positive if desire rain, negative if want to avoid it
+	*/
+	int getThirst(Unit unit) {
+		assert unit != null;
+		int thirst = 0;
+		if (unit.hasSpecial(SpecialType.Mounts)) {
+			thirst--;
+		}			
+		if (!unit.hasSpecial(SpecialType.Mounts)
+			&& unit.getRange() == 0)
+		{
+			thirst++;
+		}
+		if (unit.hasSpecial(SpecialType.LightWeakness)) {
+			thirst++;
+		}	
+		if (unit.hasSpecial(SpecialType.GiantClass)) {
+			thirst++;
+		}	
+		if (unit.hasSpecial(SpecialType.Wand)) {
+			thirst++;
+		}	
+		if (unit.hasSpecial(SpecialType.WeatherControl)) {
+			thirst += 100;
+		}	
+		return thirst;	
+	}
+
+	/**
+	*  Cast a Death Spell on the defending unit.
+	*/
+	void castDeathSpell(Unit attacker, Unit defender) {
+		assert distance <= 24;
+		assert defender.getHealth() <= 8;
+		assert !defender.getsSaves();
+		int numCasters = attacker.getFigures();
+		int damage = 5 * numCasters;
+		defender.takeDamage(damage);
+		reportDetail(attacker + " casts * DEATH SPELL * on " + defender);
+	}
+
+	/**
+	*  Try to use a wizard spell ability.
+	*  @return true if we cast a spell.
+	*/
+	boolean doSpellTurn(Unit attacker, Unit defender) {
+		assert attacker.hasSpecial(SpecialType.Spells);
+		assert attacker.getCharges() > 0;
+		
+		// Cast Control Weather if it benefits us
+		if (weather != getBestWeather(attacker, defender)) {
+			castControlWeather(attacker, defender);
+			attacker.decrementCharges();
+			return true;
+		}
+		
+		// Cast Death Spell otherwise
+		if (distance <= 24 
+			&& defender.getHealth() <= 8
+			&& !defender.getsSaves())
+		{
+			castDeathSpell(attacker, defender);		
+			attacker.decrementCharges();
+			return true;
+		}
+		
+		// Else nothing
+		return false;		
 	}
 
 	//-----------------------------------------------------------------

@@ -14,7 +14,7 @@ public class Solo extends Unit {
 	/** 
 	*  The unit in which this figure is embedded (if any).
 	*/
-	private Unit hostUnit;
+	private Unit host;
 
 	//----------------------------------------------------------------------
 	//  Constructor(s)
@@ -34,7 +34,7 @@ public class Solo extends Unit {
 	*/
 	public Solo(Solo src) {
 		super(src);
-		hostUnit = src.hostUnit;	
+		host = src.host;
 	}
 
 	//----------------------------------------------------------------------
@@ -44,12 +44,13 @@ public class Solo extends Unit {
 	/** Solos don't have embedded leaders. */
 	@Override public Solo getLeader() { return null; }
 	@Override public boolean hasLeader() { return false; };
+
+	/** Solos may be embedded in another unit. */
+	@Override public Unit getHost() { return host; }
+	@Override public boolean hasHost() { return host != null; }
 	
 	/** Solos never check morale. */
 	@Override public boolean isFearless() { return true; }
-	
-	/** Solos may be embedded in another unit. */
-	@Override public boolean isEmbedded() { return hostUnit != null; }
 
 	/** Solos always hit on an attack. */
 	@Override public boolean autoHits() { return true; }
