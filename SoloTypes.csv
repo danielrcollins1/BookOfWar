@@ -1,4 +1,7 @@
 Unit,Cost,Move,Armor,Health,Atk,Dam,Rate,Range,Width,Align,Special
+Wizard 12th Level,65,12,6,1,0,0,0,0,1,N,"Spells, Wand, Detection (12)"
+Wizard 14th Level,65,12,6,1,0,0,0,0,1,N,"Spells, Wand, Detection (12)"
+Wizard 16th Level,65,12,6,1,0,0,0,0,1,N,"Spells, Wand, Detection (12)"
 Superhero,40,9,7,1,1,1,0,0,1,N,SweepAttack (2)
 Lord 12th Level,45,9,7,1,1,1,0,0,1,N,SweepAttack (3)
 Lord 16th Level,95,9,7,2,1,1,0,0,1,N,SweepAttack (4)
@@ -11,9 +14,6 @@ Blue Dragon,80,9,6,1,1,1,0,0,2,N,"Flight (24), Detection (15), VoltBreath (9), F
 Red Dragon,70,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), FireBreath (10), Fear"
 Gold Dragon,80,9,6,1,1,1,0,0,2,L,"Flight (24), Detection (15), MultiBreath (11), Fear"
 VO Large Gold Dragon,120,9,6,2,1,1,0,0,2,L,"Flight (24), Detection (15), MultiBreath (18), Fear"
-Wizard 11th Level,1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
-Wizard 13th Level,1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
-Wizard 16th Level,1,12,6,1,0,0,0,0,1,N,"Spells, Detection (12)"
 Lich & Wyvern,35,9,6,2,1,1,0,0,2,C,"Flight (24), Detection (24), Spells, Fear"
 Titan,35,15,6,2,1,1,0,0,2,N,Spells
 Balrog,20,6,6,1,1,1,0,0,2,C,"Flight (15), MagicResistance"

@@ -61,6 +61,9 @@ public class BookOfWar {
 	
 	/** Target for morale check success (per Vol-1, p. 12). */
 	private static final int MORALE_TARGET = 9;
+
+	/** Range for magic wand missile attacks. */
+	private static int WAND_RANGE = 24;
 	
 	//-----------------------------------------------------------------
 	//  Out-of-game settings
@@ -1242,7 +1245,7 @@ public class BookOfWar {
 
 		// Check for defender immune
 		if (isAttackImmune(attacker, defender)) {
-			reportDetail(attacker + " prevented from attacking " + defender);
+			reportDetail(attacker + " barred from attacking " + defender);
 			return;
 		}
 
@@ -1665,6 +1668,13 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Roll an arbitrary-sided die.
+	*/
+	int rollDie(int sides) {
+		return random.nextInt(sides) + 1;
+	}
+
+	/**
 	*  Find greatest common denominator of two integers.
 	*/
 	int gcd(int a, int b) {
@@ -1751,9 +1761,15 @@ public class BookOfWar {
 		
 		// Air Elementals Whirlwind attack
 		if (attacker.hasSpecial(SpecialType.Whirlwind)) {
-			checkWhirlwindAttack(attacker, defender);
+			doWhirlwindTurn(attacker, defender);
 			return true;
 		}			
+		
+		// Wizards with magic wands
+		if (attacker.hasSpecial(SpecialType.Wand)) {
+			doMagicWandTurn(attacker, defender);		
+			return true;
+		}
 	
 		return false;	
 	}
@@ -1868,26 +1884,26 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Check if we can do a Whirlwind pass-through attack on a target unit.
+	*  Set up for a Whirlwind pass-through attack on a target unit.
 	*/
-	void checkWhirlwindAttack(Unit attacker, Unit defender) {
+	void doWhirlwindTurn(Unit attacker, Unit defender) {
 
-		// Only works on 1-health opponents (if not, concede).
+		// Concede if opponent is not a 1-health type.
 		if (defender.getHealth() > 1) {
 			reportDetail(attacker + " * RETREATS *");
 			attacker.setRouted(true);
 			return;
 		}
 
-		// Must be in range (if not, move half).
+		// If out of range, move up half.
 		if (distance >= getMove(attacker)) {
 			distance -= getMove(attacker) / 2;
 			return;
 		}
 
-		// Only works on alternate turns (if not, move back a bit).
+		// If not alternate turn, move back a bit.
 		if (d6() <= 3) {
-			distance += 6;
+			distance += getMove(attacker) / 4;
 			return;
 		}	
 	
@@ -1908,267 +1924,50 @@ public class BookOfWar {
 		return;
 	}
 
-// 	/**
-// 	*  Play out one hero melee attack.
-// 	*/
-// 	void heroMeleeAttack (Hero attacker, Unit defender) {
-// 		if (attacker.getFigures() < 1) return;
-// 
-// 		// Skip wizards in melee
-// 		if (attacker.isWizard())
-// 			return;
-// 
-// 		// Compute figures in attack
-// 		double atkWidth = attacker.getFiles() * attacker.getFigWidth();
-// 		double defWidth = defender.getFiles() * defender.getFigWidth();
-// 		int figsAtk = (atkWidth <= defWidth ? attacker.getFiles() :
-// 			(int) Math.ceil(defWidth / attacker.getFigWidth()));
-// 
-// // 		// Check dragon breath attack
-// // 		if (attacker.nameStarts("Dragon")
-// // 				&& attacker.getCharges() > 0)
-// // 			dragonBreathAttack(attacker, defender, figsAtk);
-// 
-// 		// Roll attack dice
-// 		int numHits = 0;
-// 		for (int i = 0; i < figsAtk; i++) {
-// 			if (d6() >= attacker.getAttacks()) {
-// 				numHits += Math.min(attacker.getDamage(), defender.getHD());
-// 			}
-// 		}
-// 
-// 		// Apply damage
-// 		applyDamage(attacker, defender, false, numHits);
-// 	}
-// 
-// 	/**
-// 	*  Play out one turn with a wizard figure.
-// 	*    No move so wizard can shoot full; ranged or melee as capable.
-// 	*    Note: Currently cannot handle wizard-vs-wizard engagements.
-// 	*/
-// 	void oneTurnWizard (Unit unit1, Unit unit2) {
-// 
-// 		// All-wizard unit
-// 		if (unit1.isWizard()) {
-// 			wizardSpellAttack((Hero)unit1, unit2);
-// 		}
-// 
-// 		// Troops with attached wizard
-// 		else {
-// 			if (unit1.hasMissiles() && distance > 0) {
-// 				rangedAttack(unit1, unit2, true);
-// 			}
-// //			else if (distance <= meleeRange(unit1)) {
-// 			else if (distance == 0) {
-// 				meleeAttack(unit1, unit2);
-// 			}	
-// 			oneTurnWizard(unit1.getHero(), unit2);
-// 		}
-// 	}
-// 
-// 	/**
-// 	*  Play out one magic area attack.
-// 	*    Adjudicates one hit on one basic figure.
-// 	*    (If target is attached hero, identify that as target.)
-// 	*    @return Damage taken.
-// 	*/
-// 	int magicAreaAttack (Unit target, int damage, boolean getSave) {
-// 		if (!(target instanceof Hero)) {
-// 			int save = 0;
-// 			if (getSave) save = random.nextInt(3) + 1; // d3
-// 			int damageTaken = Math.min(damage - save, target.getHD());
-// 			if (target.nameStarts("Dragon Flock")) damageTaken /= 4;
-// 			return (damageTaken > 0 ? damageTaken : 0);
-// 		}
-// 		else {
-// 			int save = d6();
-// 			return (save < damage/2 ? 1 : 0);
-// 		}
-// 	}
-// 
-// 	/**
-// 	*  Play out one dragon breath attack.
-// 	*/
-// 	void dragonBreathAttack (Unit dragon, Unit target, int figsAtk) {
-// 		assert(dragon.getCharges() > 0);
-// 		if (dragon.getFigures() < 1) return;
-// 		reportDetail("* DRAGON BREATH ATTACK *");
-// 		dragon.decrementCharges();
-// 
-// 		// Get damage by type (adults) & check immunities
-// 		boolean getSave = true;
-// 		if (dragonTargetImmune(dragon, target)) return;
-// 		int damage = dragonBreathDamage(dragon);
-// 		if ((dragon.nameContains("Red") || dragon.nameContains("Gold"))
-// 				&& (target.nameStarts("Treant") || target.nameStarts("Tree")))
-// 			getSave = false;			
-// 
-// 		// If dragon flock, determine figures hit in 2x3"
-// 		int figsHit = 1;
-// 		if (dragon.nameStarts("Dragon Flock")) {
-// 			int figHitWidth = Math.min(
-// 				(int)(3.0/target.getFigWidth()), target.getFiles());
-// 			int figHitLength = Math.min(
-// 				(int)(2.0/target.getFigLength()), target.getRanks());
-// 			figsHit = figHitWidth * figHitLength;
-// 		}
-// 		
-// 		// Assess hits
-// 		int hits = 0;
-// 		for (int j = 0; j < figsHit; j++) {
-// 			for (int i = 0; i < figsAtk; i++) {
-// 				hits += magicAreaAttack(target, damage, getSave);
-// 			}
-// 		}
-// 		applyDamage(dragon, target, true, hits);
-// 	}
-// 
-// 	/**
-// 	*  Find dragon breath attack damage.
-// 	*/
-// 	int dragonBreathDamage (Unit dragon) {
-// 		int damage = 0;
-// 
-// 		if (dragon.nameContains("Adult")) {
-// 			if (dragon.nameContains("White")) damage = 7;
-// 			else if (dragon.nameContains("Black")) damage = 8;
-// 			else if (dragon.nameContains("Green")) damage = 9;
-// 			else if (dragon.nameContains("Blue")) damage = 10;
-// 			else if (dragon.nameContains("Red")) damage = 11;
-// 			else if (dragon.nameContains("Gold")) damage = 12;
-// 			// Note book used 9, 10, 11 for latter
-// 		}
-// 
-// 		else if (dragon.nameContains("Very Old")) {
-// 			if (dragon.nameContains("White")) damage = 10;
-// 			else if (dragon.nameContains("Black")) damage = 12;
-// 			else if (dragon.nameContains("Green")) damage = 14;
-// 			else if (dragon.nameContains("Blue")) damage = 15;
-// 			else if (dragon.nameContains("Red")) damage = 17;
-// 			else if (dragon.nameContains("Gold")) damage = 19;
-// 			if (dragon.nameContains("Gold Large")) damage = 20;
-// 		}
-// 		
-// 		else if (dragon.nameContains("Old")) {
-// 			if (dragon.nameContains("White")) damage = 9;
-// 			else if (dragon.nameContains("Black")) damage = 10;
-// 			else if (dragon.nameContains("Green")) damage = 11;
-// 			else if (dragon.nameContains("Blue")) damage = 13;
-// 			else if (dragon.nameContains("Red")) damage = 14;
-// 			else if (dragon.nameContains("Gold")) damage = 16;
-// 		}
-// 		
-// 		return damage;
-// 	}
-// 
-// 	/**
-// 	*  Is the target immune to this dragon breath attack?
-// 	*/
-// 	boolean dragonTargetImmune (Unit dragon, Unit target) {
-// 		boolean retval = false;
-// 		
-// 		if (dragon.nameContains("White")) {
-// 			if (target.nameStarts("Giant, Frost")) retval = true;
-// 		}
-// 		else if (dragon.nameContains("Black")) {
-// 		}
-// 		else if (dragon.nameContains("Green")) {
-// 		}
-// 		else if (dragon.nameContains("Blue")) {
-// 			if (target.nameStarts("Giant, Storm")) retval = true;
-// 		}
-// 		else if (dragon.nameContains("Red")) {
-// 			if (target.nameStarts("Giant, Fire")) retval = true;
-// 		}
-// 		else if (dragon.nameContains("Gold")) {
-// 		}
-// 		
-// 		return retval;
-// 	}
-// 
-// 	/**
-// 	*  Play out one hell hound breath attack.
-// 	*/
-// 	void hellHoundBreathAttack (Unit hounds, Unit target, int figsAtk) {
-// 		if (hounds.getFigures() < 1) return;
-// 		reportDetail("* HELL HOUND BREATH ATTACK *");
-// 
-// 		// Get damage & check immunities
-// 		int damage = hounds.getHD();
-// 		if (target.nameStarts("Giant, Fire")) return;
-// 
-// 		// Check save ability
-// 		boolean getSave = true;
-// 		if (target.nameStarts("Treant") 
-// 				|| target.nameStarts("Tree"))
-// 			getSave = false;				
-// 		
-// 		// Assess hits
-// 		int hits = 0;
-// 		for (int i = 0; i < figsAtk; i++) {
-// 			hits += magicAreaAttack(target, damage, getSave);
-// 		}
-// 		applyDamage(hounds, target, true, hits);
-// 	}
-// 
-// 	/**
-// 	*  Did this missile spell hit the target?
-//		*  Used for fireballs & lightning bolts.
-// 	*  Assumes variation of +/-1 inch for missile.
-// 	*/
-// 	boolean missileSpellHit (Unit target) {
-// 		double targetDepth = target.getFigLength() * target.getRanks();
-// 		if (targetDepth <= 0.0)
-// 			return false;
-// 		else if (targetDepth <= 1.0) 
-// 			return (d6() <= 2);	// 2-in-6
-// 		else if (targetDepth <= 2.0)
-// 			return (d6() <= 4);  // 4-in-6
-// 		else
-// 			return true;
-// 	}
-// 
-// 	/**
-// 	*  Play out one wizard spell attack.
-//		*  Assumes wizard motionless, so full fire.
-// 	*/
-// 	void wizardSpellAttack (Hero wizard, Unit target) {
-// 		assert(wizard.isWizard());
-// 		if (wizard.getFigures() < 1) return;
-// 
-// 		// Assume each greater-spell charge used for "Death Spell"
-// 		if (wizard.getCharges() > 0 && distance <= 12
-// 				&& target.getHD() <= 8 && !(target instanceof Hero)) {
-// 			reportDetail("* WIZARD DEATH SPELLS *");
-// 			int hits = 0;
-// 			for (int i = 0; i < wizard.getFigures(); i++)
-// 				hits += 4 + wizard.getRanks() / 3;
-// 			applyDamage(wizard, target, true, hits);
-// 			wizard.decrementCharges();
-// 		}
-// 
-// 		// Otherwise shoot two wand-based "Fireballs"
-// 		else if (distance <= 24) {
-// 			reportDetail("* WIZARD FIREBALLS *");
-// 
-// 			// Check damage, immunity, saves
-// 			int damage = 6;
-// 			boolean getSave = true;
-// 			if (target.nameStarts("Giant, Fire")) 
-// 				damage = 0;
-// 			if (target.nameStarts("Treant") 
-// 					|| target.nameStarts("Tree"))
-// 				getSave = false;				
-// 			
-// 			// Generate total hits
-// 			int hits = 0;
-// 			for (int i = 0; i < wizard.getFigures() * 2; i++) {
-// 				if (missileSpellHit(target))
-// 					hits += magicAreaAttack(target, damage, getSave);
-// 			}
-// 			applyDamage(wizard, target, true, hits);		
-// 		}
-// 	}
+	/**
+	*  Take a turn as a magic wand wielder.
+	*/
+	void doMagicWandTurn(Unit attacker, Unit defender) {
+		assert attacker.hasSpecial(SpecialType.Wand);
+
+		// If out of range, move up slightly.
+		if (distance > WAND_RANGE) {
+			distance -= 1;
+			return;		
+		}
+		
+		// Shoot two fireballs per turn at target
+		reportDetail(attacker + " shoots * FIREBALLS *");
+		int numShots = attacker.getFigures() * 2;
+		for (int shot = 0; shot < numShots; shot++) {
+			if (checkWandHit(defender)) {
+				castEnergy(defender, 1, 6, EnergyType.Fire);			
+			}		
+		}
+	}
+
+	/**
+	*  Check if we can hit a target unit with a magic wand.
+	*  Target center of unit & check variation.
+	*/
+	boolean checkWandHit(Unit target) {
+		assert distance <= WAND_RANGE;
+	
+		// Get the shot error
+		double shotError;
+		if (distance > WAND_RANGE / 2) {
+			shotError = Math.abs(d6() + d6() - 7);
+		}
+		else if (distance > WAND_RANGE / 4) {
+			shotError = Math.abs(rollDie(3) + rollDie(3) - 4);
+		}
+		else {
+			shotError = 0;
+		}
+		
+		// See if error is within length of target
+		return shotError <= target.getTotalLength() / 2;
+	}
 
 	//-----------------------------------------------------------------
 	//  Methods for thread management
