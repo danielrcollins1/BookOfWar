@@ -14,7 +14,8 @@ import java.io.IOException;
 public class BookOfWar {
 	enum Weather { Sunny, Cloudy, Rainy };
 	enum Terrain { Open, Gulley, Rough, Hill, Woods, Marsh, Stream, Pond };
-	enum SimMode { TableAssess, AutoBalance, FullBalance, ZoomGame };
+	enum SimMode { ZoomInGame, TableAssess, AutoBalance, 
+						FullBalance, EmbedBalance };
 	enum EnergyType { Fire, Volt, Acid, Cold, Poison, Multi };
 
 	//-----------------------------------------------------------------
@@ -87,11 +88,17 @@ public class BookOfWar {
 	/** Base unit set for comparisons (unit types 1 to n). */
 	private int baseUnitNum;
 
+	/** Chief unit set for embed balancing (solo types 1 to n). */
+	private int chiefUnitNum;
+
 	/** Number of trials per matchup. */
 	private int trialsPerMatchup;
 
 	/** Units for zoom-in game (1-based index into Units list). */
 	private int zoomGameUnit1, zoomGameUnit2;
+
+	/** Solo to embed with zoom-in game (1-based index into Solo list). */
+	private int zoomGameChief;
 
 	/** Balance the Solo unit types? */
 	private boolean soloBalancing;
@@ -150,9 +157,11 @@ public class BookOfWar {
 		soloList = src.soloList;
 		assessUnitNum = src.assessUnitNum;
 		baseUnitNum = src.baseUnitNum;
+		chiefUnitNum = src.chiefUnitNum;
 		trialsPerMatchup = src.trialsPerMatchup;
 		zoomGameUnit1 = src.zoomGameUnit1;
 		zoomGameUnit2 = src.zoomGameUnit2;
+		zoomGameChief = src.zoomGameChief;
 		usePreferredValues = src.usePreferredValues;
 		printFormatCSV = src.printFormatCSV;
 		exitAfterStartup = src.exitAfterStartup;
@@ -188,12 +197,14 @@ public class BookOfWar {
 		System.out.println("  Options include:");
 		System.out.println("\t-a assess up to the nth unit in database");
 		System.out.println("\t-b use first n units as fixed base for comparisons");
-		System.out.println("\t-m sim mode (1 = table-assess, 2 = auto-balance,\n"
-									+ "\t\t 3 = full auto-balance, 4 = zoom-in game)");
+		System.out.println("\t-m sim mode (0 = zoom-in game, 1 = table-asses,\n"
+									+ "\t\t 2 = base auto-balance, 3 = full auto-balance,\n"
+									+ "\t\t 4 = balance solo embeds");
 		System.out.println("\t-p use preferred values in full auto-balancer");
 		System.out.println("\t-s balance the solo vs. basic unit types");
 		System.out.println("\t-t trials per matchup (default=" + DEFAULT_TRIALS_PER_MATCHUP + ")");
 		System.out.println("\t-v print assessment table in CSV format");
+		System.out.println("\t-x zoom-in game chief solo index (1-based)");
 		System.out.println("\t-y zoom-in game 1st unit index (1-based)");
 		System.out.println("\t-z zoom-in game 2nd unit index (1-based)");
 		System.out.println();
@@ -208,11 +219,13 @@ public class BookOfWar {
 				switch (s.charAt(1)) {
 					case 'a': assessUnitNum = getParamInt(s); break;
 					case 'b': baseUnitNum = getParamInt(s); break;
+					case 'c': chiefUnitNum = getParamInt(s); break;
 					case 'm': parseSimMode(s); break;
 					case 'p': usePreferredValues = true; break;					
 					case 's': soloBalancing = true; break;
 					case 't': trialsPerMatchup = getParamInt(s); break;
 					case 'v': printFormatCSV = true; break;
+					case 'x': zoomGameChief = getParamInt(s); break;
 					case 'y': zoomGameUnit1 = getParamInt(s); break;
 					case 'z': zoomGameUnit2 = getParamInt(s); break;
 					default: exitAfterStartup = true; break;
@@ -246,11 +259,13 @@ public class BookOfWar {
 	void parseSimMode(String s) {
 		int num = getParamInt(s);
 		switch (num) {
-			case 1: simMode = SimMode.TableAssess; return;
-			case 2: simMode = SimMode.AutoBalance; return;
-			case 3: simMode = SimMode.FullBalance; return;
-			case 4: simMode = SimMode.ZoomGame; return;
-			default: exitAfterStartup = true; return;
+			case 0: simMode = SimMode.ZoomInGame; break;
+			case 1: simMode = SimMode.TableAssess; break;
+			case 2: simMode = SimMode.AutoBalance; break;
+			case 3: simMode = SimMode.FullBalance; break;
+			case 4: simMode = SimMode.EmbedBalance; break;
+			default: System.err.println("Error: Unknown sim mode.");
+				exitAfterStartup = true; 
 		}
 	}
 
@@ -325,8 +340,19 @@ public class BookOfWar {
 		}
 		
 		// Check relation between sets
-		if (!soloBalancing && baseUnitNum >= assessUnitNum) {
+		if (!soloBalancing 
+			&& simMode != SimMode.EmbedBalance
+			&& baseUnitNum >= assessUnitNum) 
+		{
 			postStartupFailMsg("Error: Assessed unit set must be more than base units (fix -a or -b switch).");
+		}
+		
+		// Check chief set size
+		if (chiefUnitNum < 0) {
+			postStartupFailMsg("Error: Chief unit set must be nonnegative (fix -c switch).");
+		}
+		else if (chiefUnitNum > soloList.size()) {
+			postStartupFailMsg("Error: Chief unit set must be no more than database size (fix -c switch).");
 		}
 	}
 	
@@ -349,14 +375,26 @@ public class BookOfWar {
 	}	
 
 	/**
+	*  Check chief unit set positive (for certain cases).
+	*/
+	void checkChiefUnitsPositive() {
+	
+		// Set default if needed
+		if (simMode == SimMode.EmbedBalance && chiefUnitNum == 0) {
+			chiefUnitNum = soloList.size();
+		}
+	}	
+
+	/**
 	*  Run the simulator in selected mode.
 	*/
 	void run() {
  		switch (simMode) {
+ 			case ZoomInGame: zoomInGame(); break;
  			case TableAssess: assessmentTable(); break;
  			case AutoBalance: autoBalancer(); break;
 			case FullBalance: fullAutoBalancer(); break;
- 			case ZoomGame: zoomInGame(); break;
+			case EmbedBalance: embedBalancer(); break;
 			default: System.err.println("Unknown simulation mode"); break;
  		}
 	}
@@ -402,7 +440,7 @@ public class BookOfWar {
 	*  Report detail for a zoom-in game.
 	*/
 	void reportDetail(String s) {
-		if (simMode == SimMode.ZoomGame) {
+		if (simMode == SimMode.ZoomInGame) {
 			System.out.println(s);
 		}
 	}
@@ -437,7 +475,7 @@ public class BookOfWar {
 	/**
 	*  Get maximum name length in a list of units.
 	*/
-	int getMaxNameLength(List<Unit> pUnitList) {
+	int getMaxNameLength(List<? extends Unit> pUnitList) {
 		int maxLength = 0;
 		for (Unit u: pUnitList) {
 			int nameLength = u.getName().length();
@@ -446,6 +484,39 @@ public class BookOfWar {
 			}
 		}	
 		return maxLength;
+	}
+
+	/**
+	*  Battle two specified unit types with detailed in-game reports.
+	*/
+	void zoomInGame() {
+		int maxFirstIndex = soloBalancing
+			? soloList.size() : unitList.size();
+
+		// Check selcted unit indeces.
+		if (zoomGameUnit1 <= 0 || zoomGameUnit2 <= 0) {
+			System.err.println("Error: Zoom-in game requires two unit indexes (use -y and -z switches).");
+			return;
+		}
+		if (zoomGameUnit1 > maxFirstIndex || zoomGameUnit2 > unitList.size()) {
+			System.err.println("Error: Zoom-in game has unit out of range for database (fix -y or -z.");
+			return;
+		}
+		if (zoomGameChief > soloList.size()) {
+			System.err.println("Error: Zoom-in game has chief out of range for database (fix -x).");
+			return;
+		}
+		
+		// Do the game
+		Unit unit1 = soloBalancing
+			? new Solo(soloList.get(zoomGameUnit1 - 1))
+			: new Unit(unitList.get(zoomGameUnit1 - 1));
+		if (zoomGameChief > 0) {
+			Solo chief = new Solo(soloList.get(zoomGameChief - 1));
+			unit1.setLeader(chief);
+		}
+		Unit unit2 = new Unit(unitList.get(zoomGameUnit2 - 1));
+		playGame(unit1, unit2);
 	}
 
 	/**
@@ -648,33 +719,112 @@ public class BookOfWar {
 	*  Get new cost for full auto-balancer.
 	*/
 	int getNewCost(int oldCost, boolean up) {
-		if (!usePreferredValues) {
-			return up ? oldCost + 1 : oldCost - 1;
+		if (usePreferredValues) {
+			return up ? PreferredValues.inc(oldCost) : PreferredValues.dec(oldCost);
 		}
 		else {
-			return up ? PreferredValues.inc(oldCost) : PreferredValues.dec(oldCost);
+			return up ? oldCost + 1 : oldCost - 1;
 		}
 	}
 
 	/**
-	*  Battle two specified unit types with detailed in-game reports.
+	*  Balance costs for embedded Solo units.
 	*/
-	void zoomInGame() {
-		int maxFirstIndex = soloBalancing
-			? soloList.size() : unitList.size();
-		if (zoomGameUnit1 <= 0 || zoomGameUnit2 <= 0) {
-			System.err.println("Error: Zoom-in game requires two unit indexes (use -y and -z switches).");
+	void embedBalancer() {
+
+		// Check prerequisites
+		checkChiefUnitsPositive();
+		if (!checkBaseUnitsPositive()) {
+			return;		
 		}
-		else if (zoomGameUnit1 > maxFirstIndex || zoomGameUnit2 > unitList.size()) {
-			System.err.println("Error: Zoom-in game has unit out of range for database.");
-		}		
-		else {
-			Unit unit1 = soloBalancing
-				? new Solo(soloList.get(zoomGameUnit1 - 1))
-				: new Unit(unitList.get(zoomGameUnit1 - 1));
-			Unit unit2 = new Unit(unitList.get(zoomGameUnit2 - 1));
-			playGame(unit1, unit2);
+
+		// Get list of solo units to embed.
+		List<Solo> chiefUnits = soloList.subList(0, chiefUnitNum);
+		int nameColSize = getMaxNameLength(chiefUnits);
+
+		// Print header
+		printf("Auto-balanced embeded Solos best cost "
+			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
+		printWideField("Solo", nameColSize);
+		printf(getSepChar() + "Cost\n");
+
+		// Make the table
+		for (Solo solo: chiefUnits) {
+			setEmbedBalancedCost(solo);
+			printWideField(solo.getName(), nameColSize);
+			printf(getSepChar() + "" + solo.getCost() + "\n");
 		}
+	}
+
+	/**
+	*  Set the best cost for an embedded Solo type.
+	*  Searches for sumWinPctErr closest to zero (0). 
+	*/
+	void setEmbedBalancedCost(Solo solo) {
+		int lowCost = 1, highCost = solo.getCost();
+
+		// Check lower bound for cost
+		solo.setCost(lowCost);
+		double lowCostWinPctErr = scoreSoloAllHosts(solo);
+		if (lowCostWinPctErr < 0) {
+			return;
+		}
+
+		// Find upper bound for cost
+		solo.setCost(highCost);
+		double highCostWinPctErr = scoreSoloAllHosts(solo);
+		while (highCostWinPctErr > 0) {
+			highCost *= 2;
+			solo.setCost(highCost);
+			highCostWinPctErr = scoreSoloAllHosts(solo);
+		}
+			
+		// Binary search for best cost
+		while (highCost - lowCost > 1) {
+			int midCost = (highCost + lowCost) / 2;
+			//printf(midCost + " ");
+			solo.setCost(midCost);
+			double midWinPctErr = scoreSoloAllHosts(solo);
+			if (midWinPctErr < 0) {
+				highCost = midCost;
+				highCostWinPctErr = midWinPctErr;
+			}
+			else {
+				lowCost = midCost;
+				lowCostWinPctErr = midWinPctErr;
+			}
+		}
+
+		// Final check for which is better
+		assert lowCostWinPctErr >= 0 && highCostWinPctErr <= 0;
+		int bestCost = lowCostWinPctErr < -highCostWinPctErr ? lowCost : highCost;
+		solo.setCost(!usePreferredValues ? bestCost : PreferredValues.getClosest(bestCost));
+	}
+
+	/**
+	*  Score error for one Solo embedded in all Hosts.
+	*  @return the total sumErr across hosts vs. base units.
+	*/
+	double scoreSoloAllHosts(Solo solo) {
+		double totalSumErr = 0;
+		List<Unit> hostUnits = unitList.subList(0, assessUnitNum);
+		for (Unit host: hostUnits) {
+			double error = scoreSoloOneHost(solo, host);
+			totalSumErr += error;
+		}			
+		return totalSumErr;
+	}
+
+	/**
+	*  Score error for one Solo embedded in one Host.
+	*  @return the sumErr for this solo + host across the base unit set.
+	*/
+	double scoreSoloOneHost(Solo solo, Unit host) {
+		Unit newHost = new Unit(host);
+		Solo newSolo = new Solo(solo);
+		newHost.setLeader(newSolo);
+		List<Unit> baseUnits = unitList.subList(0, baseUnitNum);
+		return playDocket(newHost, baseUnits);
 	}
 
 	/**
@@ -841,7 +991,7 @@ public class BookOfWar {
 
 		// Handle units pricier than our nominal budget:
 		// if so, set budget to their cost plus a margin to not advantage them
-		int maxCost = Math.max(unit1.getCost(), unit2.getCost());
+		int maxCost = Math.max(getMaxCost(unit1), getMaxCost(unit2));
 		if (maxCost > budget) {
 			int minCost = Math.min(unit1.getCost(), unit2.getCost());
 			budget = maxCost + minCost / 2;		
@@ -857,29 +1007,36 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Get maximum figure cost for a unit.
+	*/
+	int getMaxCost(Unit unit) {
+		if (unit.hasLeader()) {
+			return Math.max(unit.getCost(), unit.getLeader().getCost());
+		}	
+		else {
+			return unit.getCost();
+		}
+	}
+
+	/**
 	*  Initialize one unit by budget.
 	*/
 	void initUnit(Unit unit, int budget) {
-		assert unit.getCost() <= budget;
+		assert budget >= 0;
+		assert getMaxCost(unit) <= budget;
 
-// 		// Buy any attached hero
-// 		if (unit.hasHero()) {
-// 			Hero hero = unit.getHero();
-// 			if (budget >= hero.getCost()) {
-// 				initUnit(hero, hero.getCost());
-// 				budget -= hero.getCost();
-// 			}
-// 			else {
-// 				initUnit(hero, 0);			
-// 			}
-// 		}
-
-// 		// Buy silver weapons if needed
-// 		int cost = unit.getCost();
-// 		if (useSilverWeapons && !(unit instanceof Hero)
-// 				&& !unit.hasSpecial(SpecialType.SilverToHit) && unit.getHealth() < 4) {
-// 			cost += (unit.hasMissiles() ? 2 : 1);
-// 		}
+		// Buy any attached leader
+		if (unit.hasLeader()) {
+			Solo leader = unit.getLeader();
+			if (budget >= leader.getCost()) {
+				leader.setFigures(1);
+				budget -= leader.getCost();
+			}
+			else {
+				leader.setFigures(0);
+			}
+			finishInitUnit(leader);
+		}
 
 		// Here we round the number of purchased figures to closest integer
 		// If this goes over budget, we assume it balances with some other
@@ -888,6 +1045,15 @@ public class BookOfWar {
 
 		// Buy & set up normal figures
 		unit.setFigures(figures);
+		finishInitUnit(unit);
+	}
+
+	/**
+	*  Finish initializing a unit before a game.
+	*/
+	void finishInitUnit(Unit unit) {
+
+		// Set the ranks and files
 		setRanksAndFiles(unit);
 
 		// Set visibility
@@ -1159,7 +1325,7 @@ public class BookOfWar {
       }
 
 		// Get base to-hit target
-		int baseToHit = defender.getArmor() 
+		int baseToHit = getArmorForShot(defender)
 			- baseAtkBonus(attacker)
 			- miscAtkBonus(attacker, defender, true);
 
@@ -1172,6 +1338,18 @@ public class BookOfWar {
 		}
 		else {
 			return attacker.getRange();         // Full range
+		}
+	}
+
+	/**
+	*  Get the effective armor for shooting at a target.
+	*/
+	int getArmorForShot(Unit target) {
+		if (target.hasActiveLeader() && target.getFigures() == 0) {
+			return target.getLeader().getArmor();
+		}	
+		else {
+			return target.getArmor();		
 		}
 	}
 
@@ -1243,14 +1421,25 @@ public class BookOfWar {
 	void meleeAttack(Unit attacker, Unit defender) {
 		makeVisible(attacker);
 
+		// Give an attack to a leader figure
+		if (attacker.hasLeader()) {
+			meleeAttack(attacker.getLeader(), defender);
+		}
+
 		// Check for defender immune
 		if (isAttackImmune(attacker, defender)) {
 			reportDetail(attacker + " barred from attacking " + defender);
 			return;
 		}
 
-		// Compute number of dice & attack bonus
+		// Compute number of attackers (possibly one vs. leader)
 		int figsAtk = countFiguresInContact(attacker, defender);
+		if (defender.hasActiveLeader()) {
+			meleeAttack(attacker, defender.getLeader());
+			figsAtk--;		
+		}
+
+		// Compute number of dice & attack bonus
 		int numAtkDice = meleeAttackDice(attacker, defender, figsAtk);
 		int atkBonus = baseAtkBonus(attacker) 
 			+ miscAtkBonus(attacker, defender, false);
@@ -1308,10 +1497,15 @@ public class BookOfWar {
 		assert distance <= attacker.getRange();
 		assert distance > 0 || attacker.hasSpecial(SpecialType.MeleeShot);
 		assert !attacker.autoHits(); // solos not handled
-		assert !defender.hasHost();
+		assert !defender.hasActiveHost();
 
 		// Make attacker visible
 		makeVisible(attacker);
+
+		// Check for naked leader
+		if (defender.hasActiveLeader() && defender.getFigures() == 0) {
+			rangedAttack(attacker, defender.getLeader(), fullRate);
+		}
 
 		// Check for defender immune
 		if (isAttackImmune(attacker, defender)) {
@@ -1459,7 +1653,7 @@ public class BookOfWar {
 	boolean getsRearAttack (Unit attacker, Unit defender) {
 
 		// Embedded targets are not susceptible
-		if (defender.hasHost()) {
+		if (defender.hasActiveHost()) {
 			return false;
 		}
 
@@ -1552,7 +1746,9 @@ public class BookOfWar {
 	void checkMorale(Unit unit, int rateOfLoss) {
 
 		// Check waivers
-		if (unit.isBeaten() || unit.isFearless()) {
+		if (unit.isFearless() || unit.isBeaten()
+			|| unit.getFigures() == 0 || unit.isRouted())		
+		{
 			return;
 		}
 
@@ -1588,7 +1784,7 @@ public class BookOfWar {
 		}
 
 		// Leadership
-		if (unit.hasLeader()) {
+		if (unit.hasActiveLeader()) {
 			bonus += 1;
 		}
 
@@ -1992,7 +2188,7 @@ public class BookOfWar {
 	*  Determine the best weather value for this attacker.
 	*/
 	Weather getBestWeather(Unit attacker, Unit defender) {
-		Unit friendly = attacker.hasHost()
+		Unit friendly = attacker.hasActiveHost()
 			? attacker.getHost() : attacker;
 		int thirst = getThirst(friendly) - getThirst(defender);
 		if (thirst < 0) {

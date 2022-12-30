@@ -63,4 +63,22 @@ public class Solo extends Unit {
 
 	/** Solos get saving throws versus magic damage. */
 	@Override public boolean getsSaves() { return true; }
+
+	/** 
+	*  Check if we have an active host unit.
+	*  @return true if we have an active host unit.
+	*/
+	@Override public boolean hasActiveHost() { 
+		return host != null 
+			&& !host.isRouted()
+			&& host.getFigures() > 0;
+	}
+	
+	/** 
+	*  Set out host unit.
+	*  @param newHost the new host unit.
+	*/
+	public void setHost(Unit newHost) {
+		host = newHost;
+	}
 }

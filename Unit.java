@@ -78,7 +78,7 @@ public class Unit {
 		alignment = src.alignment;
 		specialSet = new HashSet<SpecialAbility>(src.specialSet);
 		if (src.leader != null) {
-			leader = new Solo(src.leader);
+			setLeader(new Solo(src.leader));
 		}
 		// Other in-play records not copied
 	}
@@ -90,7 +90,6 @@ public class Unit {
 	// Unit type statistics
 	public String getName() { return name; };
 	public int getCost() { return cost; };
-	public int getMove() { return move; };
 	public int getArmor() { return armor; };
 	public int getHealth() { return health; };
 	public int getAttacks() { return attacks; };
@@ -106,7 +105,6 @@ public class Unit {
 	public int getCharges() { return specialCharges; }
 	public boolean hasMissiles() { return range > 0; };
 	public boolean isVisible() { return visible; };
-	public boolean isBeaten() { return figures == 0 || routed; };
 	public Solo getLeader() { return leader; };
 
 	// Methods to be overridden by sublass
@@ -116,6 +114,7 @@ public class Unit {
 	public boolean autoHits() { return false; }
 	public boolean getsSaves() { return false; }
 	public boolean hasHost() { return false; }
+	public boolean hasActiveHost() { return false; }
 	public Unit getHost() { return null; }
 	
 	/**
@@ -151,12 +150,31 @@ public class Unit {
 			}
 		}
 	}
+	
+	/**
+	*  Get the movement rate.
+	*  @return the current move rate.
+	*/
+	public int getMove() { 
+		return leader == null 
+			? move : Math.min(move, leader.getMove());
+	};
+
+	/**
+	*  Set the leader for this unit.
+	*  @param leader the new leader for this unit.
+	*/
+	public void setLeader(Solo newLeader) { 
+		leader = newLeader;
+		leader.setHost(this);
+	}
 
 	/**
 	*  Set a new cost.
 	*  @param newCost the new cost.
 	*/
 	public void setCost(int newCost) {
+		assert newCost >= 1;
 		cost = newCost;
 	}
 
@@ -165,6 +183,7 @@ public class Unit {
 	*  @param numFigs number of figures for unit.
 	*/
 	public void setFigures(int numFigs) {
+		assert numFigs >= 0;
 		figures = numFigs;
 		routed = false;
 		damageTaken = 0;
@@ -175,7 +194,7 @@ public class Unit {
 	*  @param files number of files for unit.
 	*/
 	public void setFiles(int files) {
-		assert files > 0;
+		assert files >= 0;
 		assert files <= figures;
 		frontFiles = files;	
 	}
@@ -243,7 +262,12 @@ public class Unit {
 	*  @return perimeter around unit in inches.
 	*/
 	public double getPerimeter() {
-		return 2 * (getTotalWidth() + getTotalLength());
+		if (figures == 0 && hasActiveLeader()) {
+			return leader.getPerimeter();
+		}
+		else {
+			return 2 * (getTotalWidth() + getTotalLength());
+		}
 	}
 
 	/**
@@ -279,6 +303,14 @@ public class Unit {
 	*/
 	public void clearFigsLostInTurn() {
 		figsLostInTurn = 0;	
+	}
+
+	/**
+	*  Is this unit beaten?
+	*  @return true if the unit is no longer functional.
+	*/
+	public boolean isBeaten() { 
+		return figures == 0 && !hasActiveLeader();
 	}
 
 	/**
@@ -392,6 +424,17 @@ public class Unit {
 	*/
 	public void setRouted(boolean newRouted) {
 		routed = newRouted;
+		if (routed) {
+			removeFigures(figures);
+		}
+	}
+
+	/**
+	*  Get routed status.
+	*  @return true if this unit is routed.
+	*/
+	public boolean isRouted() {
+		return routed;
 	}
 
 	/**
@@ -403,12 +446,20 @@ public class Unit {
 	}
 
 	/**
-	*  Does this unit have a leader?
-	*  @return true if unit has an active leader.
+	*  Does this unit have a leader set?
+	*  @return true if unit has a leader object.
 	*/
 	public boolean hasLeader() { 
-		return leader != null && !leader.isBeaten(); 
+		return leader != null; 
 	};
+
+	/**
+	*  Does this unit have an active leader?
+	*  @return true if unit has an active leader.
+	*/
+	public boolean hasActiveLeader() {
+		return leader != null && !leader.isBeaten(); 
+	}
 
 	/**
 	*  Has this unit saved against fear magic?
@@ -440,8 +491,13 @@ public class Unit {
 	*  @return string representation of this unit.
 	*/
 	public String toString() {
-		return name + " (" + figures + " fig" + plural(figures) + ", "
-			+ getRanks() + " rank" + plural(getRanks()) + ")";
+		String s = name + " (" + figures + " fig" + plural(figures) + ", "
+			+ getRanks() + " rank" + plural(getRanks());
+		if (hasActiveLeader()) {
+			s += ", " + leader.getName();
+		}
+		s += ")";
+		return s;
 	}
 	
 	/**
