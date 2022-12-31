@@ -43,10 +43,10 @@ public class BookOfWar {
 	//-----------------------------------------------------------------
 
 	/** Budget minimum (basis 50). */
-	private final int budgetMin = 100;
+	private final int budgetMin = 50;
 
 	/** Budget maximum (basis 100). */
-	private final int budgetMax = 200;
+	private final int budgetMax = 100;
 
 	/** Balances swords vs. pikes & cavalry (basis 1.00). */
 	private final double terrainMultiplier = 1.00;
@@ -956,10 +956,10 @@ public class BookOfWar {
 	*  Determine victorious unit.
 	*/
 	Unit getWinner(Unit unit1, Unit unit2) {
-		if (unit1.isBeaten()) {
+		if (unit1.isTotallyBeaten()) {
 			return unit2;
 		}
-		else if (unit2.isBeaten()) {
+		else if (unit2.isTotallyBeaten()) {
 			return unit1;
 		}
 		else {
@@ -1217,7 +1217,7 @@ public class BookOfWar {
 
  		// Attack if in contact
  		if (distance == 0) {
-			if (!attacker.isBeaten() && !defender.isBeaten()) {
+			if (!attacker.isTotallyBeaten() && !defender.isTotallyBeaten()) {
 				checkMeleeSpecials(attacker, defender);
 	 			meleeAttack(attacker, defender);
 				checkMeleeShot(attacker, defender, distMoved);
@@ -1345,7 +1345,7 @@ public class BookOfWar {
 	*  Get the effective armor for shooting at a target.
 	*/
 	int getArmorForShot(Unit target) {
-		if (target.hasActiveLeader() && target.getFigures() == 0) {
+		if (target.isLoneLeader()) {
 			return target.getLeader().getArmor();
 		}	
 		else {
@@ -1502,9 +1502,10 @@ public class BookOfWar {
 		// Make attacker visible
 		makeVisible(attacker);
 
-		// Check for naked leader
-		if (defender.hasActiveLeader() && defender.getFigures() == 0) {
+		// Check for lone leader
+		if (defender.isLoneLeader()) {
 			rangedAttack(attacker, defender.getLeader(), fullRate);
+			return;
 		}
 
 		// Check for defender immune
@@ -1724,8 +1725,6 @@ public class BookOfWar {
 	boolean rollToHit(int bonus, int armor) {
 		int die = d6();
 		int total = die + bonus;
-		//reportDetail("Attack roll: die " + die + " + " + bonus
-		//	+ " = " + total + " vs. armor " + armor);
 		return total >= armor;
 	}
 
@@ -1746,9 +1745,7 @@ public class BookOfWar {
 	void checkMorale(Unit unit, int rateOfLoss) {
 
 		// Check waivers
-		if (unit.isFearless() || unit.isBeaten()
-			|| unit.getFigures() == 0 || unit.isRouted())		
-		{
+		if (unit.isFearless() || unit.isNormalBeaten()) {
 			return;
 		}
 

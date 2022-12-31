@@ -306,11 +306,21 @@ public class Unit {
 	}
 
 	/**
-	*  Is this unit beaten?
-	*  @return true if the unit is no longer functional.
+	*  Are the normal troops in this unit beaten?
+	*  (May still have active leader.)
+	*  @return true if the normals in this unit are nonfunctional.
 	*/
-	public boolean isBeaten() { 
-		return figures == 0 && !hasActiveLeader();
+	public boolean isNormalBeaten() {
+		return figures == 0 || routed;	
+	}
+
+	/**
+	*  Is this unit totally decimated?
+	*  (Includes any attached leader.)
+	*  @return true if this unit is totally nonfunctional.
+	*/
+	public boolean isTotallyBeaten() {
+		return isNormalBeaten() && !hasActiveLeader();	
 	}
 
 	/**
@@ -458,7 +468,7 @@ public class Unit {
 	*  @return true if unit has an active leader.
 	*/
 	public boolean hasActiveLeader() {
-		return leader != null && !leader.isBeaten(); 
+		return leader != null && !leader.isNormalBeaten(); 
 	}
 
 	/**
@@ -475,6 +485,14 @@ public class Unit {
 	*/
 	public void setSavedVsFear(boolean madeSave) {
 		savedVsFear = madeSave;
+	}
+
+	/**
+	*  Is this unit reduced down to a lone leader?
+	*  @return true if only a leader remains.
+	*/
+	public boolean isLoneLeader() {
+		return isNormalBeaten() && hasActiveLeader();	
 	}
 
 	/**

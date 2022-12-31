@@ -1,4 +1,11 @@
 Unit,Cost,Move,Armor,Health,Atk,Dam,Rate,Range,Width,Align,Special
+White Dragon,70,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), ColdBreath (9), Fear"
+Black Dragon,80,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), AcidBreath (9), Fear"
+Green Dragon,80,9,6,1,1,1,0,0,2,N,"Flight (24), Detection (15), PoisonBreath (9), Fear"
+Blue Dragon,80,9,6,1,1,1,0,0,2,N,"Flight (24), Detection (15), VoltBreath (9), Fear"
+Red Dragon,70,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), FireBreath (10), Fear"
+Gold Dragon,80,9,6,1,1,1,0,0,2,L,"Flight (24), Detection (15), MultiBreath (11), Fear"
+VO Large Gold Dragon,120,9,6,2,1,1,0,0,2,L,"Flight (24), Detection (15), MultiBreath (18), Fear"
 Wizard 11th Level,80,12,6,1,0,0,0,0,1,N,"Wand, Detection (12)"
 Wizard 12th Level,120,12,6,1,0,0,0,0,1,N,"Wand, Detection (12), Spells (1)"
 Wizard 13th Level,160,12,6,1,0,0,0,0,1,N,"Wand, Detection (12), Spells (2)"
@@ -13,13 +20,6 @@ Lord & Griffon,85,12,6,2,2,1,0,0,2,N,"Flight (30), Detection (24), SweepAttack (
 Lich & Wyvern,215,9,6,2,1,1,0,0,2,C,"Flight (24), Detection (24), Spells (6), Fear"
 Titan,80,15,6,2,1,1,0,0,2,N,Spells (2)
 Storm Giant,150,15,5,1,1,1,0,0,2,N,WeatherControl
-White Dragon,70,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), ColdBreath (9), Fear"
-Black Dragon,80,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), AcidBreath (9), Fear"
-Green Dragon,80,9,6,1,1,1,0,0,2,N,"Flight (24), Detection (15), PoisonBreath (9), Fear"
-Blue Dragon,80,9,6,1,1,1,0,0,2,N,"Flight (24), Detection (15), VoltBreath (9), Fear"
-Red Dragon,70,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), FireBreath (10), Fear"
-Gold Dragon,80,9,6,1,1,1,0,0,2,L,"Flight (24), Detection (15), MultiBreath (11), Fear"
-VO Large Gold Dragon,120,9,6,2,1,1,0,0,2,L,"Flight (24), Detection (15), MultiBreath (18), Fear"
 Balrog,20,6,6,1,1,1,0,0,2,C,"Flight (15), MagicResistance"
 Air Elemental,50,36,6,1,0,0,0,0,2,N,"MagicToHit, Flight (36), Whirlwind"
 Earth Elemental,50,6,6,1,1,1,0,0,2,N,MagicToHit
