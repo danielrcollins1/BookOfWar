@@ -43,10 +43,10 @@ public class BookOfWar {
 	//-----------------------------------------------------------------
 
 	/** Budget minimum (basis 50). */
-	private final int budgetMin = 50;
+	private final int BUDGET_MIN_DEFAULT = 50;
 
 	/** Budget maximum (basis 100). */
-	private final int budgetMax = 100;
+	private final int BUDGET_MAX_DEFAULT = 100;
 
 	/** Balances swords vs. pikes & cavalry (basis 1.00). */
 	private final double terrainMultiplier = 1.00;
@@ -64,10 +64,10 @@ public class BookOfWar {
 	private static final int MORALE_TARGET = 9;
 
 	/** Range for magic wand missile attacks. */
-	private static int WAND_RANGE = 24;
+	private static final int WAND_RANGE = 24;
 
 	/** Index for solo added to animated units. */
-	private static int ANIMATED_CONTROLLER = 1;
+	private static final int ANIMATED_CONTROLLER = 1;
 	
 	//-----------------------------------------------------------------
 	//  Out-of-game settings
@@ -84,6 +84,9 @@ public class BookOfWar {
 
 	/** List of solo unit types. */
 	private List<Solo> soloList;
+
+	/** Budget minimum and maximum. */
+	private int budgetMin, budgetMax;
 
 	/** Assess to this unit number (unit types 1 to n). */
 	private int assessUnitNum;
@@ -145,6 +148,8 @@ public class BookOfWar {
 		random = new Random();
 		simMode = DEFAULT_SIM_MODE;
 		trialsPerMatchup = DEFAULT_TRIALS_PER_MATCHUP;
+		budgetMin = BUDGET_MIN_DEFAULT;
+		budgetMax = BUDGET_MAX_DEFAULT;
 		loadBasicUnits();
 		loadSoloUnits();
 	}
@@ -156,6 +161,8 @@ public class BookOfWar {
 	public BookOfWar(BookOfWar src) {
 		random = new Random();			
 		simMode = src.simMode;
+		budgetMin = src.budgetMin;
+		budgetMax = src.budgetMax;
 		unitList = src.unitList;
 		soloList = src.soloList;
 		assessUnitNum = src.assessUnitNum;
@@ -747,6 +754,10 @@ public class BookOfWar {
 			return;		
 		}
 
+		// Double the standard budgt values.
+		budgetMin *= 2;
+		budgetMax *= 2;
+
 		// Get list of solo units to embed.
 		List<Solo> chiefUnits = soloList.subList(0, chiefUnitNum);
 		int nameColSize = getMaxNameLength(chiefUnits);
@@ -1114,9 +1125,7 @@ public class BookOfWar {
 	*  Play out one turn of action for one attacking unit.
 	*/
 	void oneTurn(Unit attacker, Unit defender) {
-		if (attacker.hasLeader()) {
-			System.err.println("Error: leader");
-		}
+		assert !attacker.hasHost();
 
 		// Initialize
 		defender.clearFigsLostInTurn();
