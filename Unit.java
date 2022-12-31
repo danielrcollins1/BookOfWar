@@ -392,8 +392,13 @@ public class Unit {
 		// Unicorn teleport 1 time/game.
 		if (hasSpecial(SpecialType.Teleport)) {
 			specialCharges = 1;
-		}	
-	
+		}
+
+		// Storm Giants control weather 1 time/game.
+		if (hasSpecial(SpecialType.WeatherControl)) {
+			specialCharges = 1;
+		}
+
 		// Dragon breath usable 3 times/game.
 		else if (hasBreathWeapon()) {
 			specialCharges = 3;

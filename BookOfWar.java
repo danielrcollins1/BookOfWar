@@ -1165,8 +1165,9 @@ public class BookOfWar {
 				
 		// Leader caster actions
 		if (attacker.hasCasterLeader()) {
-			tryOneTurnCaster(attacker.getLeader(), defender);
-			wantsToMove = false;
+			if (tryOneTurnCaster(attacker.getLeader(), defender)) {
+				wantsToMove = false;
+			}
 		}
 
 		// Normal unit actions
@@ -1393,6 +1394,11 @@ public class BookOfWar {
       	return 0;
       }
 
+		// Check for auto-hit
+		if (attacker.autoHits()) {
+			return attacker.getRange();
+		}
+
 		// Get base to-hit target
 		int baseToHit = getArmorForShot(defender)
 			- baseAtkBonus(attacker)
@@ -1571,7 +1577,6 @@ public class BookOfWar {
 		assert attacker.hasMissiles();
 		assert distance <= attacker.getRange();
 		assert distance > 0 || attacker.hasSpecial(SpecialType.MeleeShot);
-		assert !attacker.autoHits(); // solos not handled
 		assert !defender.hasActiveHost();
 
 		// Make attacker visible
@@ -1581,6 +1586,16 @@ public class BookOfWar {
 		if (defender.isLoneLeader()) {
 			rangedAttack(attacker, defender.getLeader(), fullRate);
 			return;
+		}
+
+		// Give shot to leader
+		if (attacker.hasActiveLeader()) {
+			Solo leader = attacker.getLeader();
+			if (leader.hasMissiles()
+				&& distance <= leader.getRange())
+			{
+				rangedAttack(attacker.getLeader(), defender, fullRate);
+			}
 		}
 
 		// Check for defender immune
@@ -1607,7 +1622,9 @@ public class BookOfWar {
 		// Roll attack dice
 		int numHits = 0;
 		for (int i = 0; i < atkDice; i++) {
-			if (rollToHit(atkBonus, defender.getArmor())) {
+			if (attacker.autoHits()
+				|| rollToHit(atkBonus, defender.getArmor())) 
+			{
 				numHits++;
 			}
 		}
@@ -2041,11 +2058,13 @@ public class BookOfWar {
 	*/
 	boolean tryOneTurnCaster(Unit attacker, Unit defender) {
 
-		// Storm giants make rain
+		// Storm giants control weather
 		if (attacker.hasSpecial(SpecialType.WeatherControl)
-			&& weather != Weather.Rainy) 
+			&& attacker.getCharges() > 0
+			&& weather != getTargetWeather(attacker, defender))
 		{
 			castControlWeather(attacker, defender);
+			attacker.decrementCharges();
 			return true;
 		}
 		
@@ -2082,7 +2101,10 @@ public class BookOfWar {
 		assert attacker.getCharges() > 0;
 		
 		// Cast Control Weather if it benefits us
-		if (weather != getBestWeather(attacker, defender)) {
+		if (weather != getTargetWeather(attacker, defender)
+			&& attacker.getCharges() 
+				== attacker.getSpecialParam(SpecialType.Spells))
+		{
 			castControlWeather(attacker, defender);
 			attacker.decrementCharges();
 			return true;
@@ -2186,32 +2208,52 @@ public class BookOfWar {
 	void castControlWeather(Unit attacker, Unit defender) {
 		assert attacker.hasSpecial(SpecialType.Spells)
 			|| attacker.hasSpecial(SpecialType.WeatherControl);
-		assert weather != getBestWeather(attacker, defender);
-		weather = getBestWeather(attacker, defender);
+		assert weather != getTargetWeather(attacker, defender);
+		weather = getTargetWeather(attacker, defender);
 		reportDetail(attacker + " casts * CONTROL WEATHER * for " + weather);
 	}
 
 	/**
-	*  Determine the best weather value for this attacker.
+	*  Determine the target weather value for a control spell.
 	*/
-	Weather getBestWeather(Unit attacker, Unit defender) {
-		Unit friendly = attacker.hasActiveHost()
-			? attacker.getHost() : attacker;
-		int thirst = getThirst(friendly) - getThirst(defender);
-		if (thirst < 0) {
-			return Weather.Sunny;
+	Weather getTargetWeather(Unit attacker, Unit defender) {
+//		Unit friendly = attacker.hasActiveHost()
+//			? attacker.getHost() : attacker;
+		int thirst = getThirst(attacker) - getThirst(defender);
+		if (thirst > 0) {
+			return incWeather();
 		}
-		else if (thirst == 0) {
-			return Weather.Cloudy;
+		else if (thirst < 0) {
+			return decWeather();
 		}
 		else {
-			return Weather.Rainy;
+			return Weather.Cloudy;
+		}
+	}
+	
+	/**
+	*  Get weather one step wetter than current.
+	*/
+	Weather incWeather() {
+		switch (weather) {
+			case Sunny: return Weather.Cloudy;
+			default: return Weather.Rainy;
+		}
+	}
+	
+	/**
+	*  Get weather one step dryer than current.
+	*/
+	Weather decWeather() {
+		switch (weather) {
+			case Rainy: return Weather.Cloudy;
+			default: return Weather.Sunny;
 		}
 	}
 
 	/**
 	*  Check how thirsty (rain-desiring) a given unit is.
-	*  @return positive if desire rain, negative if want to avoid it
+	*  @return positive if we desire rain, negative if want to avoid it
 	*/
 	int getThirst(Unit unit) {
 		assert unit != null;
@@ -2219,22 +2261,19 @@ public class BookOfWar {
 		if (unit.hasSpecial(SpecialType.Mounts)) {
 			thirst--;
 		}			
-		if (!unit.hasSpecial(SpecialType.Mounts)
-			&& unit.getRange() == 0)
-		{
-			thirst++;
-		}
 		if (unit.hasSpecial(SpecialType.LightWeakness)) {
 			thirst++;
 		}	
 		if (unit.hasSpecial(SpecialType.GiantClass)) {
 			thirst++;
 		}	
-		if (unit.hasSpecial(SpecialType.Wand)) {
-			thirst++;
-		}	
 		if (unit.hasSpecial(SpecialType.WeatherControl)) {
-			thirst += 100;
+			thirst++;
+		}
+		if (unit.hasSpecial(SpecialType.Wand)) {
+			if (weather != Weather.Sunny) {
+				thirst += 2;
+			}
 		}	
 		return thirst;	
 	}
@@ -2256,7 +2295,7 @@ public class BookOfWar {
 		hitPerAtkr = Math.max(hitPerAtkr, 1);
 		int numHit = hitPerAtkr * countFiguresInContact(attacker, defender);
 
-		// Cast the energy
+		// Cast the energy attack
 		SpecialAbility breath = attacker.getBreathWeapon();
 		reportDetail(attacker + " uses " + breath);
 		castEnergy(defender, numHit, breath.getParam(),
