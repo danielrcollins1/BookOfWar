@@ -1062,7 +1062,6 @@ public class BookOfWar {
 		unit.setVisible(!invisible);
 
 		// Prepare any special abilities
-		unit.setSavedVsFear(false);
 		unit.refreshCharges();
 	}
 
@@ -1248,7 +1247,15 @@ public class BookOfWar {
 		// Check for defender pikes
 		if (defender.hasSpecial(SpecialType.Pikes)) {
 			checkPikeInterrupt(attacker, defender);
-		}	
+		}
+		
+		// Check for dragon fear ability
+		if (attacker.hasSpecial(SpecialType.Fear)) {
+			checkFearAbility(attacker, defender);
+		}
+		if (defender.hasSpecial(SpecialType.Fear)) {
+			checkFearAbility(defender, attacker);
+		}
 	}
 
 	/**
@@ -1980,11 +1987,6 @@ public class BookOfWar {
 	*/
 	void checkMeleeSpecials(Unit attacker, Unit defender) {
 
-		// Check for attacker fear ability
-		if (attacker.hasSpecial(SpecialType.Fear)) {
-			checkFearAbility(attacker, defender);
-		}
-
 		// Check for breath weapon
 		if (attacker.hasBreathWeapon() & attacker.getCharges() > 0) {
 			useBreathWeapon(attacker, defender);
@@ -1997,12 +1999,9 @@ public class BookOfWar {
 	void checkFearAbility(Unit attacker, Unit defender) {
 		assert distance == 0;
 		assert attacker.hasSpecial(SpecialType.Fear);
-		if (!defender.isFearless()
-			&& !defender.hasSavedVsFear())
-		{
+		if (!defender.isFearless()) {
 			reportDetail(defender + " confronts fear ability");
 			checkMorale(defender, 0);
-			defender.setSavedVsFear(true);			
 		}
 	}
 

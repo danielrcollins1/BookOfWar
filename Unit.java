@@ -33,7 +33,7 @@ public class Unit {
 
 	// Unit in-play records
 	private int figures, frontFiles, damageTaken, figsLostInTurn;
-	private boolean routed, visible, savedVsFear;
+	private boolean routed, visible;
 	protected int specialCharges;
 	private Solo leader;
 
@@ -469,22 +469,6 @@ public class Unit {
 	*/
 	public boolean hasActiveLeader() {
 		return leader != null && !leader.isNormalBeaten(); 
-	}
-
-	/**
-	*  Has this unit saved against fear magic?
-	*  @return true if we have made a save.
-	*/
-	public boolean hasSavedVsFear() {
-		return savedVsFear;	
-	}
-
-	/**
-	*  Record whether this unit has saved versus fear.
-	*  @param madeSave true if we have saved versus fear.
-	*/
-	public void setSavedVsFear(boolean madeSave) {
-		savedVsFear = madeSave;
 	}
 
 	/**
