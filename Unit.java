@@ -480,6 +480,27 @@ public class Unit {
 	}
 
 	/**
+	*  Is this unit a caster-type?
+	*  @return true if we can cast magic spells.
+	*/
+	public boolean isCaster() {
+		for (SpecialAbility a: specialSet) {
+			if (a.getType().isSpellCasting()) {
+				return true;
+			}		
+		}
+		return false;
+	}
+
+	/**
+	*  Dos this unit have a caster leader?
+	*  @return true if we have a casting leader.
+	*/
+	public boolean hasCasterLeader() {
+		return hasActiveLeader() && leader.isCaster();
+	}
+
+	/**
 	*  Return a plural suffix if needed.
 	*  @param n a number.
 	*  @return "s" if n is not one.

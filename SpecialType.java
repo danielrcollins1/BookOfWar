@@ -50,7 +50,21 @@ public enum SpecialType {
 			case FireBreath: case ColdBreath: case AcidBreath:
 			case VoltBreath: case PoisonBreath: case MultiBreath:
 				return true;
-			default: return false;
+			default: 
+				return false;
+		}	
+	}
+	
+	/**
+	*  Is this a type of magic spell casting?
+	*  @return true if this is a magic spell ability.
+	*/
+	public boolean isSpellCasting() {
+		switch (this) {
+			case Spells: case Wand: case WeatherControl:
+				return true;
+			default:
+				return false;
 		}	
 	}
 }

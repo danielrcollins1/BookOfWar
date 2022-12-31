@@ -43,10 +43,10 @@ public class BookOfWar {
 	//-----------------------------------------------------------------
 
 	/** Budget minimum (basis 50). */
-	private final int budgetMin = 50;
+	private final int budgetMin = 100;
 
 	/** Budget maximum (basis 100). */
-	private final int budgetMax = 100;
+	private final int budgetMax = 200;
 
 	/** Balances swords vs. pikes & cavalry (basis 1.00). */
 	private final double terrainMultiplier = 1.00;
@@ -362,7 +362,9 @@ public class BookOfWar {
 	boolean checkBaseUnitsPositive() {
 	
 		// Set default if needed
-		if (soloBalancing && baseUnitNum == 0) {
+		if ((soloBalancing || simMode == SimMode.EmbedBalance)
+			&& baseUnitNum == 0) 
+		{
 			baseUnitNum = unitList.size();
 		}
 	
@@ -1110,14 +1112,28 @@ public class BookOfWar {
 	*  Take one turn of action by type of unit.
 	*/
 	void takeOneTurnAction(Unit attacker, Unit defender) {
-		if (tryOneTurnCaster(attacker, defender)) {
-			return;
+		assert !(attacker.isCaster() && attacker.hasCasterLeader());
+		boolean wantsToMove = true;
+
+		// Solo caster actions
+		if (attacker.isCaster()) {
+			if (tryOneTurnCaster(attacker, defender)) {
+				return;
+			}
 		}
-		else if (tryOneTurnRanged(attacker, defender)) {
+				
+		// Leader caster actions
+		if (attacker.hasCasterLeader()) {
+			tryOneTurnCaster(attacker.getLeader(), defender);
+			wantsToMove = false;
+		}
+
+		// Normal unit actions
+		if (tryOneTurnRanged(attacker, defender, wantsToMove)) {
 			return;
 		}
 		else {
-			oneTurnMelee(attacker, defender);
+			oneTurnMelee(attacker, defender, wantsToMove);
 		}
 	}
 
@@ -1125,13 +1141,13 @@ public class BookOfWar {
 	*  Check if we should act as a ranged attacker ths turn.
 	*  @return true if we took an action.
 	*/
-	boolean tryOneTurnRanged(Unit attacker, Unit defender) {
+	boolean tryOneTurnRanged(Unit attacker, Unit defender, boolean wantsToMove) {
 		if (distance > 0
 			&& attacker.hasMissiles()
 			&& minDistanceToShoot(attacker, defender) > 0
 			&& !attacker.hasSpecial(SpecialType.MeleeShot))
 		{
-			oneTurnRanged(attacker, defender);
+			oneTurnRanged(attacker, defender, wantsToMove);
 			return true;		
 		}
 		return false;
@@ -1197,16 +1213,16 @@ public class BookOfWar {
 	/**
 	*  Play out one turn for melee troops.
 	*/
-	void oneTurnMelee(Unit attacker, Unit defender) {
+	void oneTurnMelee(Unit attacker, Unit defender, boolean wantsToMove) {
 		int distMoved = 0;
 	
 		// Charge to contact
-		if (distance > 0) {
+		if (distance > 0 && wantsToMove) {
 			distMoved = moveSeekRange(attacker, defender, 0, true);
 		}
 
 		// Expand frontage if useful
-		if (distMoved == 0) {
+		if (distance == 0 && distMoved == 0) {
 			if (attacker.getRanks() > 1 
 					&& attacker.getTotalWidth() < defender.getPerimeter()) {
 				int newFiles = Math.min(attacker.getFiles() + 6, attacker.getFigures());
@@ -1278,8 +1294,13 @@ public class BookOfWar {
 	/**
 	*  Play out one turn for ranged troops (AI-flavored).
 	*/
-	void oneTurnRanged(Unit attacker, Unit defender) {
+	void oneTurnRanged(Unit attacker, Unit defender, boolean wantsToMove) {
 		int distMoved = 0;
+
+		// If we have no troops, jump out
+		if (attacker.isNormalBeaten()) {
+			return;
+		}
 
 		// Check relative firing ranges
 		int minShotDist = minDistanceToShoot(attacker, defender);
@@ -1287,7 +1308,7 @@ public class BookOfWar {
 		boolean outranged = (minShotDist < minShotDistEnemy);
 
 		// Move to shooting distance
-		if (distance > minShotDist) {
+		if (distance > minShotDist && wantsToMove) {
 
 			// If enemy outranges us, better to go full speed to our range
 			// Otherwise we step forward half-speed to get first shot
@@ -1426,11 +1447,17 @@ public class BookOfWar {
 	*  Play out one melee attack.
 	*/
 	void meleeAttack(Unit attacker, Unit defender) {
+		assert !attacker.isTotallyBeaten();
 		makeVisible(attacker);
 
 		// Give an attack to a leader figure
-		if (attacker.hasLeader()) {
+		if (attacker.hasActiveLeader()) {
 			meleeAttack(attacker.getLeader(), defender);
+		}
+
+		// Jump out if we have no attacks
+		if (attacker.getAttacks() == 0) {
+			return;
 		}
 
 		// Check for defender immune
@@ -2136,11 +2163,11 @@ public class BookOfWar {
 		}
 		
 		// Shoot two fireballs per turn at target
-		reportDetail(attacker + " shoots * FIREBALLS *");
+		reportDetail(attacker + " shoots two * FIREBALLS *");
 		int numShots = attacker.getFigures() * 2;
 		for (int shot = 0; shot < numShots; shot++) {
 			if (checkWandHit(defender)) {
-				castEnergy(defender, 1, 6, EnergyType.Fire);			
+				castEnergy(defender, 1, 6, EnergyType.Fire);
 			}		
 		}
 	}
@@ -2176,7 +2203,7 @@ public class BookOfWar {
 			|| attacker.hasSpecial(SpecialType.WeatherControl);
 		assert weather != getBestWeather(attacker, defender);
 		weather = getBestWeather(attacker, defender);
-		reportDetail(attacker + " makes it " + weather + " via * CONTROL WEATHER *");
+		reportDetail(attacker + " casts * CONTROL WEATHER * for " + weather);
 	}
 
 	/**
@@ -2244,6 +2271,16 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Cast a Move Earth spell.
+	*  Assume this can move a Hill into a protective position for caster.
+	*/
+	void castMoveEarth(Unit attacker) {
+		assert terrain == Terrain.Open;
+		terrain = Terrain.Hill;
+		reportDetail(attacker + " casts * MOVE EARTH * to get " + terrain);
+	}
+
+	/**
 	*  Try to use a wizard spell ability.
 	*  @return true if we cast a spell.
 	*/
@@ -2260,7 +2297,7 @@ public class BookOfWar {
 
 		// Cast Move Earth if it benefits us
 		if (terrain == Terrain.Open) {
-			terrain = Terrain.Hill;
+			castMoveEarth(attacker);
 			attacker.decrementCharges();
 			return true;		
 		}
