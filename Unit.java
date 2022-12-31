@@ -395,7 +395,7 @@ public class Unit {
 		}
 
 		// Storm Giants control weather 1 time/game.
-		if (hasSpecial(SpecialType.WeatherControl)) {
+		else if (hasSpecial(SpecialType.WeatherControl)) {
 			specialCharges = 1;
 		}
 

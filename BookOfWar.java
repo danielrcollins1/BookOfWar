@@ -2143,12 +2143,12 @@ public class BookOfWar {
 			return;		
 		}
 		
-		// Shoot two fireballs per turn at target
-		reportDetail(attacker + " shoots two * FIREBALLS *");
+		// Shoot two lightning bolts per turn at target
+		reportDetail(attacker + " shoots two * LIGHTNING *");
 		int numShots = attacker.getFigures() * 2;
 		for (int shot = 0; shot < numShots; shot++) {
 			if (checkWandHit(defender)) {
-				castEnergy(defender, 1, 6, EnergyType.Fire);
+				castEnergy(defender, 1, 6, EnergyType.Volt);
 			}		
 		}
 	}
