@@ -43,10 +43,10 @@ public class BookOfWar {
 	//-----------------------------------------------------------------
 
 	/** Budget minimum (basis 50). */
-	private final int budgetMin = 50;
+	private final int budgetMin = 100;
 
 	/** Budget maximum (basis 100). */
-	private final int budgetMax = 100;
+	private final int budgetMax = 200;
 
 	/** Balances swords vs. pikes & cavalry (basis 1.00). */
 	private final double terrainMultiplier = 1.00;
@@ -2134,9 +2134,8 @@ public class BookOfWar {
 	void doMagicWandTurn(Unit attacker, Unit defender) {
 		assert attacker.hasSpecial(SpecialType.Wand);
 
-		// If out of range, move up slightly.
+		// If out of range, do nothing.
 		if (distance > WAND_RANGE) {
-			distance -= 1;
 			return;		
 		}
 		
@@ -2234,13 +2233,16 @@ public class BookOfWar {
 
 	/**
 	*  Cast a Death Spell on the defending unit.
+	*  (4 hits per casting roughly averages OD&D, AD&D, OED,
+	*   with some reduction for saving throws.)
 	*/
 	void castDeathSpell(Unit attacker, Unit defender) {
+		final int DEATH_SPELL_HITS = 4;
 		assert distance <= 24;
 		assert defender.getHealth() <= 8;
 		assert !defender.getsSaves();
 		int numCasters = attacker.getFigures();
-		int damage = 5 * numCasters;
+		int damage = DEATH_SPELL_HITS * numCasters;
 		defender.takeDamage(damage);
 		reportDetail(attacker + " casts * DEATH SPELL * on " + defender);
 	}
@@ -2259,7 +2261,14 @@ public class BookOfWar {
 			attacker.decrementCharges();
 			return true;
 		}
-		
+
+		// Cast Move Earth if it benefits us
+		if (terrain == Terrain.Open) {
+			terrain = Terrain.Hill;
+			attacker.decrementCharges();
+			return true;		
+		}
+
 		// Cast Death Spell otherwise
 		if (distance <= 24 
 			&& defender.getHealth() <= 8
