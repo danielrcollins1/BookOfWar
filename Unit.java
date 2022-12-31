@@ -161,7 +161,7 @@ public class Unit {
 
 	/**
 	*  Set the leader for this unit.
-	*  @param leader the new leader for this unit.
+	*  @param newLeader the new leader for this unit.
 	*/
 	public void setLeader(Solo newLeader) { 
 		leader = newLeader;
@@ -530,8 +530,8 @@ public class Unit {
 	*  @return string representation of this unit.
 	*/
 	public String toString() {
-		String s = name + " (" + figures + " fig" + plural(figures) + ", "
-			+ getRanks() + " rank" + plural(getRanks());
+		String s = name + " (" + figures + " fig" + plural(figures) 
+			+ ", " + getRanks() + " rank" + plural(getRanks());
 		if (hasActiveLeader()) {
 			s += ", " + leader.getName();
 		}
