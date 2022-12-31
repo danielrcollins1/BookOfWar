@@ -2013,6 +2013,29 @@ public class BookOfWar {
 	}
 
 	/**
+	*  Check for special abilities joint with melee atacks.
+	*/
+	void checkMeleeSpecials(Unit attacker, Unit defender) {
+
+		// Check for breath weapon
+		if (attacker.hasBreathWeapon() & attacker.getCharges() > 0) {
+			useBreathWeapon(attacker, defender);
+		}
+	}
+
+	/**
+	*  Check the fear effect of dragons as they make contact.
+	*/
+	void checkFearAbility(Unit attacker, Unit defender) {
+		assert distance == 0;
+		assert attacker.hasSpecial(SpecialType.Fear);
+		if (!defender.isFearless()) {
+			reportDetail(defender + " confronts fear ability");
+			checkMorale(defender, 0);
+		}
+	}
+
+	/**
 	*  Check if a unit should act as a caster this turn.
 	*  @return true if we took an action.
 	*/
@@ -2051,57 +2074,169 @@ public class BookOfWar {
 	}
 
 	/**
-	*  Check for special abilities joint with melee atacks.
+	*  Try to use a wizard spell ability.
+	*  @return true if we cast a spell.
 	*/
-	void checkMeleeSpecials(Unit attacker, Unit defender) {
+	boolean doSpellTurn(Unit attacker, Unit defender) {
+		assert attacker.hasSpecial(SpecialType.Spells);
+		assert attacker.getCharges() > 0;
+		
+		// Cast Control Weather if it benefits us
+		if (weather != getBestWeather(attacker, defender)) {
+			castControlWeather(attacker, defender);
+			attacker.decrementCharges();
+			return true;
+		}
 
-		// Check for breath weapon
-		if (attacker.hasBreathWeapon() & attacker.getCharges() > 0) {
-			useBreathWeapon(attacker, defender);
+		// Cast Move Earth if it benefits us
+		if (terrain == Terrain.Open) {
+			castMoveEarth(attacker);
+			attacker.decrementCharges();
+			return true;		
+		}
+
+		// Cast Death Spell otherwise
+		if (distance <= 24 
+			&& defender.getHealth() <= 8
+			&& !defender.getsSaves())
+		{
+			castDeathSpell(attacker, defender);		
+			attacker.decrementCharges();
+			return true;
+		}
+		
+		// Else nothing
+		return false;		
+	}
+
+	/**
+	*  Take a turn as a magic wand wielder.
+	*/
+	void doMagicWandTurn(Unit attacker, Unit defender) {
+		assert attacker.hasSpecial(SpecialType.Wand);
+
+		// If out of range, move forward a bit.
+		if (distance > WAND_RANGE) {
+			distance--;
+			return;		
+		}
+		
+		// Shoot two fireballs per turn at target
+		reportDetail(attacker + " shoots two * FIREBALLS *");
+		int numShots = attacker.getFigures() * 2;
+		for (int shot = 0; shot < numShots; shot++) {
+			if (checkWandHit(defender)) {
+				castEnergy(defender, 1, 6, EnergyType.Fire);
+			}		
 		}
 	}
 
 	/**
-	*  Check the fear effect of dragons as they charge into melee.
+	*  Check if we can hit a target unit with a magic wand.
+	*  Target center of unit & check variation.
 	*/
-	void checkFearAbility(Unit attacker, Unit defender) {
-		assert distance == 0;
-		assert attacker.hasSpecial(SpecialType.Fear);
-		if (!defender.isFearless()) {
-			reportDetail(defender + " confronts fear ability");
-			checkMorale(defender, 0);
+	boolean checkWandHit(Unit target) {
+		assert distance <= WAND_RANGE;
+	
+		// Get the shot error
+		double shotError;
+		if (distance > WAND_RANGE / 2) {
+			shotError = Math.abs(d6() + d6() - 7);
+		}
+		else if (distance > WAND_RANGE / 4) {
+			shotError = Math.abs(rollDie(3) + rollDie(3) - 4);
+		}
+		else {
+			shotError = 0;
+		}
+		
+		// See if error is within length of target
+		return shotError <= target.getTotalLength() / 2;
+	}
+
+	/**
+	*  Cast a Move Earth spell.
+	*  Assume this can move a Hill into a protective position for caster.
+	*/
+	void castMoveEarth(Unit attacker) {
+		assert terrain == Terrain.Open;
+		terrain = Terrain.Hill;
+		reportDetail(attacker + " casts * MOVE EARTH * to get " + terrain);
+	}
+
+	/**
+	*  Cast a Death Spell on the defending unit.
+	*  (4 hits per casting roughly averages OD&D, AD&D, OED,
+	*   with some reduction for saving throws.)
+	*/
+	void castDeathSpell(Unit attacker, Unit defender) {
+		final int DEATH_SPELL_HITS = 4;
+		assert distance <= 24;
+		assert defender.getHealth() <= 8;
+		assert !defender.getsSaves();
+		int numCasters = attacker.getFigures();
+		int damage = DEATH_SPELL_HITS * numCasters;
+		defender.takeDamage(damage);
+		reportDetail(attacker + " casts * DEATH SPELL * on " + defender);
+	}
+
+	/**
+	*  Cast a Control Weather spell to our benefit.
+	*/
+	void castControlWeather(Unit attacker, Unit defender) {
+		assert attacker.hasSpecial(SpecialType.Spells)
+			|| attacker.hasSpecial(SpecialType.WeatherControl);
+		assert weather != getBestWeather(attacker, defender);
+		weather = getBestWeather(attacker, defender);
+		reportDetail(attacker + " casts * CONTROL WEATHER * for " + weather);
+	}
+
+	/**
+	*  Determine the best weather value for this attacker.
+	*/
+	Weather getBestWeather(Unit attacker, Unit defender) {
+		Unit friendly = attacker.hasActiveHost()
+			? attacker.getHost() : attacker;
+		int thirst = getThirst(friendly) - getThirst(defender);
+		if (thirst < 0) {
+			return Weather.Sunny;
+		}
+		else if (thirst == 0) {
+			return Weather.Cloudy;
+		}
+		else {
+			return Weather.Rainy;
 		}
 	}
 
 	/**
-	*  Cast energy damage on a number of figures in a unit.
+	*  Check how thirsty (rain-desiring) a given unit is.
+	*  @return positive if desire rain, negative if want to avoid it
 	*/
-	void castEnergy(Unit unit, int numFigs, int dmgPerFig, EnergyType energy) {
-
-		// Check for lone leader
-		if (unit.isLoneLeader()) {
-			castEnergy(unit.getLeader(), 1, dmgPerFig, energy);
-			return;
+	int getThirst(Unit unit) {
+		assert unit != null;
+		int thirst = 0;
+		if (unit.hasSpecial(SpecialType.Mounts)) {
+			thirst--;
+		}			
+		if (!unit.hasSpecial(SpecialType.Mounts)
+			&& unit.getRange() == 0)
+		{
+			thirst++;
 		}
-
-		// Check for immunity
-		if (isEnergyImmune(unit, energy)) {
-			return;
-		}
-
-		// Check for saving throw
-		if (unit.getsSaves()) {
-			int roll = d6() + d6();
-			if (roll >= dmgPerFig) {
-				reportDetail(unit + " saves versus " + energy);
-			}	
-		}
-
-		// Magic area damage is capped by figure health
-		dmgPerFig = Math.min(dmgPerFig, unit.getHealth());
-		int damage = dmgPerFig * numFigs;
-		int figsLost = unit.takeDamage(damage);
-		reportDetail(unit + " lost " + figsLost + " figures from " + energy);
+		if (unit.hasSpecial(SpecialType.LightWeakness)) {
+			thirst++;
+		}	
+		if (unit.hasSpecial(SpecialType.GiantClass)) {
+			thirst++;
+		}	
+		if (unit.hasSpecial(SpecialType.Wand)) {
+			thirst++;
+		}	
+		if (unit.hasSpecial(SpecialType.WeatherControl)) {
+			thirst += 100;
+		}	
+		return thirst;	
 	}
 
 	/**
@@ -2127,6 +2262,38 @@ public class BookOfWar {
 		castEnergy(defender, numHit, breath.getParam(),
 			getBreathEnergy(breath.getType()));
 		attacker.decrementCharges();
+	}
+
+	/**
+	*  Cast energy damage on a number of figures in a unit.
+	*/
+	void castEnergy(Unit unit, int numFigs, int dmgPerFig, EnergyType energy) {
+
+		// Check for lone leader
+		if (unit.isLoneLeader()) {
+			castEnergy(unit.getLeader(), 1, dmgPerFig, energy);
+			return;
+		}
+
+		// Check for immunity
+		if (isEnergyImmune(unit, energy)) {
+			return;
+		}
+
+		// Check for saving throw
+		if (unit.getsSaves()) {
+			int roll = d6() + d6();
+			if (roll >= dmgPerFig) {
+				reportDetail(unit + " saves versus " + energy);
+				return;
+			}	
+		}
+
+		// Magic area damage is capped by figure health
+		dmgPerFig = Math.min(dmgPerFig, unit.getHealth());
+		int damage = dmgPerFig * numFigs;
+		int figsLost = unit.takeDamage(damage);
+		reportDetail(unit + " lost " + figsLost + " figures from " + energy);
 	}
 
 	/**
@@ -2202,172 +2369,6 @@ public class BookOfWar {
 		// Move as much as possible to other side of target
 		distance = getMove(attacker) - distance;
 		return;
-	}
-
-	/**
-	*  Take a turn as a magic wand wielder.
-	*/
-	void doMagicWandTurn(Unit attacker, Unit defender) {
-		assert attacker.hasSpecial(SpecialType.Wand);
-
-		// If out of range, move forward a bit.
-		if (distance > WAND_RANGE) {
-			distance--;
-			return;		
-		}
-		
-		// Shoot two fireballs per turn at target
-		reportDetail(attacker + " shoots two * FIREBALLS *");
-		int numShots = attacker.getFigures() * 2;
-		for (int shot = 0; shot < numShots; shot++) {
-			if (checkWandHit(defender)) {
-				castEnergy(defender, 1, 6, EnergyType.Fire);
-			}		
-		}
-	}
-
-	/**
-	*  Check if we can hit a target unit with a magic wand.
-	*  Target center of unit & check variation.
-	*/
-	boolean checkWandHit(Unit target) {
-		assert distance <= WAND_RANGE;
-	
-		// Get the shot error
-		double shotError;
-		if (distance > WAND_RANGE / 2) {
-			shotError = Math.abs(d6() + d6() - 7);
-		}
-		else if (distance > WAND_RANGE / 4) {
-			shotError = Math.abs(rollDie(3) + rollDie(3) - 4);
-		}
-		else {
-			shotError = 0;
-		}
-		
-		// See if error is within length of target
-		return shotError <= target.getTotalLength() / 2;
-	}
-
-	/**
-	*  Cast a Control Weather spell to our benefit.
-	*/
-	void castControlWeather(Unit attacker, Unit defender) {
-		assert attacker.hasSpecial(SpecialType.Spells)
-			|| attacker.hasSpecial(SpecialType.WeatherControl);
-		assert weather != getBestWeather(attacker, defender);
-		weather = getBestWeather(attacker, defender);
-		reportDetail(attacker + " casts * CONTROL WEATHER * for " + weather);
-	}
-
-	/**
-	*  Determine the best weather value for this attacker.
-	*/
-	Weather getBestWeather(Unit attacker, Unit defender) {
-		Unit friendly = attacker.hasActiveHost()
-			? attacker.getHost() : attacker;
-		int thirst = getThirst(friendly) - getThirst(defender);
-		if (thirst < 0) {
-			return Weather.Sunny;
-		}
-		else if (thirst == 0) {
-			return Weather.Cloudy;
-		}
-		else {
-			return Weather.Rainy;
-		}
-	}
-
-	/**
-	*  Check how thirsty (rain-desiring) a given unit is.
-	*  @return positive if desire rain, negative if want to avoid it
-	*/
-	int getThirst(Unit unit) {
-		assert unit != null;
-		int thirst = 0;
-		if (unit.hasSpecial(SpecialType.Mounts)) {
-			thirst--;
-		}			
-		if (!unit.hasSpecial(SpecialType.Mounts)
-			&& unit.getRange() == 0)
-		{
-			thirst++;
-		}
-		if (unit.hasSpecial(SpecialType.LightWeakness)) {
-			thirst++;
-		}	
-		if (unit.hasSpecial(SpecialType.GiantClass)) {
-			thirst++;
-		}	
-		if (unit.hasSpecial(SpecialType.Wand)) {
-			thirst++;
-		}	
-		if (unit.hasSpecial(SpecialType.WeatherControl)) {
-			thirst += 100;
-		}	
-		return thirst;	
-	}
-
-	/**
-	*  Cast a Death Spell on the defending unit.
-	*  (4 hits per casting roughly averages OD&D, AD&D, OED,
-	*   with some reduction for saving throws.)
-	*/
-	void castDeathSpell(Unit attacker, Unit defender) {
-		final int DEATH_SPELL_HITS = 4;
-		assert distance <= 24;
-		assert defender.getHealth() <= 8;
-		assert !defender.getsSaves();
-		int numCasters = attacker.getFigures();
-		int damage = DEATH_SPELL_HITS * numCasters;
-		defender.takeDamage(damage);
-		reportDetail(attacker + " casts * DEATH SPELL * on " + defender);
-	}
-
-	/**
-	*  Cast a Move Earth spell.
-	*  Assume this can move a Hill into a protective position for caster.
-	*/
-	void castMoveEarth(Unit attacker) {
-		assert terrain == Terrain.Open;
-		terrain = Terrain.Hill;
-		reportDetail(attacker + " casts * MOVE EARTH * to get " + terrain);
-	}
-
-	/**
-	*  Try to use a wizard spell ability.
-	*  @return true if we cast a spell.
-	*/
-	boolean doSpellTurn(Unit attacker, Unit defender) {
-		assert attacker.hasSpecial(SpecialType.Spells);
-		assert attacker.getCharges() > 0;
-		
-		// Cast Control Weather if it benefits us
-		if (weather != getBestWeather(attacker, defender)) {
-			castControlWeather(attacker, defender);
-			attacker.decrementCharges();
-			return true;
-		}
-
-		// Cast Move Earth if it benefits us
-		if (terrain == Terrain.Open) {
-			castMoveEarth(attacker);
-			attacker.decrementCharges();
-			return true;		
-		}
-
-		// Cast Death Spell otherwise
-		if (distance <= 24 
-			&& defender.getHealth() <= 8
-			&& !defender.getsSaves())
-		{
-			castDeathSpell(attacker, defender);		
-			attacker.decrementCharges();
-			return true;
-		}
-		
-		// Else nothing
-		return false;		
 	}
 
 	//-----------------------------------------------------------------
