@@ -1529,7 +1529,7 @@ public class BookOfWar {
 			damagePerHit = Math.min(damagePerHit, defender.getHealth());
 		}
 		int damageTotal = numHits * damagePerHit;
-		if (attacker.hasSpecial(SpecialType.DamageInc)) {
+		if (attacker.hasSpecial(SpecialType.DamageBonus)) {
 			damageTotal += damageTotal / 2;
 		}
 		applyDamage(attacker, defender, false, damageTotal);

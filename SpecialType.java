@@ -13,15 +13,14 @@ public enum SpecialType {
 	//----------------------------------------------------------------------
 
 	Pikes, Shields, Mounts, SplitMove, MoraleBonus,
-	WoodsCover, GiantDodging, LightWeakness, GiantClass,
-	ShotBonus, MeleeShot, NoRainShot, BigStones, DamageInc, 
+	WoodsCover, LightWeakness, GiantClass, GiantDodging,
+	ShotBonus, MeleeShot, NoRainShot, BigStones, DamageBonus, 
 	Invisibility, Detection, Teleport, Regeneration, 
-	Flight, Swimming, Whirlwind, Spells,
-	SweepAttack, SilverToHit, MagicToHit, MagicResistance, 
-	WeatherControl, Fear, Wand, Animated, Fearless,
+	Flight, Swimming, SweepAttack, SilverToHit, MagicToHit, 
+	Spells, Wand, MagicResistance,  WeatherControl, Whirlwind, 
 	FireBreath, VoltBreath, ColdBreath, AcidBreath, PoisonBreath, 
 	MultiBreath, FireImmunity, VoltImmunity, ColdImmunity, AcidImmunity,
-	PoisonImmunity, FireVulnerability;
+	PoisonImmunity, FireVulnerability, Fear, Fearless, Animated;
 	
 	//----------------------------------------------------------------------
 	//  Methods
