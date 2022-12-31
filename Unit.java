@@ -108,7 +108,6 @@ public class Unit {
 	public Solo getLeader() { return leader; };
 
 	// Methods to be overridden by sublass
-	public boolean isFearless() { return false; }
 	public boolean isSmallTarget() { return false; }
 	public boolean isSweepable() { return health <= 1; }
 	public boolean autoHits() { return false; }
@@ -493,11 +492,19 @@ public class Unit {
 	}
 
 	/**
-	*  Dos this unit have a caster leader?
+	*  Does this unit have a caster leader?
 	*  @return true if we have a casting leader.
 	*/
 	public boolean hasCasterLeader() {
 		return hasActiveLeader() && leader.isCaster();
+	}
+
+	/**
+	*  Is this unit type fearless?
+	*  @return true if we are immune to morale checks.
+	*/
+	public boolean isFearless() { 
+		return hasSpecial(SpecialType.Fearless); 
 	}
 
 	/**

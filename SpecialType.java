@@ -18,7 +18,7 @@ public enum SpecialType {
 	Invisibility, Detection, Teleport, Regeneration, 
 	Flight, Swimming, Whirlwind, Spells,
 	SweepAttack, SilverToHit, MagicToHit, MagicResistance, 
-	WeatherControl, Fear, Wand,
+	WeatherControl, Fear, Wand, Animated, Fearless,
 	FireBreath, VoltBreath, ColdBreath, AcidBreath, PoisonBreath, 
 	MultiBreath, FireImmunity, VoltImmunity, ColdImmunity, AcidImmunity,
 	PoisonImmunity, FireVulnerability;

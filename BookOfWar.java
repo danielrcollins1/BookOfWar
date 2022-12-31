@@ -43,10 +43,10 @@ public class BookOfWar {
 	//-----------------------------------------------------------------
 
 	/** Budget minimum (basis 50). */
-	private final int budgetMin = 100;
+	private final int budgetMin = 50;
 
 	/** Budget maximum (basis 100). */
-	private final int budgetMax = 200;
+	private final int budgetMax = 100;
 
 	/** Balances swords vs. pikes & cavalry (basis 1.00). */
 	private final double terrainMultiplier = 1.00;
@@ -65,6 +65,9 @@ public class BookOfWar {
 
 	/** Range for magic wand missile attacks. */
 	private static int WAND_RANGE = 24;
+
+	/** Index for solo added to animated units. */
+	private static int ANIMATED_CONTROLLER = 1;
 	
 	//-----------------------------------------------------------------
 	//  Out-of-game settings
@@ -495,7 +498,7 @@ public class BookOfWar {
 		int maxFirstIndex = soloBalancing
 			? soloList.size() : unitList.size();
 
-		// Check selcted unit indeces.
+		// Check selected unit indeces.
 		if (zoomGameUnit1 <= 0 || zoomGameUnit2 <= 0) {
 			System.err.println("Error: Zoom-in game requires two unit indexes (use -y and -z switches).");
 			return;
@@ -513,6 +516,10 @@ public class BookOfWar {
 		Unit unit1 = soloBalancing
 			? new Solo(soloList.get(zoomGameUnit1 - 1))
 			: new Unit(unitList.get(zoomGameUnit1 - 1));
+		if (zoomGameChief < 1 && unit1.hasSpecial(SpecialType.Animated)) {
+			System.err.println("Error: Animated type needs solo leader (use -x).");
+			return;		
+		}
 		if (zoomGameChief > 0) {
 			Solo chief = new Solo(soloList.get(zoomGameChief - 1));
 			unit1.setLeader(chief);
@@ -590,7 +597,7 @@ public class BookOfWar {
 
 		// Make the table
 		for (Unit newUnit: newUnits) {
-			setAutoBalancedCost(newUnit, baseUnits);		
+			setAutoBalancedCost(newUnit, baseUnits);
 			printWideField(newUnit.getName(), nameColSize);
 			printf(getSepChar() + "" + newUnit.getCost() + "\n");
 		}
@@ -784,7 +791,6 @@ public class BookOfWar {
 		// Binary search for best cost
 		while (highCost - lowCost > 1) {
 			int midCost = (highCost + lowCost) / 2;
-			//printf(midCost + " ");
 			solo.setCost(midCost);
 			double midWinPctErr = scoreSoloAllHosts(solo);
 			if (midWinPctErr < 0) {
@@ -991,6 +997,10 @@ public class BookOfWar {
 		int range = budgetMax - budgetMin;
 		int budget = budgetMin + random.nextInt(range);
 
+		// Check if we need to add required controllers
+		checkControllerReq(unit1);
+		checkControllerReq(unit2);
+
 		// Handle units pricier than our nominal budget:
 		// if so, set budget to their cost plus a margin to not advantage them
 		int maxCost = Math.max(getMaxCost(unit1), getMaxCost(unit2));
@@ -1006,6 +1016,18 @@ public class BookOfWar {
 		// Report
 		reportDetail("Budget: " + budget);
 		reportDetail("Units: " + unit1 + " vs. " + unit2);
+	}
+
+	/**
+	*  Add a controller if this unit needs it.
+	*/
+	void checkControllerReq(Unit unit) {
+		if (unit.hasSpecial(SpecialType.Animated)
+			&& !unit.hasLeader())
+		{
+			Solo controller = new Solo(soloList.get(ANIMATED_CONTROLLER - 1));		
+			unit.setLeader(controller);
+		}
 	}
 
 	/**
@@ -1092,6 +1114,9 @@ public class BookOfWar {
 	*  Play out one turn of action for one attacking unit.
 	*/
 	void oneTurn(Unit attacker, Unit defender) {
+		if (attacker.hasLeader()) {
+			System.err.println("Error: leader");
+		}
 
 		// Initialize
 		defender.clearFigsLostInTurn();
@@ -1105,6 +1130,13 @@ public class BookOfWar {
 		// Check regeneration
 		if (defender.hasSpecial(SpecialType.Regeneration)) {
 			defender.regenerate();
+		}
+		
+		// Check animated with no leader
+		if (defender.hasSpecial(SpecialType.Animated)
+			&& !defender.hasActiveLeader())
+		{
+			defender.setRouted(true);		
 		}
 	}
 
@@ -2037,11 +2069,23 @@ public class BookOfWar {
 	*/
 	void castEnergy(Unit unit, int numFigs, int dmgPerFig, EnergyType energy) {
 
-		// Check for ways to avoid damage
-		if (unit.getsSaves()
-			|| isEnergyImmune(unit, energy))
-		{
+		// Check for lone leader
+		if (unit.isLoneLeader()) {
+			castEnergy(unit.getLeader(), 1, dmgPerFig, energy);
 			return;
+		}
+
+		// Check for immunity
+		if (isEnergyImmune(unit, energy)) {
+			return;
+		}
+
+		// Check for saving throw
+		if (unit.getsSaves()) {
+			int roll = d6() + d6();
+			if (roll >= dmgPerFig) {
+				reportDetail(unit + " saves versus " + energy);
+			}	
 		}
 
 		// Magic area damage is capped by figure health
@@ -2157,8 +2201,9 @@ public class BookOfWar {
 	void doMagicWandTurn(Unit attacker, Unit defender) {
 		assert attacker.hasSpecial(SpecialType.Wand);
 
-		// If out of range, do nothing.
+		// If out of range, move forward a bit.
 		if (distance > WAND_RANGE) {
+			distance--;
 			return;		
 		}
 		
