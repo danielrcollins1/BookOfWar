@@ -411,12 +411,21 @@ public class Unit {
 	}
 	
 	/**
-	*  Regenerate 1 hit.
+	*  Regenerate hits.
+	*
+	*  For higher budget-scaling purposes, we assume here that
+	*  each figure in a unit regenerates 1 pip (i.e., any hits were
+	*  distributed to all figures).
+	*
+	*  In practice, players don't assemble more than one figure of trolls
+	*  in a unit, so this is a bit academic. In the written book
+	*  for simplicity we'll probably just say "regenerate 1 hit".
+	*
+	*  Note if we regenerate only one pip total here, then trolls drop
+	*  value precipitously at higher budgets, compared to other types.
 	*/
 	public void regenerate() {
-		if (damageTaken > 0) {
-			damageTaken -= 1;
-		}
+		damageTaken -= Math.min(getFigures(), damageTaken);
 	}
 
 	/**
