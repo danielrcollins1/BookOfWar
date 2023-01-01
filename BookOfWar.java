@@ -43,22 +43,22 @@ public class BookOfWar {
 	//-----------------------------------------------------------------
 
 	/** Budget minimum (basis 50). */
-	private final int BUDGET_MIN_DEFAULT = 50;
+	private static final int BUDGET_MIN_DEFAULT = 50;
 
 	/** Budget maximum (basis 100). */
-	private final int BUDGET_MAX_DEFAULT = 100;
+	private static final int BUDGET_MAX_DEFAULT = 100;
 
 	/** Balances swords vs. pikes & cavalry (basis 1.00). */
-	private final double terrainMultiplier = 1.00;
+	private static final double TERRAIN_MULTIPLIER = 1.00;
 
 	/** Balances pikes vs. swords & cavalry (basis 0.20). */
-	private final double pikeFlankingChance = 0.30;
+	private static final double PIKE_FLANK_CHANCE = 0.30;
 
 	/** Limit per-hit damage by target's health? */
-	private final boolean capDamageByHealth = false;
+	private static final boolean CAP_DAMAGE_BY_HEALTH = false;
 
 	/** Buy silver weapons for all troop types? */
-	private final boolean useSilverWeapons = false;
+	private static final boolean USE_SILVER_WEAPONS = false;
 	
 	/** Target for morale check success (per Vol-1, p. 12). */
 	private static final int MORALE_TARGET = 9;
@@ -1321,7 +1321,7 @@ public class BookOfWar {
 	*/
 	void checkPikeInterrupt(Unit attacker, Unit defender) {
 		if (isPikeAvailable(defender) 
-				&& !(random.nextDouble() < pikeFlankingChance)
+				&& !(random.nextDouble() < PIKE_FLANK_CHANCE)
 				&& !(getsRearAttack(attacker, defender))) 
 		{
 			reportDetail("** PIKES INTERRUPT ATTACK **");
@@ -1540,7 +1540,7 @@ public class BookOfWar {
 		if (pikesInterrupt) {
 			damagePerHit *= 2;
 		}
-		if (capDamageByHealth) {
+		if (CAP_DAMAGE_BY_HEALTH) {
 			damagePerHit = Math.min(damagePerHit, defender.getHealth());
 		}
 		int damageTotal = numHits * damagePerHit;
@@ -1642,7 +1642,7 @@ public class BookOfWar {
 		if (attacker.hasSpecial(SpecialType.BigStones)) {
 			damagePerHit += 1; // stone giants
 		}
-		if (capDamageByHealth) {
+		if (CAP_DAMAGE_BY_HEALTH) {
 			damagePerHit = Math.min(damagePerHit, defender.getHealth());
 		}
 		int damageTotal = numHits * damagePerHit;
@@ -1787,7 +1787,7 @@ public class BookOfWar {
 		}
 
 		// Check silver-to-hit (AD&D rule: 4HD+ bypasses)
-		if (defender.hasSpecial(SpecialType.SilverToHit) && !useSilverWeapons
+		if (defender.hasSpecial(SpecialType.SilverToHit) && !USE_SILVER_WEAPONS
 				&& attacker.getHealth() < 4 && !attacker.hasSpecial(SpecialType.SilverToHit)) {
 			return true;
 		}
@@ -1917,7 +1917,7 @@ public class BookOfWar {
 	*    Percents match coverage of entire table.
 	*/
 	void randomizeTerrain() {
-		int roll = (int) (random.nextDouble() / terrainMultiplier * 100);
+		int roll = (int) (random.nextDouble() / TERRAIN_MULTIPLIER * 100);
 
 		// These percents are for entire table
 		if (roll < 1) terrain = Terrain.Gulley;
@@ -2192,12 +2192,12 @@ public class BookOfWar {
 	*   with some reduction for saving throws.)
 	*/
 	void castDeathSpell(Unit attacker, Unit defender) {
-		final int DEATH_SPELL_HITS = 4;
 		assert distance <= 24;
 		assert defender.getHealth() <= 8;
 		assert !defender.getsSaves();
+		int deathSpellDamage = 4;
 		int numCasters = attacker.getFigures();
-		int damage = DEATH_SPELL_HITS * numCasters;
+		int damage = deathSpellDamage * numCasters;
 		defender.takeDamage(damage);
 		reportDetail(attacker + " casts * DEATH SPELL * on " + defender);
 	}
