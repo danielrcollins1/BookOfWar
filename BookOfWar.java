@@ -2198,7 +2198,7 @@ public class BookOfWar {
 		assert distance <= 24;
 		assert defender.getHealth() <= 8;
 		assert !defender.getsSaves();
-		int deathSpellDamage = 4;
+		int deathSpellDamage = 5;
 		int numCasters = attacker.getFigures();
 		int damage = deathSpellDamage * numCasters;
 		defender.takeDamage(damage);
