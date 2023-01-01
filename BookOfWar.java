@@ -66,6 +66,9 @@ public class BookOfWar {
 	/** Range for magic wand missile attacks. */
 	private static final int WAND_RANGE = 24;
 
+	/** Number of steps allowed for Control Weather spell. */
+	private static final int CONTROL_WEATHER_STEPS = 2;
+
 	/** Index for solo added to animated units. */
 	private static final int ANIMATED_CONTROLLER = 1;
 	
@@ -2217,14 +2220,14 @@ public class BookOfWar {
 	*  Determine the target weather value for a control spell.
 	*/
 	Weather getTargetWeather(Unit attacker, Unit defender) {
-//		Unit friendly = attacker.hasActiveHost()
-//			? attacker.getHost() : attacker;
 		int thirst = getThirst(attacker) - getThirst(defender);
 		if (thirst > 0) {
-			return incWeather();
+			return CONTROL_WEATHER_STEPS == 1
+				? incWeather() : Weather.Rainy;
 		}
 		else if (thirst < 0) {
-			return decWeather();
+			return CONTROL_WEATHER_STEPS == 1
+				? decWeather() : Weather.Sunny;
 		}
 		else {
 			return Weather.Cloudy;
