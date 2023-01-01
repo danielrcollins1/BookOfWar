@@ -1,0 +1,7 @@
+Unit,Cost,Move,Armor,Health,Atks,Dam,Rate,Range,Width,Align,Special
+Skeletons,4,6,4,1,1,1,0,0,3,C,"Animated, Fearless"
+Zombies,6,6,3,2,1,1,0,0,3,C,"Animated, Fearless"
+Air Elemental,1,36,6,1,0,0,0,0,2,N,"Conjured, MagicToHit, Flight (36), Whirlwind"
+Earth Elemental,1,6,6,1,1,1,0,0,2,N,"Conjured, MagicToHit"
+Fire Elemental,1,12,6,1,1,1,0,0,2,N,"Conjured, MagicToHit"
+Water Elemental,1,6,6,1,1,1,0,0,2,N,"Conjured, MagicToHit, Swimming (18)"

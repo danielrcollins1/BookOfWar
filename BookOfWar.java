@@ -805,7 +805,6 @@ public class BookOfWar {
 		// Binary search for best cost
 		while (highCost - lowCost > 1) {
 			int midCost = (highCost + lowCost) / 2;
-			solo.setCost(midCost);
 			double midWinPctErr = scoreSoloAllHosts(solo);
 			if (midWinPctErr < 0) {
 				highCost = midCost;
@@ -829,7 +828,17 @@ public class BookOfWar {
 	*/
 	double scoreSoloAllHosts(Solo solo) {
 		double totalSumErr = 0;
-		List<Unit> hostUnits = unitList.subList(0, assessUnitNum);
+		List<Unit> hostUnits;
+		if (!soloBalancing) {
+			hostUnits = unitList.subList(0, assessUnitNum);		
+		}
+		else {
+			// Balancing solos leading other solos:
+			// get the _end_ of the solo list for host units.
+			int maxSolo = soloList.size();
+			hostUnits = new ArrayList<Unit>(
+				soloList.subList(maxSolo - assessUnitNum, maxSolo));
+		}
 		for (Unit host: hostUnits) {
 			double error = scoreSoloOneHost(solo, host);
 			totalSumErr += error;
@@ -1156,20 +1165,19 @@ public class BookOfWar {
 	*  Take one turn of action by type of unit.
 	*/
 	void takeOneTurnAction(Unit attacker, Unit defender) {
-		assert !(attacker.isCaster() && attacker.hasCasterLeader());
 		boolean wantsToMove = true;
 
-		// Solo caster actions
-		if (attacker.isCaster()) {
-			if (tryOneTurnCaster(attacker, defender)) {
-				return;
-			}
-		}
-				
 		// Leader caster actions
 		if (attacker.hasCasterLeader()) {
 			if (tryOneTurnCaster(attacker.getLeader(), defender)) {
 				wantsToMove = false;
+			}
+		}
+
+		// Main unit caster actions
+		if (attacker.isCaster()) {
+			if (tryOneTurnCaster(attacker, defender)) {
+				return;
 			}
 		}
 
@@ -1506,21 +1514,26 @@ public class BookOfWar {
 		}
 
 		// Jump out if we have no attacks
-		if (attacker.getAttacks() == 0) {
+		if (attacker.getAttacks() == 0 || attacker.isNormalBeaten()) {
 			return;
+		}
+
+		// Compute number of attackers (possibly one vs. leader)
+		int figsAtk = countFiguresInContact(attacker, defender);
+		if (defender.hasActiveLeader() && figsAtk > 0) {
+			meleeAttack(attacker, defender.getLeader());
+			figsAtk--;		
+		}
+
+		// Check that we have attacks to make
+		if (figsAtk == 0) {
+			return;		
 		}
 
 		// Check for defender immune
 		if (isAttackImmune(attacker, defender)) {
 			reportDetail(attacker + " barred from attacking " + defender);
 			return;
-		}
-
-		// Compute number of attackers (possibly one vs. leader)
-		int figsAtk = countFiguresInContact(attacker, defender);
-		if (defender.hasActiveLeader()) {
-			meleeAttack(attacker, defender.getLeader());
-			figsAtk--;		
 		}
 
 		// Compute number of dice & attack bonus
@@ -1562,11 +1575,13 @@ public class BookOfWar {
 		double atkWidth = attacker.getTotalWidth();
 		double defWidth = priorContact 
 			? defender.getPerimeter() : defender.getTotalWidth();
-		int figsAtk = atkWidth <= defWidth ? attacker.getFiles() 
+		int figsAtk = atkWidth <= defWidth ? attacker.getFiles()
 			: (int) Math.ceil(defWidth / attacker.getFigWidth());
 		if (defender.isSmallTarget()) {
 			figsAtk = Math.min(figsAtk, defender.getFigures());
+			figsAtk = Math.max(figsAtk, 1);
 		}
+		assert figsAtk <= attacker.getFigures();
 		return figsAtk;
 	}
 
@@ -1577,6 +1592,7 @@ public class BookOfWar {
 	void rangedAttack(Unit attacker, Unit defender, boolean fullRate) {
 
 		// Check preconditions
+		assert !attacker.isTotallyBeaten();
 		assert attacker.hasMissiles();
 		assert distance <= attacker.getRange();
 		assert distance > 0 || attacker.hasSpecial(SpecialType.MeleeShot);
@@ -1809,6 +1825,7 @@ public class BookOfWar {
 	*/
 	boolean isPikeAvailable(Unit unit) {
 		return unit.hasSpecial(SpecialType.Pikes)
+			&& !unit.isNormalBeaten()
 			&& terrain == Terrain.Open
 			&& weather != Weather.Rainy
 			&& !priorContact;
@@ -2049,7 +2066,9 @@ public class BookOfWar {
 	void checkFearAbility(Unit attacker, Unit defender) {
 		assert distance == 0;
 		assert attacker.hasSpecial(SpecialType.Fear);
-		if (!defender.isFearless()) {
+		if (!attacker.isNormalBeaten()
+			&& !defender.isFearless()) 
+		{
 			reportDetail(defender + " confronts fear ability");
 			checkMorale(defender, 0);
 		}
@@ -2060,6 +2079,11 @@ public class BookOfWar {
 	*  @return true if we took an action.
 	*/
 	boolean tryOneTurnCaster(Unit attacker, Unit defender) {
+
+		// Jump out if the attacker is beaten
+		if (attacker.isNormalBeaten()) {
+			return false;		
+		}
 
 		// Storm giants control weather
 		if (attacker.hasSpecial(SpecialType.WeatherControl)
@@ -2113,22 +2137,22 @@ public class BookOfWar {
 			return true;
 		}
 
-		// Cast Move Earth if it benefits us
-		if (terrain == Terrain.Open) {
-			castMoveEarth(attacker);
-			attacker.decrementCharges();
-			return true;		
-		}
-
-		// Cast Death Spell otherwise
-		if (distance <= 24 
-			&& defender.getHealth() <= 8
-			&& !defender.getsSaves())
-		{
-			castDeathSpell(attacker, defender);		
-			attacker.decrementCharges();
-			return true;
-		}
+// 		// Cast Move Earth if it benefits us
+// 		if (terrain == Terrain.Open) {
+// 			castMoveEarth(attacker);
+// 			attacker.decrementCharges();
+// 			return true;		
+// 		}
+// 
+// 		// Cast Death Spell otherwise
+// 		if (distance <= 24 
+// 			&& defender.getHealth() <= 8
+// 			&& !defender.getsSaves())
+// 		{
+// 			castDeathSpell(attacker, defender);		
+// 			attacker.decrementCharges();
+// 			return true;
+// 		}
 		
 		// Else nothing
 		return false;		

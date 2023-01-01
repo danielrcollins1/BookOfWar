@@ -305,8 +305,9 @@ public class Unit {
 	}
 
 	/**
-	*  Are the normal troops in this unit beaten?
+	*  Are the base-level troops in this unit beaten?
 	*  (May still have active leader.)
+	*  Think of this as "shallow beaten".
 	*  @return true if the normals in this unit are nonfunctional.
 	*/
 	public boolean isNormalBeaten() {
@@ -316,6 +317,7 @@ public class Unit {
 	/**
 	*  Is this unit totally decimated?
 	*  (Includes any attached leader.)
+	*  Think of this as "deeply beaten".
 	*  @return true if this unit is totally nonfunctional.
 	*/
 	public boolean isTotallyBeaten() {

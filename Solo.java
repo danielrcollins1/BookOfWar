@@ -41,9 +41,9 @@ public class Solo extends Unit {
 	//  Methods
 	//----------------------------------------------------------------------
 
-	/** Solos don't have embedded leaders. */
-	@Override public Solo getLeader() { return null; }
-	@Override public boolean hasLeader() { return false; };
+// 	/** Solos don't have embedded leaders. */
+// 	@Override public Solo getLeader() { return null; }
+// 	@Override public boolean hasLeader() { return false; };
 
 	/** Solos may be embedded in another unit. */
 	@Override public Unit getHost() { return host; }
@@ -52,7 +52,7 @@ public class Solo extends Unit {
 	/** Solos never check morale. */
 	@Override public boolean isFearless() { return true; }
 
-	/** Solos always hit on an attack. */
+	/** Solos always hit on attacks. */
 	@Override public boolean autoHits() { return true; }
 	
 	/** Solos present small targets against attacks. */
@@ -65,6 +65,14 @@ public class Solo extends Unit {
 	@Override public boolean getsSaves() { return true; }
 
 	/** 
+	*  Set our host unit.
+	*  @param newHost the new host unit.
+	*/
+	public void setHost(Unit newHost) {
+		host = newHost;
+	}
+
+	/** 
 	*  Check if we have an active host unit.
 	*  @return true if we have an active host unit.
 	*/
@@ -72,13 +80,5 @@ public class Solo extends Unit {
 		return host != null 
 			&& !host.isRouted()
 			&& host.getFigures() > 0;
-	}
-	
-	/** 
-	*  Set out host unit.
-	*  @param newHost the new host unit.
-	*/
-	public void setHost(Unit newHost) {
-		host = newHost;
 	}
 }
