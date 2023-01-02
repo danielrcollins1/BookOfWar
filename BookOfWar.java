@@ -531,6 +531,8 @@ public class BookOfWar {
 			return;		
 		}
 		if (zoomGameChief > 0) {
+			budgetMin *= 2;
+			budgetMax *= 2;
 			Solo chief = new Solo(soloList.get(zoomGameChief - 1));
 			unit1.setLeader(chief);
 		}
