@@ -29,7 +29,7 @@ public class Unit {
 	private int cost, move, armor, health, 
 		attacks, damage, rate, range, width;
 	private Alignment alignment;
-	private Set<SpecialAbility> specialSet;
+	private Set<SpecialAbility> specials;
 
 	// Unit in-play records
 	private int figures, frontFiles, damageTaken, figsLostInTurn;
@@ -76,7 +76,7 @@ public class Unit {
 		range = src.range;
 		width = src.width;
 		alignment = src.alignment;
-		specialSet = new HashSet<SpecialAbility>(src.specialSet);
+		specials = new HashSet<SpecialAbility>(src.specials);
 		if (src.leader != null) {
 			setLeader(new Solo(src.leader));
 		}
@@ -137,14 +137,14 @@ public class Unit {
 	*  @param specialString descriptor of special abilities.
 	*/
 	private void parseSpecials(String specialString) {
-		specialSet = new HashSet<SpecialAbility>();
+		specials = new HashSet<SpecialAbility>();
 		if (!specialString.equals("-")) {
 			String[] splits = specialString.split(", ");
 			for (String s: splits) {
 				SpecialAbility ability 
 					= SpecialAbility.createFromString(s);
 				if (ability != null) {
-					specialSet.add(ability);
+					specials.add(ability);
 				}
 			}
 		}
@@ -330,7 +330,7 @@ public class Unit {
 	*  @return special ability object (or null)
 	*/
 	public SpecialAbility getAbilityByType(SpecialType type) {
-		for (SpecialAbility a: specialSet) {
+		for (SpecialAbility a: specials) {
 			if (a.getType() == type) {
 				return a;
 			}
@@ -363,7 +363,7 @@ public class Unit {
 	*  @return this unit's breath weapon (or null).
 	*/
 	public SpecialAbility getBreathWeapon() {
-		for (SpecialAbility ability: specialSet) {
+		for (SpecialAbility ability: specials) {
 			if (ability.getType().isBreathWeapon()) {
 				return ability;
 			}
@@ -499,7 +499,7 @@ public class Unit {
 	*  @return true if we can cast magic spells.
 	*/
 	public boolean isCaster() {
-		for (SpecialAbility a: specialSet) {
+		for (SpecialAbility a: specials) {
 			if (a.getType().isSpellCasting()) {
 				return true;
 			}		
@@ -521,6 +521,19 @@ public class Unit {
 	*/
 	public boolean isFearless() { 
 		return hasSpecial(SpecialType.Fearless); 
+	}
+
+	/**
+	*  Does this unit type require a controlling leader?
+	*  @return true if we require a controller.
+	*/
+	public boolean isControlRequired() {
+		for (SpecialAbility a: specials) {
+			if (a.getType().isControlRequired()) {
+				return true;
+			}		
+		}
+		return false;
 	}
 
 	/**

@@ -17,10 +17,10 @@ public enum SpecialType {
 	ShotBonus, MeleeShot, NoRainShot, BigStones, DamageBonus, 
 	Invisibility, Detection, Teleport, Regeneration, 
 	Flight, Swimming, SweepAttack, SilverToHit, MagicToHit, 
-	Spells, Wand, MagicResistance,  WeatherControl, Whirlwind, 
+	Spells, Wand, MagicResistance, WeatherControl, Whirlwind, 
 	FireBreath, VoltBreath, ColdBreath, AcidBreath, PoisonBreath, 
 	MultiBreath, FireImmunity, VoltImmunity, ColdImmunity, AcidImmunity,
-	PoisonImmunity, FireVulnerability, Fear, Fearless, Animated;
+	PoisonImmunity, FireVulnerability, Fear, Fearless, Animated, Conjured;
 	
 	//----------------------------------------------------------------------
 	//  Methods
@@ -63,6 +63,19 @@ public enum SpecialType {
 			case Spells: case Wand: case WeatherControl:
 				return true;
 			default:
+				return false;
+		}	
+	}
+	
+	/**
+	*  Is this a type that requires a controlling leader?
+	*  @return true if this requires a controller.
+	*/
+	public boolean isControlRequired() {
+		switch (this) {
+			case Animated: case Conjured: 
+				return true;
+			default: 
 				return false;
 		}	
 	}

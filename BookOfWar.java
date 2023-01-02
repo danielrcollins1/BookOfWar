@@ -67,10 +67,10 @@ public class BookOfWar {
 	private static final int WAND_RANGE = 24;
 
 	/** Number of steps allowed for Control Weather spell. */
-	private static final int CONTROL_WEATHER_STEPS = 2;
+	private static final int CONTROL_WEATHER_STEPS = 1;
 
 	/** Index for solo added to animated units. */
-	private static final int ANIMATED_CONTROLLER = 1;
+	private static final int DEFAULT_CONTROLLER = 1;
 	
 	//-----------------------------------------------------------------
 	//  Out-of-game settings
@@ -526,8 +526,8 @@ public class BookOfWar {
 		Unit unit1 = soloBalancing
 			? new Solo(soloList.get(zoomGameUnit1 - 1))
 			: new Unit(unitList.get(zoomGameUnit1 - 1));
-		if (zoomGameChief < 1 && unit1.hasSpecial(SpecialType.Animated)) {
-			System.err.println("Error: Animated type needs solo leader (use -x).");
+		if (zoomGameChief < 1 && unit1.isControlRequired()) {
+			System.err.println("Error: First unit requires leader control (use -x).");
 			return;		
 		}
 		if (zoomGameChief > 0) {
@@ -1047,10 +1047,8 @@ public class BookOfWar {
 	*  Add a controller if this unit needs it.
 	*/
 	void checkControllerReq(Unit unit) {
-		if (unit.hasSpecial(SpecialType.Animated)
-			&& !unit.hasLeader())
-		{
-			Solo controller = new Solo(soloList.get(ANIMATED_CONTROLLER - 1));		
+		if (unit.isControlRequired() && !unit.hasLeader()) {
+			Solo controller = new Solo(soloList.get(DEFAULT_CONTROLLER - 1));		
 			unit.setLeader(controller);
 		}
 	}
@@ -1156,7 +1154,7 @@ public class BookOfWar {
 		}
 		
 		// Check animated with no leader
-		if (defender.hasSpecial(SpecialType.Animated)
+		if (defender.isControlRequired()
 			&& !defender.hasActiveLeader())
 		{
 			defender.setRouted(true);		
@@ -1794,6 +1792,11 @@ public class BookOfWar {
 	*/
 	boolean isAttackImmune(Unit attacker, Unit defender) {
 
+		// Check for lone leader target
+		if (defender.isLoneLeader()) {
+			return isAttackImmune(attacker, defender.getLeader());		
+		}
+
 		// Invisible units can't be attacked
 		if (!defender.isVisible()) {
 			return true;
@@ -2084,6 +2087,13 @@ public class BookOfWar {
 			return false;		
 		}
 
+		// Jump out if we are controlling an Elemental
+		if (attacker.hasActiveHost()
+			&& attacker.getHost().hasSpecial(SpecialType.Conjured))
+		{
+			return false;		
+		}
+
 		// Storm giants control weather
 		if (attacker.hasSpecial(SpecialType.WeatherControl)
 			&& attacker.getCharges() > 0
@@ -2297,9 +2307,7 @@ public class BookOfWar {
 			thirst++;
 		}
 		if (unit.hasSpecial(SpecialType.Wand)) {
-			if (weather != Weather.Sunny) {
-				thirst += 2;
-			}
+			thirst++;
 		}	
 		return thirst;	
 	}
