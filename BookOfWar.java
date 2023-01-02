@@ -805,6 +805,7 @@ public class BookOfWar {
 		// Binary search for best cost
 		while (highCost - lowCost > 1) {
 			int midCost = (highCost + lowCost) / 2;
+			solo.setCost(midCost);
 			double midWinPctErr = scoreSoloAllHosts(solo);
 			if (midWinPctErr < 0) {
 				highCost = midCost;
@@ -842,7 +843,7 @@ public class BookOfWar {
 		for (Unit host: hostUnits) {
 			double error = scoreSoloOneHost(solo, host);
 			totalSumErr += error;
-		}			
+		}
 		return totalSumErr;
 	}
 
@@ -980,7 +981,8 @@ public class BookOfWar {
 	*  Check if both units in game still live.
 	*/
 	boolean bothUnitsLive(Unit unit1, Unit unit2) {
-		return getWinner(unit1, unit2) == null;
+		return !unit1.isTotallyBeaten()
+			&& !unit2.isTotallyBeaten();
 	}
 
 	/**
@@ -1165,6 +1167,7 @@ public class BookOfWar {
 	*  Take one turn of action by type of unit.
 	*/
 	void takeOneTurnAction(Unit attacker, Unit defender) {
+		assert !attacker.hasHost();
 		boolean wantsToMove = true;
 
 		// Leader caster actions
@@ -1349,11 +1352,6 @@ public class BookOfWar {
 	*/
 	void oneTurnRanged(Unit attacker, Unit defender, boolean wantsToMove) {
 		int distMoved = 0;
-
-		// If we have no troops, jump out
-		if (attacker.isNormalBeaten()) {
-			return;
-		}
 
 		// Check relative firing ranges
 		int minShotDist = minDistanceToShoot(attacker, defender);
@@ -1601,13 +1599,13 @@ public class BookOfWar {
 		// Make attacker visible
 		makeVisible(attacker);
 
-		// Check for lone leader
+		// Check for lone leader target
 		if (defender.isLoneLeader()) {
 			rangedAttack(attacker, defender.getLeader(), fullRate);
 			return;
 		}
 
-		// Give shot to leader
+		// Give shot to attacker leader
 		if (attacker.hasActiveLeader()) {
 			Solo leader = attacker.getLeader();
 			if (leader.hasMissiles()
@@ -1619,11 +1617,12 @@ public class BookOfWar {
 
 		// Check for defender immune
 		if (isAttackImmune(attacker, defender)) {
+			reportDetail(attacker + " barred from shooting " + defender);
 			return;
 		}
 
 		// Measure range & get modifier
-		int rangeMod = distance <= attacker.getRange() / 2
+		int rangeMod = (distance <= attacker.getRange() / 2)
 			? 0 : -1;
 
 		// Compute number of dice to roll
@@ -2137,22 +2136,22 @@ public class BookOfWar {
 			return true;
 		}
 
-// 		// Cast Move Earth if it benefits us
-// 		if (terrain == Terrain.Open) {
-// 			castMoveEarth(attacker);
-// 			attacker.decrementCharges();
-// 			return true;		
-// 		}
-// 
-// 		// Cast Death Spell otherwise
-// 		if (distance <= 24 
-// 			&& defender.getHealth() <= 8
-// 			&& !defender.getsSaves())
-// 		{
-// 			castDeathSpell(attacker, defender);		
-// 			attacker.decrementCharges();
-// 			return true;
-// 		}
+		// Cast Move Earth if it benefits us
+		if (terrain == Terrain.Open) {
+			castMoveEarth(attacker);
+			attacker.decrementCharges();
+			return true;		
+		}
+
+		// Cast Death Spell otherwise
+		if (distance <= 24 
+			&& defender.getHealth() <= 8
+			&& !defender.getsSaves())
+		{
+			castDeathSpell(attacker, defender);		
+			attacker.decrementCharges();
+			return true;
+		}
 		
 		// Else nothing
 		return false;		
