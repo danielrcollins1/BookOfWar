@@ -2265,8 +2265,14 @@ public class BookOfWar {
 		assert attacker.hasSpecial(SpecialType.Spells)
 			|| attacker.hasSpecial(SpecialType.WeatherControl);
 		assert weather != getTargetWeather(attacker, defender);
-		weather = getTargetWeather(attacker, defender);
-		reportDetail(attacker + " casts * CONTROL WEATHER * for " + weather);
+		int castings = 0;
+		while (castings < attacker.getFigures()
+			&& weather != getTargetWeather(attacker, defender)) 
+		{
+			weather = getTargetWeather(attacker, defender);
+			reportDetail(attacker + " casts * CONTROL WEATHER * for " + weather);
+			castings++;
+		}
 	}
 
 	/**
