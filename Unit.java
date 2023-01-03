@@ -33,7 +33,7 @@ public class Unit {
 
 	// Unit in-play records
 	private int figures, frontFiles, damageTaken, figsLostInTurn;
-	private boolean routed, visible;
+	private boolean routed, visible, savedVsFear;
 	protected int specialCharges;
 	private Solo leader;
 
@@ -155,8 +155,8 @@ public class Unit {
 	*  @return the current move rate.
 	*/
 	public int getMove() { 
-		return leader == null 
-			? move : Math.min(move, leader.getMove());
+		return hasActiveLeader()
+			? Math.min(move, leader.getMove()) : move;
 	};
 
 	/**
@@ -534,6 +534,22 @@ public class Unit {
 			}		
 		}
 		return false;
+	}
+
+	/**
+	*  Get whether we have saved against fear.
+	*  @return true if we have saved against fear.
+	*/
+	public boolean hasSavedVsFear() {
+		return savedVsFear;	
+	}
+
+	/**
+	*  Set whether we have saved against fear.
+	*  @param saved true if we have saved versus fear.
+	*/
+	public void setSavedVsFear(boolean saved) {
+		savedVsFear = saved;	
 	}
 
 	/**

@@ -1112,6 +1112,7 @@ public class BookOfWar {
 
 		// Prepare any special abilities
 		unit.refreshCharges();
+		unit.setSavedVsFear(false);
 	}
 
 	/**
@@ -1288,11 +1289,9 @@ public class BookOfWar {
 
  		// Attack if in contact
  		if (distance == 0) {
-			if (!attacker.isTotallyBeaten() && !defender.isTotallyBeaten()) {
-				checkMeleeSpecials(attacker, defender);
-	 			meleeAttack(attacker, defender);
-				checkMeleeShot(attacker, defender, distMoved);
-			}
+			checkMeleeSpecials(attacker, defender);
+ 			meleeAttack(attacker, defender);
+			checkMeleeShot(attacker, defender, distMoved);
 			priorContact = true;
  		}
 	}
@@ -1302,7 +1301,8 @@ public class BookOfWar {
 	*/
 	void checkMeleeShot(Unit attacker, Unit defender, int distMoved) {
 		assert distance == 0;
-		if (attacker.hasSpecial(SpecialType.MeleeShot) 
+		if (bothUnitsLive(attacker, defender)
+			&& attacker.hasSpecial(SpecialType.MeleeShot) 
 			&& minDistanceToShoot(attacker, defender) > 0
 			&& distMoved <= getMove(attacker) / 2)
 		{				
@@ -1320,21 +1320,14 @@ public class BookOfWar {
 		if (defender.hasSpecial(SpecialType.Pikes)) {
 			checkPikeInterrupt(attacker, defender);
 		}
-		
-		// Check for dragon fear ability
-		if (attacker.hasSpecial(SpecialType.Fear)) {
-			checkFearAbility(attacker, defender);
-		}
-		if (defender.hasSpecial(SpecialType.Fear)) {
-			checkFearAbility(defender, attacker);
-		}
 	}
 
 	/**
 	*  Check for pikes interrupt attack on defense.
 	*/
 	void checkPikeInterrupt(Unit attacker, Unit defender) {
-		if (isPikeAvailable(defender) 
+		if (bothUnitsLive(attacker, defender)
+				&& isPikeAvailable(defender) 
 				&& !(random.nextDouble() < PIKE_FLANK_CHANCE)
 				&& !(getsRearAttack(attacker, defender))) 
 		{
@@ -1384,6 +1377,7 @@ public class BookOfWar {
 	*  Try to use split-move-and-fire, if possible.
 	*/
 	void checkSplitMove(Unit attacker, boolean outranged) {
+		assert !attacker.isTotallyBeaten();
 		if (attacker.hasSpecial(SpecialType.SplitMove) && !outranged) {
 			moveBackward(attacker);
 		}
@@ -1503,8 +1497,11 @@ public class BookOfWar {
 	*  Play out one melee attack.
 	*/
 	void meleeAttack(Unit attacker, Unit defender) {
-		assert !attacker.isTotallyBeaten();
-		makeVisible(attacker);
+
+		// Jump out if either side dead
+		if (!bothUnitsLive(attacker, defender)) {
+			return;
+		}
 
 		// Give an attack to a leader figure
 		if (attacker.hasActiveLeader()) {
@@ -1520,7 +1517,7 @@ public class BookOfWar {
 		int figsAtk = countFiguresInContact(attacker, defender);
 		if (defender.hasActiveLeader() && figsAtk > 0) {
 			meleeAttack(attacker, defender.getLeader());
-			figsAtk--;		
+			figsAtk--;
 		}
 
 		// Check that we have attacks to make
@@ -1562,6 +1559,9 @@ public class BookOfWar {
 			damageTotal += damageTotal / 2;
 		}
 		applyDamage(attacker, defender, false, damageTotal);
+		
+		// Make the attacker visible
+		makeVisible(attacker);
 	}
 
 	/**
@@ -1573,11 +1573,12 @@ public class BookOfWar {
 		double atkWidth = attacker.getTotalWidth();
 		double defWidth = priorContact 
 			? defender.getPerimeter() : defender.getTotalWidth();
-		int figsAtk = atkWidth <= defWidth ? attacker.getFiles()
+		int figsAtk = (atkWidth <= defWidth) ? attacker.getFiles()
 			: (int) Math.ceil(defWidth / attacker.getFigWidth());
 		if (defender.isSmallTarget()) {
-			figsAtk = Math.min(figsAtk, defender.getFigures());
-			figsAtk = Math.max(figsAtk, 1);
+			int figsDef = defender.getFigures()
+				+ (defender.hasActiveLeader() ? 1 : 0);
+			figsAtk = Math.min(figsAtk, figsDef);
 		}
 		assert figsAtk <= attacker.getFigures();
 		return figsAtk;
@@ -1595,9 +1596,6 @@ public class BookOfWar {
 		assert distance <= attacker.getRange();
 		assert distance > 0 || attacker.hasSpecial(SpecialType.MeleeShot);
 		assert !defender.hasActiveHost();
-
-		// Make attacker visible
-		makeVisible(attacker);
 
 		// Check for lone leader target
 		if (defender.isLoneLeader()) {
@@ -1665,6 +1663,9 @@ public class BookOfWar {
 		}
 		int damageTotal = numHits * damagePerHit;
 		applyDamage(attacker, defender, true, damageTotal);
+
+		// Make the attacker visible
+		makeVisible(attacker);
 	}
 
 	/**
@@ -2058,8 +2059,24 @@ public class BookOfWar {
 	*/
 	void checkMeleeSpecials(Unit attacker, Unit defender) {
 
+		// Jump out if no attacks to make
+		if (attacker.isNormalBeaten()) {
+			return;
+		}
+
+		// Check for fear ability
+		if (bothUnitsLive(attacker, defender)
+			&& attacker.hasSpecial(SpecialType.Fear)
+			&& !defender.hasSavedVsFear())
+		{
+			checkFearAbility(attacker, defender);
+		}
+
 		// Check for breath weapon
-		if (attacker.hasBreathWeapon() & attacker.getCharges() > 0) {
+		if (bothUnitsLive(attacker, defender)
+			&& attacker.hasBreathWeapon() 
+			&& attacker.getCharges() > 0)
+		{
 			useBreathWeapon(attacker, defender);
 		}
 	}
@@ -2073,8 +2090,9 @@ public class BookOfWar {
 		if (!attacker.isNormalBeaten()
 			&& !defender.isFearless()) 
 		{
-			reportDetail(defender + " confronts fear ability");
+			reportDetail(defender + " confronts * FEAR * ability");
 			checkMorale(defender, 0);
+			defender.setSavedVsFear(true);
 		}
 	}
 
