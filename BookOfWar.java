@@ -48,6 +48,9 @@ public class BookOfWar {
 	/** Budget maximum (basis 100). */
 	private static final int BUDGET_MAX_DEFAULT = 100;
 
+	/** Ceiling for any unit cost in auto-balancer. */
+	private static final int COST_LIMIT = 1000;
+
 	/** Balances swords vs. pikes & cavalry (basis 1.00). */
 	private static final double TERRAIN_MULTIPLIER = 1.00;
 
@@ -636,6 +639,10 @@ public class BookOfWar {
 			highCost *= 2;
 			newUnit.setCost(highCost);
 			highCostWinPctErr = playDocket(newUnit, baseUnits);
+			if (highCostWinPctErr > 0 && highCost > COST_LIMIT) {
+				newUnit.setCost(COST_LIMIT);
+				return;
+			}
 		}
 			
 		// Binary search for best cost
@@ -802,6 +809,10 @@ public class BookOfWar {
 			highCost *= 2;
 			solo.setCost(highCost);
 			highCostWinPctErr = scoreSoloAllHosts(solo);
+			if (highCostWinPctErr > 0 && highCost > COST_LIMIT) {
+				solo.setCost(COST_LIMIT);
+				return;
+			}
 		}
 			
 		// Binary search for best cost

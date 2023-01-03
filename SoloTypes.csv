@@ -3,7 +3,7 @@ Lord 9th Level,50,9,7,1,1,1,0,0,1,N,SweepAttack (2)
 Lord 12th Level,65,9,7,1,1,1,0,0,1,N,SweepAttack (3)
 Lord 15th Level,75,9,7,1,1,1,0,0,1,N,SweepAttack (4)
 Lord 18th Level,125,9,7,2,1,1,0,0,1,N,SweepAttack (5)
-Lord & Griffon,55,12,6,2,2,1,0,0,2,N,"Flight (30), Detection (24), SweepAttack (2)"
+Lord & Griffon,60,12,6,2,2,1,0,0,2,N,"Flight (30), Detection (24), SweepAttack (2)"
 Wizard 11th Level,90,12,6,1,0,0,0,0,1,N,"Wand, Detection (12)"
 Wizard 12th Level,120,12,6,1,0,0,0,0,1,N,"Wand, Detection (12), Spells (1)"
 Wizard 13th Level,160,12,6,1,0,0,0,0,1,N,"Wand, Detection (12), Spells (2)"
@@ -14,7 +14,6 @@ Lich & Wyvern,200,9,6,2,1,1,0,0,2,C,"Flight (24), Detection (24), Spells (6), Fe
 Cloud Giant,40,12,5,1,1,1,1,20,2,N,"GiantClass, Detection (12)"
 Storm Giant,60,15,5,1,1,1,1,20,2,N,"GiantClass, WeatherControl"
 Titan,100,15,6,2,1,1,1,20,2,N,"GiantClass, Spells (2)"
-Balrog,20,6,6,1,1,1,0,0,2,C,"Flight (15), MagicResistance"
 White Dragon,70,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), ColdBreath (9), Fear"
 Black Dragon,80,9,6,1,1,1,0,0,2,C,"Flight (24), Detection (15), AcidBreath (9), Fear"
 Green Dragon,80,9,6,1,1,1,0,0,2,N,"Flight (24), Detection (15), PoisonBreath (9), Fear"
