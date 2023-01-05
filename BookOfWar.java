@@ -49,7 +49,7 @@ public class BookOfWar {
 	private static final int BUDGET_MAX_DEFAULT = 100;
 
 	/** Ceiling for any unit cost in auto-balancer. */
-	private static final int COST_LIMIT = 1000;
+	private static final int COST_LIMIT = 999;
 
 	/** Balances swords vs. pikes & cavalry (basis 1.00). */
 	private static final double TERRAIN_MULTIPLIER = 1.00;
@@ -1883,7 +1883,7 @@ public class BookOfWar {
 		int bonus = rateOfLoss + health + miscBonus;
 
 		// Make the roll
-		int roll = d6() + d6();
+		int roll = roll2d6();
 		int total = roll + bonus;
 
 		// Check and report
@@ -1986,6 +1986,13 @@ public class BookOfWar {
 	*/
 	int d6() {
 		return random.nextInt(6) + 1;
+	}
+
+	/**
+	*  Roll two 6-sided dice.
+	*/
+	int roll2d6() {
+		return d6() + d6();	
 	}
 
 	/**
@@ -2230,7 +2237,7 @@ public class BookOfWar {
 		// Get the shot error
 		double shotError;
 		if (distance > WAND_RANGE / 2) {
-			shotError = Math.abs(d6() + d6() - 7);
+			shotError = Math.abs(roll2d6() - 7);
 		}
 		else if (distance > WAND_RANGE / 4) {
 			shotError = Math.abs(rollDie(3) + rollDie(3) - 4);
@@ -2385,14 +2392,16 @@ public class BookOfWar {
 			return;
 		}
 
-		// Check for immunity
-		if (isEnergyImmune(unit, energy)) {
+		// Check for immunity or magic resistance
+		if (isEnergyImmune(unit, energy)
+			|| resistsMagic(unit))
+		{
 			return;
 		}
 
 		// Check for saving throw
 		if (unit.getsSaves()) {
-			int roll = d6() + d6();
+			int roll = roll2d6();
 			if (roll >= dmgPerFig) {
 				reportDetail(unit + " saves versus " + energy);
 				return;
@@ -2446,7 +2455,7 @@ public class BookOfWar {
 	void doWhirlwindTurn(Unit attacker, Unit defender) {
 
 		// Concede if opponent is not a 1-health type.
-		if (defender.getHealth() > 1) {
+		if (!defender.isSweepable()) {
 			reportDetail(attacker + " * RETREATS *");
 			attacker.setRouted(true);
 			return;
@@ -2479,6 +2488,17 @@ public class BookOfWar {
 		// Move as much as possible to other side of target
 		distance = getMove(attacker) - distance;
 		return;
+	}
+
+	/**
+	*  Check if a unit successfully resists magic.
+	*  Balrog per OD&D Vol-2 1st print (etc.) has 75% resistance,
+	*  roughly 6+ on 2d6 (could be 7+ for Wiz 14-16, ignored here).
+	*  @return true if the unit resists magic.
+	*/
+	boolean resistsMagic(Unit unit) {
+		return unit.hasSpecial(SpecialType.MagicResistance)
+			&& roll2d6() >= 6;
 	}
 
 	//-----------------------------------------------------------------
