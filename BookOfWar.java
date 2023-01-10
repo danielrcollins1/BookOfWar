@@ -556,7 +556,7 @@ public class BookOfWar {
   		// Header
 		printf("Assessed win percents "
 			+ "(nominal budget " + budgetMin + "-" + budgetMax + "):\n\n");
-		printWideField("", nameColSize);
+		printWideField("Unit", nameColSize);
 		for (Unit unit: unitList2) {
 			printf(sepChar + unit.getAbbreviation());
 		}
