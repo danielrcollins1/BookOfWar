@@ -1,4 +1,4 @@
-Unit,Cost,Move,Armor,Health,Atk,Dam,Rate,Range,Width,Align,Special
+Solo,Cost,Move,Armor,Health,Atk,Dam,Rate,Range,Width,Align,Special
 Lord 9th Level,50,9,7,1,1,1,0,0,1,N,SweepAttack (2)
 Lord 12th Level,65,9,7,1,1,1,0,0,1,N,SweepAttack (3)
 Lord 15th Level,75,9,7,1,1,1,0,0,1,N,SweepAttack (4)
