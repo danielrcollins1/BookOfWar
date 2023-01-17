@@ -1,9 +1,10 @@
 Unit,Cost,Move,Armor,Health,Atks,Dam,Rate,Range,Width,Align,Special
 Skeletons,4,6,4,1,1,1,0,0,3,C,"Animated, Fearless"
 Zombies,6,6,3,2,1,1,0,0,3,C,"Animated, Fearless"
+Superhero (as Lord 9),50,9,7,1,1,1,0,0,1,N,SweepAttack (2)
 VO Large Gold Dragon,120,9,6,2,1,1,0,0,2,L,"Flight (24), Detection (15), MultiBreath (18), Fear"
-Air Elemental,50,36,6,1,0,0,0,0,2,N,"Conjured, MagicToHit, Flight (36), Whirlwind"
-Earth Elemental,50,6,6,1,1,1,0,0,2,N,"Conjured, MagicToHit"
-Fire Elemental,50,12,6,1,1,1,0,0,2,N,"Conjured, MagicToHit"
-Water Elemental,50,6,6,1,1,1,0,0,2,N,"Conjured, MagicToHit, Swimming (18)"
-Balrog,50,6,6,1,1,1,0,0,2,C,"Flight (15), MagicToHit, MagicResistance"
+Air Elemental,?,36,6,1,0,0,0,0,2,N,"Conjured, MagicToHit, Flight (36), Whirlwind"
+Earth Elemental,?,6,6,1,1,1,0,0,2,N,"Conjured, MagicToHit"
+Fire Elemental,?,12,6,1,1,1,0,0,2,N,"Conjured, MagicToHit"
+Water Elemental,?,6,6,1,1,1,0,0,2,N,"Conjured, MagicToHit, Swimming (18)"
+Balrog,?,6,6,1,1,1,0,0,2,C,"Flight (15), MagicToHit, MagicResistance"
