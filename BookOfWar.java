@@ -2262,14 +2262,13 @@ public class BookOfWar {
 
 	/**
 	*  Cast a Death Spell on the defending unit.
-	*  (4 hits per casting roughly averages OD&D, AD&D, OED,
-	*   with some reduction for saving throws.)
+	*  (Damage amount here roughly averages OD&D and AD&D.)
 	*/
 	void castDeathSpell(Unit attacker, Unit defender) {
 		assert distance <= 24;
 		assert defender.getHealth() <= 8;
 		assert !defender.getsSaves();
-		int deathSpellDamage = 5;
+		int deathSpellDamage = 4;
 		int numCasters = attacker.getFigures();
 		int damage = deathSpellDamage * numCasters;
 		defender.takeDamage(damage);
