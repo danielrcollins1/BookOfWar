@@ -1,10 +1,10 @@
-/******************************************************************************
-*  Special ability types.
-*  - Names should be nouns or noun phrases.
-*
-*  @author   Daniel R. Collins
-*  @since    2022-12-10
-******************************************************************************/
+/**
+	Special ability types.
+	- Names should be nouns or noun phrases.
+
+	@author Daniel R. Collins
+	@since 2022-12-10
+*/
 
 public enum SpecialType {
 
@@ -27,9 +27,9 @@ public enum SpecialType {
 	//----------------------------------------------------------------------
 
 	/**
-	*  Find special type matching a string.
-	*  @param s Name of special ability type.
-	*  @return Value of special type (or null).
+		Find special type matching a string.
+		@param s Name of special ability type.
+		@return Value of special type (or null).
 	*/
 	public static SpecialType findByName(String s) {
 		for (SpecialType t: SpecialType.values()) {
@@ -41,8 +41,8 @@ public enum SpecialType {
 	}
 	
 	/**
-	*  Is this a type of breath weapon?
-	*  @return true if this is a breath weapon.
+		Is this a type of breath weapon?
+		@return true if this is a breath weapon.
 	*/
 	public boolean isBreathWeapon() {
 		switch (this) {
@@ -55,8 +55,8 @@ public enum SpecialType {
 	}
 	
 	/**
-	*  Is this a type of magic spell casting?
-	*  @return true if this is a magic spell ability.
+		Is this a type of magic spell casting?
+		@return true if this is a magic spell ability.
 	*/
 	public boolean isSpellCasting() {
 		switch (this) {
@@ -68,8 +68,8 @@ public enum SpecialType {
 	}
 	
 	/**
-	*  Is this a type that requires a controlling leader?
-	*  @return true if this requires a controller.
+		Is this a type that requires a controlling leader?
+		@return true if this requires a controller.
 	*/
 	public boolean isControlRequired() {
 		switch (this) {

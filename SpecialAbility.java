@@ -1,12 +1,12 @@
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
-/******************************************************************************
-*  Parameterized special ability for a unit.
-*
-*  @author   Daniel R. Collins
-*  @since    2022-12-10
-******************************************************************************/
+/**
+	Parameterized special ability for a unit.
+
+	@author Daniel R. Collins
+	@since 2022-12-10
+*/
 
 public class SpecialAbility {
 
@@ -25,9 +25,9 @@ public class SpecialAbility {
 	//----------------------------------------------------------------------
 
 	/**	
-	*  Constructor (type, param).
-	*  @param pType Special type value.
-	*  @param pParam Special parameter value.
+		Constructor (type, param).
+		@param pType Special type value.
+		@param pParam Special parameter value.
 	*/
 	SpecialAbility(SpecialType pType, int pParam) {
 		type = pType;
@@ -35,16 +35,16 @@ public class SpecialAbility {
 	}
 
 	/**	
-	*  Constructor (type only).
-	*  @param pType Special type value.
+		Constructor (type only).
+		@param pType Special type value.
 	*/
 	SpecialAbility(SpecialType pType) {
 		this(pType, 0);
 	}
 	
 	/**	
-	*  Constructor (copy).
-	*  @param src Special source to copy.
+		Constructor (copy).
+		@param src Special source to copy.
 	*/
 	SpecialAbility(SpecialAbility src) {
 		this(src.type, src.param);
@@ -55,9 +55,9 @@ public class SpecialAbility {
 	//----------------------------------------------------------------------
 
 	/**
-	*  Create new special ability from a string.
-	*  @param s Special ability descriptor.
-	*  @return Special ability object.
+		Create new special ability from a string.
+		@param s Special ability descriptor.
+		@return Special ability object.
 	*/
 	public static SpecialAbility createFromString(String s) {
 		Pattern p = Pattern.compile("(\\w+)( \\(([-]?\\d+))?\\)?");
@@ -84,24 +84,24 @@ public class SpecialAbility {
 	}
 
 	/**
-	*  Get the type of this special ability.
-	*  @return Special type value.
+		Get the type of this special ability.
+		@return Special type value.
 	*/
 	public SpecialType getType() { 
 		return type; 
 	}
 
 	/**
-	*  Get the parameter of this special ability.
-	*  @return Special parameter value.
+		Get the parameter of this special ability.
+		@return Special parameter value.
 	*/
 	public int getParam() { 
 		return param; 
 	}
 
 	/**
-	*  Identify this object as a string.
-	*  @return String descriptor.
+		Identify this object as a string.
+		@return String descriptor.
 	*/
 	public String toString() {
 		String s = type.name();
@@ -112,8 +112,8 @@ public class SpecialAbility {
 	}
 	
 	/**
-	*  Main test function.
-	*  @param args Command-line arguments.
+		Main test function.
+		@param args Command-line arguments.
 	*/
 	public static void main(String[] args) {
 		System.out.println(createFromString("MoraleBonus"));

@@ -1,9 +1,9 @@
-/******************************************************************************
-*  One solo figure.
-*
-*  @author   Daniel R. Collins
-*  @since    2022-12-22
-******************************************************************************/
+/**
+	One solo figure.
+
+	@author Daniel R. Collins
+	@since 2022-12-22
+*/
 
 public class Solo extends Unit {
 
@@ -12,7 +12,7 @@ public class Solo extends Unit {
 	//----------------------------------------------------------------------
 
 	/** 
-	*  The unit in which this figure is embedded (if any).
+		The unit in which this figure is embedded (if any).
 	*/
 	private Unit host;
 
@@ -21,16 +21,16 @@ public class Solo extends Unit {
 	//----------------------------------------------------------------------
 
 	/**
-	*  Constructor (from string descriptor).
-	*  @param s Descriptor string array.
+		Constructor (from string descriptor).
+		@param s Descriptor string array.
 	*/
 	public Solo(String[] s) {
 		super(s);
 	}
 
 	/**
-	*  Constructor (copy).
-	*  @param src source solo to copy.
+		Constructor (copy).
+		@param src source solo to copy.
 	*/
 	public Solo(Solo src) {
 		super(src);
@@ -65,16 +65,16 @@ public class Solo extends Unit {
 	@Override public boolean getsSaves() { return true; }
 
 	/** 
-	*  Set our host unit.
-	*  @param newHost the new host unit.
+		Set our host unit.
+		@param newHost the new host unit.
 	*/
 	public void setHost(Unit newHost) {
 		host = newHost;
 	}
 
 	/** 
-	*  Check if we have an active host unit.
-	*  @return true if we have an active host unit.
+		Check if we have an active host unit.
+		@return true if we have an active host unit.
 	*/
 	@Override public boolean hasActiveHost() { 
 		return host != null 

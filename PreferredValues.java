@@ -1,22 +1,27 @@
-/******************************************************************************
-*  Preferred values sequence class.
-*
-*  @author   Daniel R. Collins
-*  @since    2022-12-18
-******************************************************************************/
+/**
+	Preferred values sequence class.
+
+	@author Daniel R. Collins
+	@since 2022-12-18
+*/
 
 public class PreferredValues {
 
 	/**
-	*  Base array for preferred values (note mostly divisors of 60).
+		Base array for preferred values (note mostly divisors of 60).
 	*/
-	static final int[] PREFER_VALS = {1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20};
-	static final int HIGHER_INC = 5;
+	private static final int[] PREFER_VALS =
+		{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20};
 
 	/**
-	*  Get the nth preferred value (possibly outside array).
-	*  @param idx index in the values sequence.
-	*  @return value of the entry.
+		Increment for each step beyond the base array.
+	*/
+	private static final int HIGHER_INC = 5;
+
+	/**
+		Get the nth preferred value (possibly outside array).
+		@param idx index in the values sequence.
+		@return value of the entry.
 	*/
 	private static int get(int idx) {
 		assert idx >= 0;
@@ -31,9 +36,9 @@ public class PreferredValues {
 	}
 
 	/**
-	*  Find index of first preferred value greater than or equal to target.
-	*  @param num number to find nearby index.
-	*  @return first index with value at least num.
+		Find index of first preferred value greater than or equal to target.
+		@param num number to find nearby index.
+		@return first index with value at least num.
 	*/
 	private static int getIdxAtLeast(int num) {
 		int idx = 0;
@@ -44,9 +49,9 @@ public class PreferredValues {
 	}
 
 	/**
-	*  Find index of closest preferred value.
-	*  @param num number to find nearby index.
-	*  @return index with value closest to num.
+		Find index of closest preferred value.
+		@param num number to find nearby index.
+		@return index with value closest to num.
 	*/
 	private static int getClosestIdx(int num) {
 
@@ -68,18 +73,18 @@ public class PreferredValues {
 	}
 
 	/**
-	*  Get value of closest preferred number.
-	*  @param num number to find nearby sequence value.
-	*  @return sequence value closest to num.
+		Get value of closest preferred number.
+		@param num number to find nearby sequence value.
+		@return sequence value closest to num.
 	*/
 	public static int getClosest(int num) {
 		return get(getClosestIdx(num));	
 	}
 
 	/**
-	*  Increment to next higher preferred value.
-	*  @param num number to increment in sequence.
-	*  @return next higher sequence value.
+		Increment to next higher preferred value.
+		@param num number to increment in sequence.
+		@return next higher sequence value.
 	*/
 	public static int inc(int num) {
 		int closestIdx = getClosestIdx(num);
@@ -88,9 +93,9 @@ public class PreferredValues {
 	}
 
 	/**
-	*  Decrement to next lower preferred value.
-	*  @param num number to decrement in sequence.
-	*  @return next lower sequence value.
+		Decrement to next lower preferred value.
+		@param num number to decrement in sequence.
+		@return next lower sequence value.
 	*/
 	public static int dec(int num) {
 		int closestIdx = getClosestIdx(num);
@@ -99,8 +104,8 @@ public class PreferredValues {
 	}
 
 	/**
-	*  Main test driver.
-	*  @param args command-line arguments.
+		Main test driver.
+		@param args command-line arguments.
 	*/
 	public static void main(String[] args) {
 

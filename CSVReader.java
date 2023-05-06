@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.ArrayList;
 import java.nio.charset.Charset;
 
-/******************************************************************************
-*  CSV-file reader help functions.
-*  See: wikipedia.org/wiki/Comma-separated_values#Toward_standardization
-*
-*  @author   Daniel R. Collins (dcollins@superdan.net)
-*  @since    2014-07-16
-******************************************************************************/
+/**
+	CSV-file reader help functions.
+	See: wikipedia.org/wiki/Comma-separated_values#Toward_standardization
+
+	@author Daniel R. Collins (dcollins@superdan.net)
+	@since 2014-07-16
+*/
 
 public class CSVReader {
 
@@ -22,22 +22,22 @@ public class CSVReader {
 	private static final char QUOTE = '\"';
 
 	/**
-	*  Read in a text file.
-	*  Assumes default charset.
-	*  @param filename File to read.
-	*  @return array of split string arrays.
-	*  @throws IOException if an I/O error occurs.
+		Read in a text file.
+		Assumes default charset.
+		@param filename File to read.
+		@return array of split string arrays.
+		@throws IOException if an I/O error occurs.
 	*/
 	public static String[][] readFile(String filename) throws IOException {
 		return readFile(filename, Charset.defaultCharset().name());
 	}
 
 	/**
-	*  Read in a text file.
-	*  @param filename File to read.
-	*  @param charset Name of encoding type.
-	*  @return array of split string arrays.
-	*  @throws IOException if an I/O error occurs.
+		Read in a text file.
+		@param filename File to read.
+		@param charset Name of encoding type.
+		@return array of split string arrays.
+		@throws IOException if an I/O error occurs.
 	*/
 	public static String[][] readFile(String filename, String charset) 
 			throws IOException {
@@ -52,9 +52,9 @@ public class CSVReader {
 	}
 
 	/**	
-	*  Split one line with proper quote handling.
-	*  @param line text line to split.
-	*  @return array of split strings.
+		Split one line with proper quote handling.
+		@param line text line to split.
+		@return array of split strings.
 	*/
 	private static String[] splitLine(String line) {
 		int ptr = 0;
@@ -73,11 +73,11 @@ public class CSVReader {
 	}
 
 	/**
-	*  Parse a non-quoted CSV field.
-	*  @param fieldList string list to append.
-	*  @param line text line to parse.
-	*  @param ptr starting position in line.
-	*  @return ending positon in line.
+		Parse a non-quoted CSV field.
+		@param fieldList string list to append.
+		@param line text line to parse.
+		@param ptr starting position in line.
+		@return ending positon in line.
 	*/
 	private static int parseNonQuoteField(
 		List<String> fieldList, String line, int ptr) 
@@ -92,11 +92,11 @@ public class CSVReader {
 	}
 
 	/**
-	*  Parse a quoted CSV field.
-	*  @param fieldList string list to append.
-	*  @param line text line to parse.
-	*  @param ptr starting position in line.
-	*  @return ending positon in line.
+		Parse a quoted CSV field.
+		@param fieldList string list to append.
+		@param line text line to parse.
+		@param ptr starting position in line.
+		@return ending positon in line.
 	*/
 	private static int parseQuotedField(
 		List<String> fieldList, String line, int ptr) 
@@ -142,9 +142,9 @@ public class CSVReader {
 	}
 
 	/**
-	*  Trim off trailing delimiters of a string.
-	*  @param s string to trim.
-	*  @return trimmed string.
+		Trim off trailing delimiters of a string.
+		@param s string to trim.
+		@return trimmed string.
 	*/
 	public static String trimTrailingDelimit(String s) {
 		int ptr = s.length() - 1;
@@ -155,9 +155,9 @@ public class CSVReader {
 	}
 
 	/**	
-	*  Split one line with no quote-handling (for testing).
-	*  @param line Line to split.
-	*  @return array of split strings.
+		Split one line with no quote-handling (for testing).
+		@param line Line to split.
+		@return array of split strings.
 	*/
 	public static String[] splitLineNoQuotes(String line) {
 		line = trimTrailingDelimit(line);
@@ -165,18 +165,18 @@ public class CSVReader {
 	}
 
 	/**
-	*  Parse string to integer, treating dash as zero.
-	*  @param s string to parse.
-	*  @return parsed integer.
+		Parse string to integer, treating dash as zero.
+		@param s string to parse.
+		@return parsed integer.
 	*/
 	public static int parseInt(String s) {
 		return s.equals("-") ? 0 : Integer.parseInt(s);		
 	};
 
 	/**
-	*  Make a CSV line from strings (for writing).
-	*  @param list string list.
-	*  @return comma-separated string.
+		Make a CSV line from strings (for writing).
+		@param list string list.
+		@return comma-separated string.
 	*/
 	public static String makeLineFromStrings(String... list) {
 		String s = "";
@@ -190,8 +190,8 @@ public class CSVReader {
 	}
 
 	/**
-	*  Main test function.
-	*  @param args command-line arguments.
+		Main test function.
+		@param args command-line arguments.
 	*/
 	public static void main(String[] args) {
 
