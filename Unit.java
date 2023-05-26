@@ -525,6 +525,15 @@ public class Unit {
 	}
 
 	/**
+		Can this unit teleport?
+		@return true if unit can teleport at this time.
+	*/
+	public boolean canTeleport() {
+		return hasSpecial(SpecialType.Teleport)
+			&& getCharges() > 0;
+	}
+
+	/**
 		Does this unit have a leader set?
 		@return true if unit has a leader object.
 	*/

@@ -1497,16 +1497,9 @@ public class BookOfWar {
 		Find maximum distance to move, including terrain & weather.
 	*/
 	private int getMove(Unit unit) {
-		int moveCost;
 
-		// Terrain mods
-		switch (terrain) {
-			default: moveCost = 1; break;
-			case Hill: case Gulley: case Rough: case Woods: 
-				moveCost = 2; break;
-			case Marsh: moveCost = 3; break;
-			case Stream: moveCost = 4; break;
-		}
+		// Get base cost by terrain
+		int moveCost = getTerrainMoveCost();
 			
 		// Swimmers ignore streams
 		if (unit.hasSpecial(SpecialType.Swimming) && terrain == Terrain.Stream) {
@@ -1518,7 +1511,7 @@ public class BookOfWar {
 			moveCost = 1;
 		}
 
-		// Weather mods
+		// Weather modifier
 		if (weather == Weather.Rainy) {
 			moveCost *= 2;
 		}
@@ -1528,24 +1521,43 @@ public class BookOfWar {
 			moveCost *= 2;
 		}
 
-		// Teleporters wait to pounce
-		if (unit.hasSpecial(SpecialType.Teleport)
-			&& unit.getCharges() > 0) 
-		{
-			int teleportRange = unit.getSpecialParam(SpecialType.Teleport);
-			if (distance < teleportRange) {
-				reportDetail(unit + " * TELEPORTS * into combat");
-				unit.decrementCharges();
-				return distance;
-			}
-			else {
-				return 1;
-			}
+		// Teleporters get special move
+		if (unit.canTeleport()) {
+			return getTeleportMove(unit);
 		}
 
 		// Return move (at least 1 inch)
 		int move = Math.max(unit.getMove(), unit.getFlyMove()) / moveCost;
 		return Math.max(move, 1);
+	}
+
+	/**
+		Get terrain movement cost.
+	*/
+	private int getTerrainMoveCost() {
+		switch (terrain) {
+			default: return 1;
+			case Hill: case Gulley: case Rough: case Woods: return 2;
+			case Marsh: return 3;
+			case Stream: return 4;
+		}
+	}
+
+	/**
+		Get desired move for teleporting unit.
+		Teleporters wait to spring best attack.
+	*/
+	private int getTeleportMove(Unit unit) {
+		assert unit.canTeleport();
+		int teleportRange = unit.getSpecialParam(SpecialType.Teleport);
+		if (distance < teleportRange) {
+			reportDetail(unit + " * TELEPORTS * into combat");
+			unit.decrementCharges();
+			return distance;
+		}
+		else {
+			return 1;
+		}
 	}
 
 	/**
