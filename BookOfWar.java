@@ -2031,12 +2031,13 @@ public class BookOfWar {
 
 	/**
 		Randomize weather.
+		Compare to determination in Chainmail (p. 22).
 	*/
 	private void randomizeWeather() {
 		switch (d6()) {
-			case 1: case 2: 
+			case 1: case 2: case 3:
 				weather = Weather.Sunny; break;
-			case 3: case 4: case 5: 
+			case 4: case 5: 
 				weather = Weather.Cloudy; break;
 			default: 
 				weather = Weather.Rainy; break;
