@@ -20,7 +20,8 @@ public enum SpecialType {
 	Spells, Wand, MagicResistance, WeatherControl, Whirlwind, 
 	FireBreath, VoltBreath, ColdBreath, AcidBreath, PoisonBreath, 
 	MultiBreath, FireImmunity, VoltImmunity, ColdImmunity, AcidImmunity,
-	PoisonImmunity, FireVulnerability, Fear, Fearless, Animated, Conjured;
+	PoisonImmunity, FireVulnerability, MissileWard, Fear, 
+	Fearless, Animated, Conjured;
 	
 	//----------------------------------------------------------------------
 	//  Methods

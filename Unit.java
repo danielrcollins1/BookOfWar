@@ -579,6 +579,18 @@ public class Unit {
 	}
 
 	/**
+		Count how many spells this unit has cast.
+		@return number of spells cast so far.
+	*/
+	public int numSpellsCast() {
+		if (hasSpecial(SpecialType.Spells)) {
+			int maxSpells = getSpecialParam(SpecialType.Spells);
+			return maxSpells - specialCharges;
+		}
+		return 0;
+	}
+
+	/**
 		Is this unit type fearless?
 		@return true if we are immune to morale checks.
 	*/
@@ -600,7 +612,7 @@ public class Unit {
 	}
 
 	/**
-		Get whether we have saved against fear.
+		Have we already saved against fear?
 		@return true if we have saved against fear.
 	*/
 	public boolean hasSavedVsFear() {

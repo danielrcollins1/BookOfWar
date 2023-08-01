@@ -77,11 +77,17 @@ public class BookOfWar {
 	/** Range for magic wand missile attacks. */
 	private static final int WAND_RANGE = 24;
 
+	/** Damage thrown by the Death Spell. */
+	private static final int DEATH_SPELL_DAMAGE = 4;
+
 	/** Number of steps allowed for Control Weather spell. */
 	private static final int CONTROL_WEATHER_STEPS = 1;
 
 	/** Index for solo added to animated units. */
 	private static final int DEFAULT_CONTROLLER = 1;
+	
+	/** Chance wizard has useful hill in range. */
+	private static final double CHANCE_HILL_NEARBY = 0.25;
 	
 	//-----------------------------------------------------------------
 	//  Out-of-game settings
@@ -221,6 +227,7 @@ public class BookOfWar {
 		System.out.println("  Options include:");
 		System.out.println("\t-a assess up to the nth unit in database");
 		System.out.println("\t-b use first n units as base for comparisons");
+		System.out.println("\t-c use first n solos as unit leader chiefs");
 		System.out.println("\t-m sim mode (0 = zoom-in game, 1 = table-asses,\n"
 			+ "\t\t 2 = base auto-balance, 3 = full auto-balance,\n"
 			+ "\t\t 4 = balance solo embeds");
@@ -799,7 +806,7 @@ public class BookOfWar {
 			return;		
 		}
 
-		// Double the standard budgt values.
+		// Double the standard budget values.
 		budgetMin *= 2;
 		budgetMax *= 2;
 
@@ -1448,7 +1455,7 @@ public class BookOfWar {
 	private int minDistanceToShoot(Unit attacker, Unit defender) {
 
 		// Check factors prohibiting fire
-		if (!attacker.hasMissiles() 
+		if (!attacker.hasMissiles()
 			|| !terrainPermitShots()
 			|| isAttackImmune(attacker, defender)
 			|| (weather == Weather.Rainy 
@@ -1478,12 +1485,8 @@ public class BookOfWar {
 		Get the effective armor for shooting at a target.
 	*/
 	private int getArmorForShot(Unit target) {
-		if (target.isLoneLeader()) {
-			return target.getLeader().getArmor();
-		}	
-		else {
-			return target.getArmor();		
-		}
+		return target.isLoneLeader() 
+			? target.getLeader().getArmor() : target.getArmor();
 	}
 
 	/**
@@ -1571,7 +1574,9 @@ public class BookOfWar {
 		}
 
 		// Give an attack to a leader figure
+		// (only handle one side with solo leader)
 		if (attacker.hasActiveLeader()) {
+			assert !defender.hasActiveLeader();
 			meleeAttack(attacker.getLeader(), defender);
 		}
 
@@ -1580,12 +1585,14 @@ public class BookOfWar {
 			return;
 		}
 
+		// If target reduced to just leader, attack them
+		if (defender.isLoneLeader()) {
+			meleeAttack(attacker, defender.getLeader());
+			return;
+		}
+		
 		// Compute number of attackers (possibly one vs. leader)
 		int figsAtk = countFiguresInContact(attacker, defender);
-		if (defender.hasActiveLeader() && figsAtk > 0) {
-			meleeAttack(attacker, defender.getLeader());
-			figsAtk--;
-		}
 
 		// Check that we have attacks to make
 		if (figsAtk == 0) {
@@ -1866,7 +1873,7 @@ public class BookOfWar {
 
 		// Check for lone leader target
 		if (defender.isLoneLeader()) {
-			return isAttackImmune(attacker, defender.getLeader());		
+			return isAttackImmune(attacker, defender.getLeader());
 		}
 
 		// Invisible units can't be attacked
@@ -1877,6 +1884,14 @@ public class BookOfWar {
 		// Units that auto-hit (solos) assumed to bypass protections
 		if (attacker.autoHits()) {
 			return false;
+		}
+
+		// Check ranged attack vs. missile ward 
+		// (protection against normal missiles spell)
+		if (distance > 0 && attacker.getDamage() <= 1 
+			&& defender.hasSpecial(SpecialType.MissileWard)) 
+		{
+			return true;
 		}
 
 		// Check silver-to-hit (AD&D rule: 4HD+ bypasses)
@@ -2216,6 +2231,7 @@ public class BookOfWar {
 			&& attacker.getCharges() > 0)
 		{
 			if (doSpellTurn(attacker, defender)) {
+				makeVisible(attacker);
 				return true;
 			}		
 		}
@@ -2223,6 +2239,7 @@ public class BookOfWar {
 		// Wizards with magic wands
 		if (attacker.hasSpecial(SpecialType.Wand)) {
 			doMagicWandTurn(attacker, defender);		
+			makeVisible(attacker);
 			return true;
 		}
 	
@@ -2238,9 +2255,8 @@ public class BookOfWar {
 		assert attacker.getCharges() > 0;
 		
 		// Cast Control Weather if it benefits us
-		if (weather != getTargetWeather(attacker, defender)
-			&& attacker.getCharges() 
-				== attacker.getSpecialParam(SpecialType.Spells))
+		if (attacker.numSpellsCast() == 0
+			&& weather != getTargetWeather(attacker, defender))
 		{
 			castControlWeather(attacker, defender);
 			attacker.decrementCharges();
@@ -2248,10 +2264,13 @@ public class BookOfWar {
 		}
 
 		// Cast Move Earth if it benefits us
-		if (terrain == Terrain.Open) {
+		if (attacker.numSpellsCast() == 1
+			&& terrain == Terrain.Open
+			&& random.nextDouble() <= CHANCE_HILL_NEARBY)
+		{
 			castMoveEarth(attacker);
 			attacker.decrementCharges();
-			return true;		
+			return true;
 		}
 
 		// Cast Death Spell otherwise
@@ -2325,15 +2344,13 @@ public class BookOfWar {
 
 	/**
 		Cast a Death Spell on the defending unit.
-		(Damage amount here roughly averages OD&D and AD&D.)
 	*/
 	private void castDeathSpell(Unit attacker, Unit defender) {
 		assert distance <= 24;
 		assert defender.getHealth() <= 8;
 		assert !defender.getsSaves();
-		int deathSpellDamage = 4;
 		int numCasters = attacker.getFigures();
-		int damage = deathSpellDamage * numCasters;
+		int damage = numCasters * DEATH_SPELL_DAMAGE;
 		defender.takeDamage(damage);
 		reportDetail(attacker + " casts * DEATH SPELL * on " + defender);
 	}
