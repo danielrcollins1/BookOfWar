@@ -1813,7 +1813,7 @@ public class BookOfWar {
 
  		// Halfling ranged attack bonus
  		if (attacker.hasSpecial(SpecialType.ShotBonus) && ranged) {
-			bonus += 1;
+			bonus += attacker.getSpecialParam(SpecialType.ShotBonus);
 		}
 		
  		// Dwarf dodge giants

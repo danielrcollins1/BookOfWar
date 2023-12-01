@@ -8,3 +8,4 @@ Earth Elemental,?,6,6,1,1,1,0,0,2,N,"Conjured, MagicToHit"
 Fire Elemental,?,12,6,1,1,1,0,0,2,N,"Conjured, MagicToHit"
 Water Elemental,?,6,6,1,1,1,0,0,2,N,"Conjured, MagicToHit, Swimming (18)"
 Balrog,?,6,6,1,1,1,0,0,2,C,"Flight (15), MagicToHit, MagicResistance"
+"Ballista (2 figs, 2 each)",20,6,5,2,0,1,1,30,7,N,ShotBonus (2)
